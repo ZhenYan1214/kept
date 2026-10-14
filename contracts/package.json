@@ -1,0 +1,26 @@
+{
+  "name": "kept-contracts",
+  "version": "1.0.0",
+  "description": "Kept: verifiable disaster-relief commitments",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "forge test",
+    "deploy:local": "node scripts/ensure-poseidon.mjs && forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast",
+    "e2e": "node scripts/e2e.mjs"
+  },
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "@semaphore-protocol/contracts": "^4.14.3"
+  },
+  "devDependencies": {
+    "@openzeppelin/merkle-tree": "^1.0.8",
+    "@semaphore-protocol/core": "^4.14.3",
+    "viem": "^2.57.6"
+  },
+  "private": true
+}
