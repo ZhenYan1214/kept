@@ -152,7 +152,7 @@ export default function Why() {
           deduplicates aid across agencies and the Spanish Red Cross runs zero-knowledge eligibility credentials.
         </p>
         <p className="text-sm">
-          What we could not find anywhere: <strong>a custody trail that follows money past the first hand</strong> until
+          What we did not find in any deployment we reviewed: <strong>a custody trail that follows money past the first hand</strong> until
           households confirm it, <strong>promises the custodian cannot rewrite</strong>, and{" "}
           <strong>a voice for the people the money is for</strong>.
         </p>

@@ -18,7 +18,16 @@ export default function Setup() {
           partly delivered custody chain — the starting point of the demo.
         </SectionTitle>
         {snap?.seeded ? (
-          <Note tone="ok">Scenario is set up on this deployment.</Note>
+          <div className="space-y-3">
+            <Note tone="ok">Scenario is set up on this deployment.</Note>
+            <p className="text-sm text-muted">
+              Explored it and want a clean start? This creates a new disaster and fund with the same simulated data; the dashboard
+              switches to it. Household credentials in this browser belong to the old disaster, so reset local demo data too.
+            </p>
+            <ActionButton variant="secondary" onClick={async () => setLog((await postJSON<{ log: string[] }>("/api/seed")).log)}>
+              Start a fresh scenario
+            </ActionButton>
+          </div>
         ) : (
           <ActionButton onClick={async () => setLog((await postJSON<{ log: string[] }>("/api/seed")).log)}>
             Set up scenario

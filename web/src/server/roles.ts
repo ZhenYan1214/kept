@@ -83,9 +83,13 @@ const CUSTODIAN_FLOW = {
   programs: ["createProgram", "claim", "closeProgram"],
 };
 
-/** What each demo role is allowed to call. Anything else is refused by the demo server. */
+/**
+ * What each demo role is allowed to call through the public demo API. Anything else is refused.
+ * Setting up disasters, issuers and funds is done only by the server's own seed, so a visitor cannot
+ * create a disaster or a fund and take over what the public dashboard shows.
+ */
 export const ALLOWED: Record<RoleName, Partial<Record<Target, string[]>>> = {
-  authority: { registry: ["setVillage", "setIssuer", "createDisaster"] },
+  authority: {},
   office: {
     registry: [...CHIEF, "revokeMember", "replaceMember", "resolveAppeal", "reportCoverage", "setProxy"],
   },
@@ -97,7 +101,7 @@ export const ALLOWED: Record<RoleName, Partial<Record<Target, string[]>>> = {
   c1: COMMITTEE,
   c2: COMMITTEE,
   c3: COMMITTEE,
-  custodian: { factory: ["createFund"], fund: ["execute", "concludeReview"] },
+  custodian: { fund: ["execute", "concludeReview"] },
   ministry: CUSTODIAN_FLOW,
   county: CUSTODIAN_FLOW,
   ngo: CUSTODIAN_FLOW,

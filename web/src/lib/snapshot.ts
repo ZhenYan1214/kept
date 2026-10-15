@@ -182,7 +182,21 @@ export type Snapshot = {
 
 const n = (x: bigint | number) => Number(x);
 
-export async function loadSnapshot(): Promise<Snapshot> {
+/**
+ * The fund shown is the most recent one created for the demo custodian (when known), so a fund
+ * anyone else creates through the open factory cannot take over the dashboard. Everything else is
+ * filtered to that fund and its disaster.
+ */
+async function pickFund(funds: readonly Address[], custodian?: Address): Promise<Address | undefined> {
+  for (let i = funds.length - 1; i >= 0; i--) {
+    if (!custodian) return funds[i];
+    const c = (await publicClient.readContract({ address: funds[i], abi: fundAbi, functionName: "custodian" })) as Address;
+    if (c.toLowerCase() === custodian.toLowerCase()) return funds[i];
+  }
+  return undefined;
+}
+
+export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
   const d = getDeployment();
   const head = await publicClient.getBlock();
   const fromBlock = BigInt(d.deployBlock);
@@ -206,26 +220,31 @@ export async function loadSnapshot(): Promise<Snapshot> {
 
   const issuerAddrs = new Set<Address>();
   const villages = new Map<number, number>();
+  const fundAddr = await pickFund(funds as readonly Address[], custodian);
+  const disasterId = fundAddr
+    ? ((await publicClient.readContract({ address: fundAddr, abi: fundAbi, functionName: "disasterId" })) as bigint)
+    : disasterCount;
+
   const tierEvents: Tier[] = [];
   for (const log of registryLogs) {
     const ev = decodeEventLog({ abi: registryAbi, data: log.data, topics: log.topics });
     if (ev.eventName === "IssuerSet") issuerAddrs.add(ev.args.issuer);
     if (ev.eventName === "VillageSet") villages.set(n(ev.args.village), n(ev.args.township));
-    if (ev.eventName === "TierGroupCreated" && ev.args.disasterId === disasterCount) {
+    if (ev.eventName === "TierGroupCreated" && ev.args.disasterId === disasterId) {
       tierEvents.push({ tier: n(ev.args.tier), name: ev.args.name, groupId: ev.args.groupId });
     }
   }
 
   // --- registry ---
   let disaster: Disaster | null = null;
-  if (disasterCount > 0n) {
+  if (disasterId > 0n) {
     const [, tierCount, createdAt, verified, name] = await publicClient.readContract({
       address: d.registry,
       abi: registryAbi,
       functionName: "disasters",
-      args: [disasterCount],
+      args: [disasterId],
     });
-    disaster = { id: disasterCount, name, tierCount: n(tierCount), verified: n(verified), createdAt: n(createdAt), tiers: tierEvents };
+    disaster = { id: disasterId, name, tierCount: n(tierCount), verified: n(verified), createdAt: n(createdAt), tiers: tierEvents };
   }
 
   const [issuers, registrations, appeals, villageStats] = await Promise.all([
@@ -317,8 +336,7 @@ export async function loadSnapshot(): Promise<Snapshot> {
       : Promise.resolve([] as VillageStats[]),
   ]);
 
-  // --- fund (the demo runs one fund; the most recent one is shown) ---
-  const fundAddr = funds.length ? funds[funds.length - 1] : undefined;
+  // --- fund (see pickFund) ---
   const fund = fundAddr ? await loadFund(fundAddr, fromBlock, head.number) : null;
 
   // --- custody ledger ---
@@ -390,11 +408,11 @@ export async function loadSnapshot(): Promise<Snapshot> {
     villages: [...villages.entries()].map(([code, township]) => ({ code, township })),
     villageStats,
     issuers,
-    registrations,
-    appeals,
+    registrations: registrations.filter((r) => r.disasterId === disasterId),
+    appeals: appeals.filter((a) => a.disasterId === disasterId),
     fund,
-    hops,
-    programs,
+    hops: hops.filter((h) => fundAddr && h.fund.toLowerCase() === fundAddr.toLowerCase()),
+    programs: programs.filter((p) => p.disasterId === disasterId),
   };
 }
 

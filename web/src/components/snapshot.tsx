@@ -22,12 +22,13 @@ export function SnapshotProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<Partial<Record<RoleName, Address>>>({});
   const inflight = useRef<Promise<void> | null>(null);
+  const custodian = useRef<Address | undefined>(undefined);
 
   const refresh = useCallback(async () => {
     if (inflight.current) return inflight.current;
     inflight.current = (async () => {
       try {
-        setSnap(await loadSnapshot());
+        setSnap(await loadSnapshot(custodian.current));
         setError(null);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -44,7 +45,11 @@ export function SnapshotProvider({ children }: { children: React.ReactNode }) {
     const id = setInterval(refresh, CHAIN_ID === 31337 ? 4000 : 10000);
     fetch("/api/roles")
       .then((r) => r.json())
-      .then(setRoles)
+      .then((r: Partial<Record<RoleName, Address>>) => {
+        setRoles(r);
+        custodian.current = r.custodian;
+        refresh();
+      })
       .catch(() => {});
     return () => clearInterval(id);
   }, [refresh]);

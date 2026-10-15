@@ -13,7 +13,7 @@ Money is raised before a plan exists → the custodian keeps every record → vi
 - **Haiti 2010:** US$488M raised, six permanent homes built ([ProPublica/NPR](https://www.propublica.org/article/how-the-red-cross-raised-half-a-billion-dollars-for-haiti-and-built-6-homes)).
 - **Hualien 2024:** a county donation account of ~NT$790M still held ~NT$420M a year later; its committee met three times and had no victims on it ([PTS](https://news.pts.org.tw/article/744652)). The following year's allocation through the national relief foundation was under a fifth of the 2018 one ([PTS](https://news.pts.org.tw/article/695533)).
 - **Guangfu 2025:** of NT$1.21bn paid out by the relief foundation (including pre-allocations), NT$49M had been reconciled by Sept 2026 ([disclosure](https://www.tf4dr.org/fundraising_plans/156/credits)). Pre-allocating and reconciling later is normal in an emergency; the point is that **nothing after the first hand is visible**.
-- Victims have **no vote** anywhere; Hualien's rules let up to five attend committee meetings and speak only with the chair's permission ([rules](https://glrs.hl.gov.tw/glrsout/LawContent.aspx?id=GL001170)).
+- Victims have **no vote** on how the money is used: the relief foundation's board has no seat for them, and Hualien's rules let up to five attend committee meetings and speak only with the chair's permission ([rules](https://glrs.hl.gov.tw/glrsout/LawContent.aspx?id=GL001170)).
 - Three villages outside the "red zone" were left off the first aid list and had to protest ([CNA](https://www.cna.com.tw/news/aloc/202510060164.aspx)).
 
 The full, source-checked problem statement is on the app's **Why Kept** page.
@@ -91,26 +91,29 @@ Then open **Setup → Set up scenario** to create the simulated disaster, fund, 
 
 ### Demo walkthrough
 
-1. **Household** — create a credential; press *Simulate: chief scans this code*.
-2. **Village & township** — as the Nanfu chief, propose the registration; switch to the township office and approve it (two signatures).
-3. **Household** — now verified. *Show code at the counter* generates a zero-knowledge proof in the browser.
-4. **NGO counter** — verify and record the hand-over. Showing the same code again is rejected.
-5. **Fund committee** — try to allocate to *General public works*: the contract refuses. Propose a cap change and approve it with a second member: it enters the public waiting period.
-6. **Household** — vote *No*. On the committee screen, *Demo: 3 neighbours vote no* casts real proofs from simulated households; skip the waiting period (devnet) and *Execute*: the change is **vetoed**.
+The order follows the story: what the public sees today, then reconciliation, then the promises.
+
+1. **Guangfu, real data** — the foundation's real disclosure: 98.8% of what was paid out was pre-allocated, and the trail stops after the first hand.
+2. **Public dashboard** — the simulated fund. *Accountability alerts* already flag a disputed payment and two villages where verified households say they are still waiting.
+3. **Household** — create a credential; press *Simulate: chief scans this code*.
+4. **Village & township** — as the Nanfu chief, propose the registration; switch to the township office and approve it (two signatures).
+5. **Custodians** — as the ministry, commit a payment roster that includes the new household. **Household** — the line is checked against the on-chain root; say *I received it* or *I did not receive it*. This is the reconciliation evidence the custodian gets.
+6. **NGO counter** — on the household screen, *Show code at the counter* makes a zero-knowledge proof; the NGO verifies it without any roster. Showing the same code again is rejected.
+7. **Fund committee** — try to allocate to *General public works*: the contract refuses. Propose a cap change and approve it with a second member: it enters the public waiting period. Vote *No* as the household; *Demo: 3 neighbours vote no* casts real proofs from simulated households; skip the waiting period (devnet) and *Execute*: the change is **vetoed**.
    Optional: tick *Emergency* for a cap move — it applies at once; three *No* votes and *Settle household review* return the unspent part and revoke the emergency path. *Use the surplus* only opens after the deadline (*Devnet: jump past the deadline*).
-7. **Custodians** — as the ministry, commit a payment roster including the live household. **Household** — the line is checked against the on-chain root; confirm or dispute it.
 8. **Public dashboard** — everything above is visible; download the open data as JSON.
 
 ## Demo mode — what is simulated
 
 - Institutional signing keys (township office, committee, ministry, NGO…) are held by the demo server (`/api/tx`, allow-listed per role). In production each institution signs with its own wallet.
+- Creating disasters, issuers and funds is not exposed through the demo API; only the server's seed does it. The dashboard shows the latest fund of the demo custodian, so a fund created by anyone else through the open factory does not replace it. *Setup → Start a fresh scenario* creates a new disaster and fund, at most once every 15 minutes.
 - A relayer pays gas for households; they never need crypto.
 - "Scanning a QR code" between devices is simulated through the browser's local storage.
 - `MockTWD` stands in for a regulated NT$ stablecoin. In phase 1 donations stay in bank accounts and Kept records commitments, decisions and custody; Taiwan's Virtual Asset Service Act (passed 2026-06-30) opens a path to on-chain NT$ later.
 
 ## Validation
 
-- **What we have:** public statements and official records from nine stakeholder groups ([table above](#evidence-of-need-in-stakeholders-own-words)), and a replay of the relief foundation's real Guangfu transfer disclosure on Kept's custody ledger (institution-level public data; household-level data stays simulated).
+- **What we have:** nine public statements and official records from seven stakeholder groups ([table above](#evidence-of-need-in-stakeholders-own-words)), and a replay of the relief foundation's real Guangfu transfer disclosure on Kept's custody ledger (institution-level public data; household-level data stays simulated).
 - **What we do not have yet:** interviews with a relief custodian, an NGO, a social worker or affected households, and any field test with elders.
 - **Plan for the mentoring period (27 Oct–25 Nov):** ask the organisers' mentors and partner NGOs to connect us with one custodian and one social worker for feedback, and test the household screens with older users.
 

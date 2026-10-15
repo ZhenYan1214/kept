@@ -22,6 +22,7 @@ import { waitingPeriod, waitingScope } from "@/lib/scopes";
 import { groups } from "./groups";
 
 const SIM_SEED = process.env.SIM_SEED ?? "kept-simulated-households";
+const FUND_LIFETIME = 365n * 86400n;
 
 async function send(role: RoleName, target: Target, functionName: string, args: unknown[], fund?: Address) {
   const address = target === "fund" ? fund! : targetAddress(target);
@@ -63,12 +64,20 @@ export type SeedLog = string[];
 
 export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; log: SeedLog }> {
   const d = getDeployment();
-  const existing = (await publicClient.readContract({
-    address: d.factory,
-    abi: ABIS.factory,
-    functionName: "fundCount",
-  })) as bigint;
-  if (existing > 0n) throw new Error("Scenario already seeded on this deployment");
+  // A fresh scenario (new disaster and fund) may be started again, but not more than once every
+  // 15 minutes, so the public demo API cannot be used to drain the demo wallets. (Not on the local
+  // devnet, whose seed fast-forwards chain time.)
+  const funds = (await publicClient.readContract({ address: d.factory, abi: ABIS.factory, functionName: "allFunds" })) as Address[];
+  if (funds.length > 0 && CHAIN_ID !== 31337) {
+    const lastDeadline = (await publicClient.readContract({
+      address: funds[funds.length - 1],
+      abi: ABIS.fund,
+      functionName: "deadline",
+    })) as bigint;
+    const createdAt = lastDeadline - FUND_LIFETIME;
+    const age = (await publicClient.getBlock()).timestamp - createdAt;
+    if (age < 15n * 60n) throw new Error(`A scenario was started ${age / 60n} min ago; try again in a few minutes`);
+  }
 
   const timelock = Number(process.env.DEMO_TIMELOCK_SECONDS ?? (CHAIN_ID === 31337 ? 7 * 86400 : 300));
 
@@ -105,7 +114,7 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
       custodian: roleAccount("custodian").address,
       token: d.token,
       disasterId,
-      deadline: now + 365n * 86400n,
+      deadline: now + FUND_LIFETIME,
       threshold: 2,
       emergencyThreshold: 3,
       timelock,
