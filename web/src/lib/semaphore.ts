@@ -1,33 +1,19 @@
 "use client";
-import { Group, generateProof, type Identity } from "@semaphore-protocol/core";
-import { decodeEventLog } from "viem";
-import { publicClient, getLogsChunked } from "./chain";
+import { generateProof, type Group, type Identity } from "@semaphore-protocol/core";
+import { publicClient } from "./chain";
 import { getDeployment } from "./config";
-import { semaphoreGroupsAbi } from "@/generated/contracts";
+import { buildGroup } from "./groups";
+import { registryAbi } from "@/generated/contracts";
 
-/** Rebuild a Semaphore group (Lean IMT) from on-chain events, exactly as the contract holds it. */
+/** Rebuild a Semaphore group exactly as the contract holds it, from the registry's member list. */
 export async function fetchGroup(groupId: bigint): Promise<Group> {
-  const d = getDeployment();
-  const head = await publicClient.getBlockNumber();
-  const logs = await getLogsChunked({
-    address: d.semaphore,
-    events: semaphoreGroupsAbi.filter(
-      (x) => x.type === "event" && ["MemberAdded", "MembersAdded", "MemberUpdated", "MemberRemoved"].includes(x.name),
-    ) as never,
-    fromBlock: BigInt(d.deployBlock),
-    toBlock: head,
+  const members = await publicClient.readContract({
+    address: getDeployment().registry,
+    abi: registryAbi,
+    functionName: "groupMembers",
+    args: [groupId],
   });
-  const group = new Group();
-  for (const log of logs) {
-    const ev = decodeEventLog({ abi: semaphoreGroupsAbi, data: log.data, topics: log.topics });
-    const args = ev.args as Record<string, bigint | bigint[]>;
-    if (args.groupId !== groupId) continue;
-    if (ev.eventName === "MemberAdded") group.addMember(args.identityCommitment as bigint);
-    else if (ev.eventName === "MembersAdded") group.addMembers(args.identityCommitments as bigint[]);
-    else if (ev.eventName === "MemberUpdated") group.updateMember(Number(args.index), args.newIdentityCommitment as bigint);
-    else if (ev.eventName === "MemberRemoved") group.removeMember(Number(args.index));
-  }
-  return group;
+  return buildGroup(members);
 }
 
 export type SolidityProof = {

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Addr, Card, Empty, Field, Note, SectionTitle, TxLink, inputCls, ntd, pct } from "@/components/ui";
+import { ActionButton, Addr, Card, Empty, Field, Note, SectionTitle, formatDate, inputCls, ntd, pct } from "@/components/ui";
 import { CharterPanel, custodyTotals } from "@/components/panels";
 import { tx, eventArg } from "@/lib/api";
 import { textHash } from "@/lib/scopes";
@@ -59,13 +59,13 @@ export default function DonatePage() {
       <Card>
         <SectionTitle title="Recent donations (public)" />
         <div className="divide-y divide-line text-sm">
-          {[...f.donations].reverse().slice(0, 12).map((d) => (
-            <div key={d.tx + d.receiptNo} className="flex items-center justify-between py-2">
+          {[...f.donations].reverse().map((d) => (
+            <div key={d.receiptNo.toString()} className="flex items-center justify-between py-2">
               <span>
                 Receipt #{d.receiptNo.toString()} · <Addr address={d.donor} />
               </span>
               <span className="flex items-center gap-3 tabular-nums">
-                {ntd(d.amount)} <TxLink hash={d.tx} />
+                {ntd(d.amount)} <span className="text-xs text-muted">{formatDate(d.at)}</span>
               </span>
             </div>
           ))}

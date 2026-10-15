@@ -218,4 +218,29 @@ contract EligibilityTest is Base {
         vm.expectRevert(EligibilityRegistry.UnknownVillage.selector);
         registry.reportWaiting(disasterId, g0, nowhere);
     }
+
+    // ---------------- enumerable state (no event logs needed) ----------------
+
+    function test_IssuersAndVillagesAreListed() public view {
+        assertEq(registry.issuerCount(), 4);
+        assertEq(registry.issuerList(0), office);
+        assertEq(registry.villageCount(), 3);
+        assertEq(registry.villageList(1), VILLAGE_B);
+    }
+
+    function test_GroupMembersMirrorTheTree() public {
+        _register(chiefA, office, 0, VILLAGE_A, 111);
+        _register(chiefA, office, 0, VILLAGE_A, 222);
+        _register(chiefA, office, 0, VILLAGE_A, 333);
+        uint256[] memory siblings;
+        vm.startPrank(office);
+        registry.revokeMember(disasterId, 0, VILLAGE_A, 222, siblings, bytes32(0));
+        registry.replaceMember(disasterId, 0, VILLAGE_A, 333, 444, _receiptOf(444), siblings, bytes32(0));
+        vm.stopPrank();
+        uint256[] memory m = registry.groupMembers(_group(0));
+        assertEq(m.length, 3);
+        assertEq(m[0], 111);
+        assertEq(m[1], 0, "revoked leaf is zero");
+        assertEq(m[2], 444, "replaced in place");
+    }
 }

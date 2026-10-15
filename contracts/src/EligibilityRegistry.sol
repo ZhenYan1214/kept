@@ -110,6 +110,15 @@ contract EligibilityRegistry is Ownable {
     mapping(uint256 groupId => uint8) public groupTier;
     mapping(uint256 groupId => bool) public isGroup;
 
+    // Enumerable mirrors of state that would otherwise only be in event logs, so clients can read
+    // everything with plain calls (public RPCs limit log queries to small block ranges).
+    address[] public issuerList;
+    uint32[] public villageList;
+    /// @dev Leaves of each Semaphore group in insertion order, exactly as its Merkle tree holds them
+    /// (a revoked member's leaf is 0), so clients can rebuild the group and make proofs.
+    mapping(uint256 groupId => uint256[]) internal _members;
+    mapping(uint256 groupId => mapping(uint256 commitment => uint256)) internal _memberIndexPlusOne;
+
     Registration[] public registrations;
     mapping(bytes32 => bool) public tagUsed; // keccak(disasterId, uniqueTag)
     mapping(bytes32 => bool) public commitmentUsed; // keccak(disasterId, commitment)
@@ -172,6 +181,7 @@ contract EligibilityRegistry is Ownable {
     // ------------------------------------------------------------------
 
     function setVillage(uint32 village, uint32 township) external onlyOwner {
+        if (townshipOf[village] == 0) villageList.push(village);
         townshipOf[village] = township;
         emit VillageSet(village, township);
     }
@@ -181,6 +191,7 @@ contract EligibilityRegistry is Ownable {
         onlyOwner
     {
         Issuer storage i = issuers[account];
+        if (i.role == Role.None && role != Role.None) issuerList.push(account);
         i.role = role;
         i.region = region;
         i.active = active;
@@ -274,7 +285,10 @@ contract EligibilityRegistry is Ownable {
         r.decidedAt = uint64(block.timestamp);
         issuers[msg.sender].approved++;
 
-        semaphore.addMember(tierGroup[r.disasterId][r.tier], r.commitment);
+        uint256 groupId = tierGroup[r.disasterId][r.tier];
+        semaphore.addMember(groupId, r.commitment);
+        _members[groupId].push(r.commitment);
+        _memberIndexPlusOne[groupId][r.commitment] = _members[groupId].length;
         disasters[r.disasterId].verifiedHouseholds++;
         villageStats[r.disasterId][r.village].verified++;
         emit RegistrationDecided(id, true, msg.sender, bytes32(0));
@@ -304,7 +318,10 @@ contract EligibilityRegistry is Ownable {
         delete commitmentVillage[key];
         delete _receiptVillage[keccak256(abi.encode(disasterId, commitmentReceipt[key]))];
         delete commitmentReceipt[key];
-        semaphore.removeMember(tierGroup[disasterId][tier], commitment, merkleProofSiblings);
+        uint256 groupId = tierGroup[disasterId][tier];
+        semaphore.removeMember(groupId, commitment, merkleProofSiblings);
+        _members[groupId][_memberIndexPlusOne[groupId][commitment] - 1] = 0;
+        delete _memberIndexPlusOne[groupId][commitment];
         disasters[disasterId].verifiedHouseholds--;
         villageStats[disasterId][village].verified--;
         issuers[msg.sender].revoked++;
@@ -339,7 +356,12 @@ contract EligibilityRegistry is Ownable {
         commitmentVillage[newKey] = village;
         commitmentReceipt[newKey] = newReceipt;
         _receiptVillage[newReceiptKey] = village;
-        semaphore.updateMember(tierGroup[disasterId][tier], oldCommitment, newCommitment, merkleProofSiblings);
+        uint256 groupId = tierGroup[disasterId][tier];
+        semaphore.updateMember(groupId, oldCommitment, newCommitment, merkleProofSiblings);
+        uint256 slot = _memberIndexPlusOne[groupId][oldCommitment];
+        _members[groupId][slot - 1] = newCommitment;
+        _memberIndexPlusOne[groupId][newCommitment] = slot;
+        delete _memberIndexPlusOne[groupId][oldCommitment];
         emit MemberReplaced(disasterId, tier, msg.sender, reasonHash);
     }
 
@@ -452,6 +474,19 @@ contract EligibilityRegistry is Ownable {
 
     function isProxy(uint256 disasterId, uint32 village, address proxy) external view returns (bool) {
         return _proxy[keccak256(abi.encode(disasterId, village, proxy))];
+    }
+
+    function issuerCount() external view returns (uint256) {
+        return issuerList.length;
+    }
+
+    function villageCount() external view returns (uint256) {
+        return villageList.length;
+    }
+
+    /// @notice All leaves of a group in tree order (0 = revoked). Enough to rebuild it off-chain.
+    function groupMembers(uint256 groupId) external view returns (uint256[] memory) {
+        return _members[groupId];
     }
 
     function registrationCount() external view returns (uint256) {

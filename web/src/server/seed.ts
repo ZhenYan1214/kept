@@ -19,7 +19,7 @@ import {
 } from "@/lib/scenario";
 import { receiptDomain, RECEIPT_TYPES } from "@/lib/receipt";
 import { waitingPeriod, waitingScope } from "@/lib/scopes";
-import { groups } from "./groups";
+import { groupOf } from "./groups";
 
 const SIM_SEED = process.env.SIM_SEED ?? "kept-simulated-households";
 const FUND_LIFETIME = 365n * 86400n;
@@ -27,7 +27,7 @@ const FUND_LIFETIME = 365n * 86400n;
 async function send(role: RoleName, target: Target, functionName: string, args: unknown[], fund?: Address) {
   const address = target === "fund" ? fund! : targetAddress(target);
   return withRoleLock(role, async () => {
-    const { request } = await publicClient.simulateContract({
+    const { request } = await simulateWithRetry({
       account: roleAccount(role),
       address,
       abi: ABIS[target],
@@ -39,6 +39,22 @@ async function send(role: RoleName, target: Target, functionName: string, args: 
     const receipt = await waitReceipt(hash);
     return parseEventLogs({ abi: ABIS[target] as Abi, logs: receipt.logs });
   });
+}
+
+/**
+ * A public RPC is served by several nodes, and the next call can reach one that has not seen the
+ * block we just waited for (e.g. "UnknownDisaster" right after createDisaster). On a live chain,
+ * retry the simulation a few times before treating a revert as real.
+ */
+async function simulateWithRetry(params: Parameters<typeof publicClient.simulateContract>[0]) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await publicClient.simulateContract(params);
+    } catch (e) {
+      if (CHAIN_ID === 31337 || attempt >= 6) throw e;
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
 }
 
 /** Simulated households (no real people). Each has a Semaphore identity and a receipt key. */
@@ -223,7 +239,6 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
   })) as [boolean, number, bigint];
   const period = waitingPeriod(Number((await publicClient.getBlock()).timestamp), Number(disasterCreatedAt));
   const scope = waitingScope(d.registry, disasterId, period);
-  const g = await groups();
   for (const i of [12, 13, 18, 19]) {
     const h = p[i];
     const groupId = (await publicClient.readContract({
@@ -232,7 +247,7 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
       functionName: "tierGroup",
       args: [disasterId, h.tier],
     })) as bigint;
-    const proof = await generateProof(simHousehold(i).identity, g.get(groupId)!, BigInt(h.village), scope);
+    const proof = await generateProof(simHousehold(i).identity, await groupOf(groupId), BigInt(h.village), scope);
     await send("relayer", "registry", "reportWaiting", [
       disasterId,
       groupId,

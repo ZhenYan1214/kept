@@ -116,6 +116,15 @@ contract ReliefFund is Initializable, ReentrancyGuard {
     uint256 public totalAllocated;
     uint256 public donationCount;
 
+    struct DonationRecord {
+        address donor;
+        uint256 amount;
+        uint64 at;
+    }
+
+    /// @dev Kept in storage (not only in events) so anyone can list donations with plain calls.
+    DonationRecord[] internal _donations;
+
     Proposal[] internal _proposals;
     mapping(uint256 proposalId => mapping(address member => bool)) public hasApproved;
 
@@ -208,6 +217,7 @@ contract ReliefFund is Initializable, ReentrancyGuard {
         token.safeTransferFrom(msg.sender, address(this), amount);
         totalRaised += amount;
         receiptNo = ++donationCount;
+        _donations.push(DonationRecord({donor: msg.sender, amount: amount, at: uint64(block.timestamp)}));
         emit Donated(msg.sender, amount, receiptNo, memoHash);
     }
 
@@ -362,6 +372,11 @@ contract ReliefFund is Initializable, ReentrancyGuard {
         Purpose storage pu = _purposes[purposeId];
         uint256 cap = (totalRaised * pu.capBps) / 10_000;
         return cap > pu.allocated ? cap - pu.allocated : 0;
+    }
+
+    /// @notice Donation by receipt number (1-based, as returned by donate).
+    function donation(uint256 receiptNo) external view returns (DonationRecord memory) {
+        return _donations[receiptNo - 1];
     }
 
     function balance() external view returns (uint256) {

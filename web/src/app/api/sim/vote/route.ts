@@ -5,7 +5,7 @@ import { ABIS, ensureRoleGas, publicClient, roleAccount, walletFor, waitReceipt,
 import { plan, simHousehold } from "@/server/seed";
 import { chain, getDeployment, DEMO_MODE } from "@/lib/config";
 import { registryAbi, voiceAbi } from "@/generated/contracts";
-import { groups } from "@/server/groups";
+import { groupOf } from "@/server/groups";
 import { fromJSONSafe } from "@/lib/serialize";
 
 export const runtime = "nodejs";
@@ -20,7 +20,6 @@ export async function POST(req: Request) {
   const { voteKey, yes = 0, no = 0 } = fromJSONSafe(await req.json()) as { voteKey: Hex; yes?: number; no?: number };
   const d = getDeployment();
   const disasterId = (await publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "disasterCount" })) as bigint;
-  const g = await groups();
   const scope = BigInt(voteKey) >> 8n;
   const wanted = [...Array(yes).fill(1n), ...Array(no).fill(0n)] as bigint[];
   await ensureRoleGas("relayer");
@@ -33,7 +32,7 @@ export async function POST(req: Request) {
       functionName: "tierGroup",
       args: [disasterId, h.tier],
     })) as bigint;
-    const group = g.get(groupId);
+    const group = await groupOf(groupId);
     const { identity } = simHousehold(i);
     if (!group || group.indexOf(identity.commitment) === -1) continue;
     const message = wanted[cast];

@@ -23,6 +23,9 @@ contract ReliefFundTest is Base {
         assertEq(fund.totalRaised(), 1_000_000);
         assertEq(fund.balance(), 1_000_000);
         assertEq(fund.donationCount(), 1);
+        ReliefFund.DonationRecord memory d = fund.donation(1);
+        assertEq(d.donor, donor);
+        assertEq(d.amount, 1_000_000);
     }
 
     function test_AllocationNeedsThresholdAndCreatesHop() public {

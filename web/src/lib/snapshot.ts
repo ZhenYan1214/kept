@@ -1,5 +1,5 @@
-import { decodeEventLog, type Address, type Hex } from "viem";
-import { publicClient, getLogsChunked } from "./chain";
+import { type Address, type Hex } from "viem";
+import { publicClient } from "./chain";
 import { getDeployment } from "./config";
 import {
   registryAbi,
@@ -105,7 +105,7 @@ export type Proposal = {
   vote?: Vote;
 };
 
-export type Donation = { donor: Address; amount: bigint; receiptNo: bigint; block: bigint; tx: Hex };
+export type Donation = { donor: Address; amount: bigint; receiptNo: bigint; at: number };
 
 export type Fund = {
   address: Address;
@@ -125,7 +125,8 @@ export type Fund = {
   totalRaised: bigint;
   totalAllocated: bigint;
   balance: bigint;
-  donations: Donation[];
+  donationCount: number;
+  donations: Donation[]; // the most recent ones (see RECENT_DONATIONS)
   proposals: Proposal[];
 };
 
@@ -199,17 +200,11 @@ async function pickFund(funds: readonly Address[], custodian?: Address): Promise
 export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
   const d = getDeployment();
   const head = await publicClient.getBlock();
-  const fromBlock = BigInt(d.deployBlock);
 
-  const [registryLogs, regCount, appealCount, disasterCount, funds, hopCount, programCount] = await Promise.all([
-    getLogsChunked({
-      address: d.registry,
-      events: registryAbi.filter(
-        (x) => x.type === "event" && ["IssuerSet", "VillageSet", "TierGroupCreated"].includes(x.name),
-      ) as never,
-      fromBlock,
-      toBlock: head.number,
-    }),
+  // Everything is read with plain calls; nothing depends on event logs (public RPCs cap log ranges).
+  const [issuerCount, villageCount, regCount, appealCount, disasterCount, funds, hopCount, programCount] = await Promise.all([
+    publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "issuerCount" }),
+    publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "villageCount" }),
     publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "registrationCount" }),
     publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "appealCount" }),
     publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "disasterCount" }),
@@ -218,22 +213,26 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
     publicClient.readContract({ address: d.programs, abi: programsAbi, functionName: "programCount" }),
   ]);
 
-  const issuerAddrs = new Set<Address>();
-  const villages = new Map<number, number>();
   const fundAddr = await pickFund(funds as readonly Address[], custodian);
   const disasterId = fundAddr
     ? ((await publicClient.readContract({ address: fundAddr, abi: fundAbi, functionName: "disasterId" })) as bigint)
     : disasterCount;
 
-  const tierEvents: Tier[] = [];
-  for (const log of registryLogs) {
-    const ev = decodeEventLog({ abi: registryAbi, data: log.data, topics: log.topics });
-    if (ev.eventName === "IssuerSet") issuerAddrs.add(ev.args.issuer);
-    if (ev.eventName === "VillageSet") villages.set(n(ev.args.village), n(ev.args.township));
-    if (ev.eventName === "TierGroupCreated" && ev.args.disasterId === disasterId) {
-      tierEvents.push({ tier: n(ev.args.tier), name: ev.args.name, groupId: ev.args.groupId });
-    }
-  }
+  const [issuerAddrs, villageList] = await Promise.all([
+    Promise.all(
+      Array.from({ length: n(issuerCount) }, (_, i) =>
+        publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "issuerList", args: [BigInt(i)] }),
+      ),
+    ),
+    Promise.all(
+      Array.from({ length: n(villageCount) }, async (_, i) => {
+        const code = await publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "villageList", args: [BigInt(i)] });
+        const township = await publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "townshipOf", args: [code] });
+        return [n(code), n(township)] as const;
+      }),
+    ),
+  ]);
+  const villages = new Map<number, number>(villageList);
 
   // --- registry ---
   let disaster: Disaster | null = null;
@@ -244,12 +243,21 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
       functionName: "disasters",
       args: [disasterId],
     });
-    disaster = { id: disasterId, name, tierCount: n(tierCount), verified: n(verified), createdAt: n(createdAt), tiers: tierEvents };
+    const tiers = await Promise.all(
+      Array.from({ length: n(tierCount) }, async (_, tier) => {
+        const [groupId, tierName] = await Promise.all([
+          publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "tierGroup", args: [disasterId, tier] }),
+          publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "tierName", args: [disasterId, tier] }),
+        ]);
+        return { tier, name: tierName, groupId } satisfies Tier;
+      }),
+    );
+    disaster = { id: disasterId, name, tierCount: n(tierCount), verified: n(verified), createdAt: n(createdAt), tiers };
   }
 
   const [issuers, registrations, appeals, villageStats] = await Promise.all([
     Promise.all(
-      [...issuerAddrs].map(async (address) => {
+      issuerAddrs.map(async (address) => {
         const r = await publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "issuers", args: [address] });
         return {
           address,
@@ -337,7 +345,7 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
   ]);
 
   // --- fund (see pickFund) ---
-  const fund = fundAddr ? await loadFund(fundAddr, fromBlock, head.number) : null;
+  const fund = fundAddr ? await loadFund(fundAddr) : null;
 
   // --- custody ledger ---
   const hops = await Promise.all(
@@ -416,7 +424,9 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
   };
 }
 
-async function loadFund(address: Address, fromBlock: bigint, toBlock: bigint): Promise<Fund> {
+const RECENT_DONATIONS = 12;
+
+async function loadFund(address: Address): Promise<Fund> {
   const d = getDeployment();
   const read = <F extends string>(functionName: F, args: unknown[] = []) =>
     publicClient.readContract({ address, abi: fundAbi, functionName: functionName as never, args: args as never });
@@ -439,7 +449,7 @@ async function loadFund(address: Address, fromBlock: bigint, toBlock: bigint): P
     totalAllocated,
     balance,
     proposalCount,
-    donationLogs,
+    donationCount,
   ] = await Promise.all([
     read("name"),
     read("surplusRule"),
@@ -458,12 +468,7 @@ async function loadFund(address: Address, fromBlock: bigint, toBlock: bigint): P
     read("totalAllocated"),
     read("balance"),
     read("proposalCount"),
-    getLogsChunked({
-      address,
-      events: fundAbi.filter((x) => x.type === "event" && x.name === "Donated") as never,
-      fromBlock,
-      toBlock,
-    }),
+    read("donationCount"),
   ]);
 
   const members = committee as unknown as Address[];
@@ -526,11 +531,14 @@ async function loadFund(address: Address, fromBlock: bigint, toBlock: bigint): P
     }),
   );
 
-  const donations = donationLogs.map((log) => {
-    const ev = decodeEventLog({ abi: fundAbi, data: log.data, topics: log.topics });
-    const a = ev.args as unknown as { donor: Address; amount: bigint; receiptNo: bigint };
-    return { donor: a.donor, amount: a.amount, receiptNo: a.receiptNo, block: log.blockNumber!, tx: log.transactionHash! };
-  });
+  const count = n(donationCount as bigint);
+  const donations = await Promise.all(
+    Array.from({ length: Math.min(count, RECENT_DONATIONS) }, async (_, i) => {
+      const receiptNo = BigInt(count - Math.min(count, RECENT_DONATIONS) + i + 1);
+      const r = (await read("donation", [receiptNo])) as unknown as { donor: Address; amount: bigint; at: bigint };
+      return { donor: r.donor, amount: r.amount, receiptNo, at: n(r.at) } satisfies Donation;
+    }),
+  );
 
   return {
     address,
@@ -550,6 +558,7 @@ async function loadFund(address: Address, fromBlock: bigint, toBlock: bigint): P
     totalRaised: totalRaised as bigint,
     totalAllocated: totalAllocated as bigint,
     balance: balance as bigint,
+    donationCount: count,
     donations,
     proposals,
   };

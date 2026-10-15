@@ -4,11 +4,15 @@ import {
   createWalletClient,
   http,
   parseEther,
+  encodePacked,
+  keccak256,
+  nonceManager,
   type Abi,
   type Address,
-  type HDAccount,
+  type Hex,
+  type LocalAccount,
 } from "viem";
-import { mnemonicToAccount } from "viem/accounts";
+import { mnemonicToAccount, privateKeyToAccount } from "viem/accounts";
 import { chain, RPC_URL, getDeployment, CHAIN_ID } from "@/lib/config";
 import { ROLES, type RoleName } from "@/lib/scenario";
 import {
@@ -24,18 +28,30 @@ import {
 
 const ANVIL_MNEMONIC = "test test test test test test test test test test test junk";
 
-function mnemonic() {
-  const m = process.env.DEMO_MNEMONIC;
-  if (m) return m;
-  if (CHAIN_ID === 31337) return ANVIL_MNEMONIC;
-  throw new Error("DEMO_MNEMONIC must be set for non-local chains");
+/**
+ * Every demo role's key comes from one secret held by the demo server:
+ * - DEMO_PRIVATE_KEY: that key is the authority/deployer (index 0); each other role's key is
+ *   keccak256(privateKey, "kept-role", index), so one funded key is enough to run the demo;
+ * - or DEMO_MNEMONIC: HD address index per role;
+ * - on the local devnet, anvil's well-known mnemonic.
+ */
+function deriveAccount(index: number): LocalAccount {
+  const pk = process.env.DEMO_PRIVATE_KEY as Hex | undefined;
+  if (pk) {
+    const key = index === 0 ? pk : keccak256(encodePacked(["bytes32", "string", "uint256"], [pk, "kept-role", BigInt(index)]));
+    return privateKeyToAccount(key, { nonceManager });
+  }
+  const m = process.env.DEMO_MNEMONIC ?? (CHAIN_ID === 31337 ? ANVIL_MNEMONIC : undefined);
+  if (!m) throw new Error("Set DEMO_PRIVATE_KEY or DEMO_MNEMONIC for non-local chains");
+  // Track nonces locally: a load-balanced RPC can report a stale pending nonce right after a send.
+  return mnemonicToAccount(m, { addressIndex: index, nonceManager });
 }
 
-const accounts = new Map<RoleName, HDAccount>();
-export function roleAccount(role: RoleName): HDAccount {
+const accounts = new Map<RoleName, LocalAccount>();
+export function roleAccount(role: RoleName): LocalAccount {
   let a = accounts.get(role);
   if (!a) {
-    a = mnemonicToAccount(mnemonic(), { addressIndex: ROLES[role].index });
+    a = deriveAccount(ROLES[role].index);
     accounts.set(role, a);
   }
   return a;

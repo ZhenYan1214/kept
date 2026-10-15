@@ -125,7 +125,7 @@ export function FunnelPanel({ snap }: { snap: Snapshot }) {
   const t = custodyTotals(snap.hops);
   const raised = snap.fund?.totalRaised ?? 0n;
   const steps = [
-    { label: "Raised", value: raised, note: `${snap.fund?.donations.length ?? 0} donations` },
+    { label: "Raised", value: raised, note: `${snap.fund?.donationCount ?? 0} donations` },
     { label: "Allocated by committee", value: t.allocated, note: "on-chain transfer" },
     { label: "Receipt acknowledged", value: t.acknowledged, note: "by receiving custodian" },
     { label: "Reported paid to households", value: t.reported, note: `${t.reportedHouseholds} households in committed rosters` },

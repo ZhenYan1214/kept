@@ -58,7 +58,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Raised" value={ntd(f.totalRaised)} sub={`${f.donations.length} donations`} />
+        <Stat label="Raised" value={ntd(f.totalRaised)} sub={`${f.donationCount} donations`} />
         <Stat label="Allocated" value={ntd(f.totalAllocated)} sub={`${pct(f.totalAllocated, f.totalRaised)}% of raised`} />
         <Stat label="Reported paid" value={ntd(t.reported)} sub={`${t.reportedHouseholds} households`} />
         <Stat label="Household-confirmed" value={t.confirmed} sub={`${t.disputed} disputed`} tone={t.disputed ? "warn" : "ok"} />
