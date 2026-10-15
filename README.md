@@ -76,7 +76,7 @@ Requirements: Node 20+, [Foundry](https://getfoundry.sh).
 # 1. contracts
 cd contracts
 npm install
-forge test                 # 62 unit tests
+forge test                 # 64 unit tests
 anvil                      # in a separate terminal
 npm run deploy:local       # deploys Poseidon, Semaphore and Kept to the local chain
 npm run e2e                # optional: end-to-end run with real Semaphore proofs

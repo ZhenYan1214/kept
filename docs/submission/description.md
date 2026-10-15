@@ -22,7 +22,7 @@ When disaster donations are pre-allocated, the public loses sight of them after 
 - Demo: [https://… (Vercel)]
 - Video: [https://… (YouTube, unlisted is fine)]
 - Code: https://github.com/ZhenYan1214/kept
-- Contracts on Base Sepolia: [addresses from contracts/deployments/84532.json]
+- Contracts on Base Sepolia (chain 84532): KeptFactory `0x433256da41BB19bD111843f0AEA63FCdd01e7702`, CustodyLedger `0xD97508E6b9DBbB809B0Bb5F138FDB0908490f0b7`, EligibilityRegistry `0x85C52d03A3606Df24B1ca1321e6494AC329aC9e1`, VoiceModule `0x482741b3A7074f53EC79c49581936D39ae0B9293`, AidPrograms `0x12D40B048fC83f34AB1652498806A3C3b5F403Bf` (Semaphore v4 `0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`)
 
 ## Track
 
@@ -68,9 +68,9 @@ Two more gaps from the same disaster: three villages outside the "red zone" were
 
 ### Built and tested
 
-- 6 Solidity contracts (Foundry): `ReliefFund`, `KeptFactory`, `CustodyLedger`, `EligibilityRegistry`, `VoiceModule`, `AidPrograms`. 62 unit tests, plus an end-to-end script with real Semaphore v4 proofs (13 checks).
+- 6 Solidity contracts (Foundry): `ReliefFund`, `KeptFactory`, `CustodyLedger`, `EligibilityRegistry`, `VoiceModule`, `AidPrograms`. 64 unit tests, plus an end-to-end script with real Semaphore v4 proofs (13 checks).
 - Next.js app with a public dashboard and a screen for each role (household, village chief and township office, fund committee, custodians, NGO counter), a "Why Kept" page with sources, and a **real-data page** replaying the foundation's 48 Guangfu transfers.
-- [Deployed on Base Sepolia — confirm after deployment.] Households never need crypto: a relayer pays gas, and the credential can live on a phone or be printed as a QR code.
+- Deployed on Base Sepolia (addresses above). Households never need crypto: a relayer pays gas, and the credential can live on a phone or be printed as a QR code.
 - Borrowed, not reinvented: Semaphore v4 (PSE), OpenZeppelin, Merkle trees. Prior art we build on: WFP Building Blocks (cross-agency deduplication), Spanish Red Cross RedChain (ZK eligibility), "Not Yet Another Digital ID" (EPFL × ICRC, IEEE S&P 2023).
 
 ### Evidence of need

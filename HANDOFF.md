@@ -1,6 +1,6 @@
 # Kept 專案交接文件（HANDOFF）
 
-> **給接手的 AI／自己：** 先完整讀完這份文件再動手。這份文件和 `docs/` 的研究資料都已在 repo 裡；只有 `.env.testnet`（測試網助記詞）**沒有**進 repo，要手動帶到新電腦。
+> **給接手的 AI／自己：** 先完整讀完這份文件再動手。這份文件和 `docs/` 的研究資料都已在 repo 裡；只有 `kept/.env`（測試網私鑰與設定）**沒有**進 repo，要手動帶到新電腦。
 > 最後更新：2026-10-15（同日第二版：修正合約與文案不一致的五處、統一研究筆記的矛盾事實）。使用者以繁體中文溝通；產品、程式、提交內容一律英文。
 
 ---
@@ -13,9 +13,11 @@
 | **初賽截止** | **2026/10/25 00:00（未標時區，目標 10/24 中午前送出）** |
 | 題目 | **Kept**：讓災難善款的兩個承諾都可驗證：對捐款人承諾錢怎麼用，對災民承諾不漏掉任何人 |
 | 程式碼 | https://github.com/ZhenYan1214/kept （`main` 分支） |
-| 合約 | 6 份，**62 個**單元測試全過（2026-10-15 修正後，含匿名「仍在等待」回報）；端對端腳本用**真實 Semaphore ZK 證明**跑通。**合約已改，舊的本機部署要重新部署** |
+| 合約 | 6 份，**64 個**單元測試全過（2026-10-15 修正後，含匿名「仍在等待」回報）；端對端腳本用**真實 Semaphore ZK 證明**跑通。**合約已改，舊的本機部署要重新部署** |
 | 前端 | Next.js，9 個頁面，完整 Demo 流程已在瀏覽器實測跑通，`next build` 成功 |
-| **卡住的事** | ① 測試網錢包還沒有 ETH ② Vercel 還沒登入 |
+| **測試網** | 2026-10-16 已部署 Base Sepolia（`contracts/deployments/84532.json`，factory `0x4332…7702`、registry `0x85C5…C9e1`、ledger `0xD975…f0b7`），seed 在本機對測試網執行（`npm run dev:testnet` 後 `POST localhost:3001/api/seed`） |
+| **RPC** | 官方 `sepolia.base.org` 的 `eth_getLogs` 只允許 200 個區塊範圍，所以前端改成**完全不讀 event log**：registry 新增 `issuerList`、`villageList`、`groupMembers`（Semaphore 葉子依序，撤銷為 0），基金新增 `donation(receiptNo)`。`.env` 的 RPC 改用 `https://base-sepolia-rpc.publicnode.com`。公開 RPC 由多個節點負載平衡，剛寫入的狀態可能讀不到：seed 的 simulate 會重試，帳戶用 viem `nonceManager` 本地管理 nonce |
+| **卡住的事** | Vercel 還沒登入 |
 | 接下來 | 部署 Base Sepolia → 部署 Vercel → 英文提案 → Demo 影片 → 送出 |
 
 ---
@@ -239,7 +241,7 @@ cd ../web && npm install && npm run dev                          # http://localh
 ```
 
 - 需要：Node 20+（原本用 24）、Foundry（原本用 forge 1.8.5）
-- 如果要沿用測試網錢包，把 `.env.testnet` 放回 `kept/`（它沒有進 repo）
+- 如果要沿用測試網錢包，把 `.env` 放回 `kept/`（它沒有進 repo）
 - 換新的本機鏈之後，瀏覽器先到 Setup → **Reset local demo data**
 - **這台電腦（2026-10-15）**：8545 埠被 ASUS GlideX 服務占用，anvil 改跑 **8553**。`web/.env.local` 設 `NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8553`（gitignore），部署與 e2e 用 `RPC_URL=http://127.0.0.1:8553`，`forge script ... --rpc-url http://127.0.0.1:8553`。預覽設定在外層資料夾 `Desktop/kept/.claude/launch.json`
 - 如果在 Claude Code 桌面版，可以在專案根目錄建 `.claude/launch.json`，加入 `anvil` 和 `kept-web` 兩個設定
@@ -249,12 +251,11 @@ cd ../web && npm install && npm run dev                          # http://localh
 ## 8. 待辦（依優先順序）
 
 ### A. 部署（卡住中）
-1. **測試網錢包**：authority／deployer `0xe79cC12f60F7FFEB515F3e273604c8f176A162A2`，助記詞在 `kept/.env.testnet`（gitignore）。需要約 0.05 Base Sepolia ETH（Coinbase CDP faucet）。
-   - 如果 `.env.testnet` 沒帶到新電腦且還沒領幣：重新產生即可（用 viem `generateMnemonic`，格式參考下方）。
-   - `.env.testnet` 格式：`DEMO_MNEMONIC="..."`、`NEXT_PUBLIC_CHAIN_ID=84532`、`NEXT_PUBLIC_RPC_URL=https://sepolia.base.org`、`SEMAPHORE_ADDRESS=0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`、`DEMO_TIMELOCK_SECONDS=300`
+1. **測試網錢包（2026-10-16 已備妥）**：authority／deployer `0x3C4960433663F844fa43D322AD8da9F56228f95E`，已有 0.1 Base Sepolia ETH。私鑰在 `kept/.env` 的 `DEMO_PRIVATE_KEY`（gitignore）。其他 Demo 角色的金鑰由它確定性衍生：`keccak256(privateKey, "kept-role", index)`（`web/src/server/roles.ts`），gas 由 authority 自動補。舊的助記詞地址 `0xe79c…62A2` 已不用。
+   - `kept/.env` 格式：`DEMO_PRIVATE_KEY=0x…`、`NEXT_PUBLIC_CHAIN_ID=84532`、`NEXT_PUBLIC_RPC_URL=https://sepolia.base.org`、`SEMAPHORE_ADDRESS=0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`、`DEMO_TIMELOCK_SECONDS=300`。也仍支援 `DEMO_MNEMONIC`
 2. `cd contracts && npm run deploy:base-sepolia` → 產生 `deployments/84532.json`（要 commit）
 3. `cd web && npm run sync && npm run dev:testnet`（port 3001）→ `curl -X POST localhost:3001/api/seed`（測試網上約數分鐘）
-4. Vercel：`npx vercel login`（使用者自己登入）；Root Directory 設 `web`；環境變數：`NEXT_PUBLIC_CHAIN_ID=84532`、`NEXT_PUBLIC_RPC_URL`、`DEMO_MNEMONIC`（加密）、`DEMO_TIMELOCK_SECONDS=300`。或直接連 GitHub repo 自動部署。
+4. Vercel：`npx vercel login`（使用者自己登入）；Root Directory 設 `web`；環境變數：`NEXT_PUBLIC_CHAIN_ID=84532`、`NEXT_PUBLIC_RPC_URL`、`DEMO_PRIVATE_KEY`（加密）、`DEMO_TIMELOCK_SECONDS=300`。或直接連 GitHub repo 自動部署。
    - 注意：Vercel 上沒有 `contracts/out`，`sync-contracts.mjs` 會略過，所以 **`src/generated/contracts.ts` 必須包含 84532 的部署並 commit**
    - 公開 RPC 可能有速率限制；不夠的話改用 Alchemy／QuickNode 的 Base Sepolia RPC
    - 風險（寫進 README）：Demo API 公開，任何人都能操作白名單內的函式；只是測試網，最壞情況是測試幣耗光
