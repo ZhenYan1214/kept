@@ -51,7 +51,7 @@ const EVIDENCE = [
   },
   {
     who: "Donors and citizens",
-    text: "Hualien's 2024 allocation was under a fifth of 2018's; a councillor said people “would rather give to the central government”; nearly 300 petitioned for an ordinance.",
+    text: "By May 2024 Hualien County had received NT$453M for that year's earthquake, under a fifth of the NT$2.7bn it received in 2018; a councillor said people “would rather give to the central government”; nearly 300 petitioned for an ordinance.",
     source: "PTS, 2024-05-17",
     href: "https://news.pts.org.tw/article/695533",
     kept: "a fund custodians can prove they kept",
@@ -117,11 +117,11 @@ export default function Why() {
             times and had no victims on it (<Src href="https://news.pts.org.tw/article/744652">PTS, 2025</Src>).
           </Fact>
           <Fact figure="< 1/5">
-            After disputes over 2018 quake donations, the relief foundation&apos;s 2024 allocation to Hualien was under a fifth of the
-            2018 one; people preferred giving to the central government (
+            After disputes over 2018 quake donations, Hualien County had received NT$453M for the 2024 earthquake by May, through the
+            relief foundation: under a fifth of the NT$2.7bn it received in 2018. People preferred giving to the central government (
             <Src href="https://news.pts.org.tw/article/695533">PTS, 2024</Src>).
           </Fact>
-          <Fact figure="~4% verified">
+          <Fact figure="~4% reconciled">
             2025 Guangfu barrier lake: of NT$1.21bn paid out (incl. pre-allocations) by the relief foundation, NT$49M had been
             reconciled as of Sept 2026. Pre-allocation then reconciliation is normal emergency practice — but what happens after the
             first hand is invisible to the public (<Src href="https://www.tf4dr.org/fundraising_plans/156/credits">foundation disclosure</Src>).
