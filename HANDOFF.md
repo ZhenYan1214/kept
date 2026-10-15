@@ -1,6 +1,6 @@
 # Kept 專案交接文件（HANDOFF）
 
-> **給接手的 AI／自己：** 先完整讀完這份文件再動手。這份文件已 commit 到 repo；`.env.testnet`（測試網助記詞）和 `contest/` 底下的研究資料**沒有**進 repo，要手動帶到新電腦。
+> **給接手的 AI／自己：** 先完整讀完這份文件再動手。這份文件和 `docs/` 的研究資料都已在 repo 裡；只有 `.env.testnet`（測試網助記詞）**沒有**進 repo，要手動帶到新電腦。
 > 最後更新：2026-10-15。使用者以繁體中文溝通；產品、程式、提交內容一律英文。
 
 ---
@@ -270,14 +270,14 @@ cd ../web && npm install && npm run dev                          # http://localh
 
 ---
 
-## 9. 其他背景資料（只在舊電腦上，沒有進 repo）
+## 9. 其他背景資料（已複製到 repo 的 `docs/`）
 `C:\Users\User\Desktop\contest\` 底下：
 - `專案定義書.md`（v0.2，本文件 §3–§5 的完整版）、`反思與風險清單.md`、`產品架構規劃.md`（v0.1，已作廢）
 - `reports/Web3 社會公益現況研究.md`（Web3 公益全景研究，含 14 項機會缺口）
 - `research_notes/Web3 社會公益現況研究/`（8 份：人道援助、普惠金融、氣候、公共財、身分／教育／醫療、AI＋論文、鏈生態、主辦方與亞洲脈絡）
 - `research_notes/台灣災難捐款真實案例/`（2025 光復、歷年爭議與法規、救助流程與現有工具、國際案例、事實查核、法規現況與缺口確認、現有方案比較）
 
-如果要帶走，整個 `contest/` 資料夾複製過去即可。
+以上全部已複製到 **`docs/`**（目錄說明見 `docs/README.md`），新聞中一般民眾的姓名已匿名化。
 
 ---
 
@@ -379,7 +379,7 @@ cd ../web && npm install && npm run dev                          # http://localh
 - **Wüst & Gervais 2018「Do you need a blockchain?」**：標準的判斷框架。
 - **IEEE S&P 2023 "Not Yet Another Digital ID"**（EPFL×ICRC）：每戶每輪一次、智慧卡版。
 - **Frontiers in Blockchain 2026**：歐盟 306 個公部門用例中，SDG 2、6、14 較少被涵蓋。
-- 原始筆記都在舊電腦的 `contest/research_notes/`（見 §9）。
+- 原始筆記在 `docs/research_notes/`（見 §9）。
 
 ### 10.8 反思清單中仍需處理的項目
 - 提交表單欄位（影片長度、是否需要上線網址）仍未確認 → 登入 DoraHacks 看「Submit Build」
