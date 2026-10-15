@@ -20,12 +20,16 @@ export const PURPOSES = [
   "Livelihood relief",
   "Housing repair",
   "Community & mental-health recovery",
+  "Long-term recovery of the affected villages",
 ] as const;
+export const PURPOSE_CAPS = [5500, 2500, 1000, 1000];
+/** Index of the charter purpose that alone may receive money after the deadline. */
+export const SURPLUS_PURPOSE = 3;
 
 export const DISASTER_NAME = "Mataian River barrier lake, Guangfu 2025 (simulated)";
 export const FUND_NAME = "Guangfu Relief Fund (simulated)";
 export const SURPLUS_RULE =
-  "Any surplus may only fund the charter purposes for households affected by this disaster. It can never be moved to another disaster, general public works or administrative costs.";
+  "After the deadline, unspent money may only fund long-term recovery of the villages affected by this disaster. It can never be moved to another disaster, general public works or administrative costs.";
 
 export function villageName(code: number | bigint) {
   const v = VILLAGES.find((v) => v.code === Number(code));

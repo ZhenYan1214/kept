@@ -98,11 +98,15 @@ const groupIds = created.filter((l) => l.eventName === "TierGroupCreated").map((
 ok(`disaster ${disasterId} with Semaphore groups ${groupIds.join(", ")}`);
 
 console.log("\n2) Five households registered with two signatures each (real Semaphore groups)");
-const households = Array.from({ length: 5 }, (_, i) => ({ id: new Identity(`household-${i}`), tier: i % 2 }));
+const households = Array.from({ length: 5 }, (_, i) => ({
+  id: new Identity(`household-${i}`),
+  receipt: privateKeyToAccount(keccak256(toHex(`household-${i}/receipt`))),
+  tier: i % 2,
+}));
 const localGroups = groupIds.map(() => new Group());
 for (const [i, h] of households.entries()) {
   const tag = keccak256(toHex(`HMAC(national-id-${i})`));
-  const logs = await send(chiefA, dep.registry, "registry", "proposeRegistration", [disasterId, h.tier, VILLAGE_A, h.id.commitment, tag]);
+  const logs = await send(chiefA, dep.registry, "registry", "proposeRegistration", [disasterId, h.tier, VILLAGE_A, h.id.commitment, tag, h.receipt.address]);
   const regId = logs.find((l) => l.eventName === "RegistrationProposed").args.id;
   await send(office, dep.registry, "registry", "approveRegistration", [regId]);
   localGroups[h.tier].addMember(h.id.commitment);
@@ -120,7 +124,8 @@ const now = (await pub.getBlock()).timestamp;
 const fundLogs = await send(custodian, dep.factory, "factory", "createFund", [
   {
     name: "Guangfu Relief Fund (simulated)",
-    surplusRule: "Charter purposes for this disaster only",
+    surplusRule: "After the deadline, only long-term recovery of the affected villages",
+    surplusPurposeId: 3,
     custodian: custodian.address,
     token: dep.token,
     disasterId,
@@ -130,8 +135,8 @@ const fundLogs = await send(custodian, dep.factory, "factory", "createFund", [
     timelock: 7 * 86400,
     quorumBps: 2000,
     committee: [c1.address, c2.address, c3.address],
-    purposeNames: ["Livelihood relief", "Housing repair", "Community recovery"],
-    purposeCaps: [6000, 3000, 1000],
+    purposeNames: ["Livelihood relief", "Housing repair", "Community recovery", "Long-term recovery"],
+    purposeCaps: [6000, 3000, 1000, 0],
   },
 ]);
 const fund = fundLogs.find((l) => l.eventName === "FundCreated").args.fund;
@@ -191,15 +196,18 @@ const a2 = logs.find((l) => l.eventName === "Proposed").args.id;
 await send(c2, fund, "fund", "approve", [a2]);
 const mHop = (await read(fund, "fund", "proposal", [a2])).hopId;
 await send(ministry, dep.ledger, "ledger", "acknowledge", [mHop]);
-const receiptKeys = [generatePrivateKey(), generatePrivateKey()].map(privateKeyToAccount);
+// Two registered households, plus a receipt key the custodian made up to pad the roster.
+const padded = privateKeyToAccount(generatePrivateKey());
+const receiptKeys = [households[0].receipt, households[1].receipt, padded];
 const roster = StandardMerkleTree.of(
   [
     [receiptKeys[0].address, "200000"],
     [receiptKeys[1].address, "50000"],
+    [padded.address, "50000"],
   ],
   ["address", "uint256"],
 );
-await send(ministry, dep.ledger, "ledger", "reconcile", [mHop, roster.root, 250_000n, 2, keccak256(toHex("roster batch 1"))]);
+await send(ministry, dep.ledger, "ledger", "reconcile", [mHop, roster.root, 300_000n, 3, keccak256(toHex("roster batch 1"))]);
 const domain = { name: "Kept CustodyLedger", version: "1", chainId: 31337, verifyingContract: dep.ledger };
 const types = {
   Receipt: [
@@ -211,11 +219,13 @@ const types = {
   ],
 };
 for (const [i, [addr, amt]] of [...roster.entries()].map(([i, v]) => [i, v])) {
-  const received = i === 0;
+  const received = addr !== households[1].receipt.address;
   const signer = receiptKeys.find((k) => k.address === addr);
   const message = { hopId: mHop, batchIndex: 0n, receipt: addr, amount: BigInt(amt), received };
   const signature = await signer.signTypedData({ domain, types, primaryType: "Receipt", message });
-  await send(donor, dep.ledger, "ledger", "confirmLine", [mHop, 0n, addr, BigInt(amt), received, roster.getProof(i), signature]);
+  const args = [mHop, 0n, addr, BigInt(amt), received, roster.getProof(i), signature];
+  if (addr === padded.address) await expectRevert(donor, dep.ledger, "ledger", "confirmLine", args, "NotRegisteredHousehold");
+  else await send(donor, dep.ledger, "ledger", "confirmLine", args);
 }
 const mh = await read(dep.ledger, "ledger", "hop", [mHop]);
 assert(mh.confirmed === 1 && mh.disputed === 1, "one household confirmed, one disputed — via signatures only they can make");

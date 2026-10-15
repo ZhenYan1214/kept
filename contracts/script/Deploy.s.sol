@@ -36,7 +36,8 @@ contract Deploy is Script {
         MockTWD twd = new MockTWD();
         EligibilityRegistry registry = new EligibilityRegistry(ISemaphore(semaphoreAddr), merkleTreeDuration, owner);
         KeptFactory factory = new KeptFactory();
-        CustodyLedger ledger = new CustodyLedger(IKeptFactory(address(factory)), owner);
+        CustodyLedger ledger =
+            new CustodyLedger(IKeptFactory(address(factory)), IEligibilityRegistry(address(registry)), owner);
         VoiceModule voice = new VoiceModule(IEligibilityRegistry(address(registry)), IKeptFactory(address(factory)));
         AidPrograms programs =
             new AidPrograms(IEligibilityRegistry(address(registry)), ICustodyLedger(address(ledger)));
@@ -56,6 +57,7 @@ contract Deploy is Script {
         vm.serializeAddress(obj, "ledger", address(ledger));
         vm.serializeAddress(obj, "voice", address(voice));
         string memory json = vm.serializeAddress(obj, "programs", address(programs));
+        vm.createDir(string.concat(vm.projectRoot(), "/deployments"), true); // missing on a fresh clone
         string memory path = string.concat(vm.projectRoot(), "/deployments/", vm.toString(block.chainid), ".json");
         vm.writeJson(json, path);
         console.log("Deployment written to", path);

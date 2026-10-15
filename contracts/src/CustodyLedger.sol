@@ -5,7 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import {IKeptFactory} from "./interfaces/IKept.sol";
+import {IKeptFactory, IEligibilityRegistry, IReliefFund} from "./interfaces/IKept.sol";
 
 /// @title CustodyLedger
 /// @notice Follows each tranche of donated money through every pair of hands until it reaches a household.
@@ -15,11 +15,14 @@ import {IKeptFactory} from "./interfaces/IKept.sol";
 ///   Forwarded            custodian -> next custodian (e.g. foundation -> ministry -> county)
 ///   Reconciled           the paying custodian commits a Merkle root of its payment roster
 ///                        (one hashed leaf per household: receipt address + amount)
-///   Delivered            the household itself signs "received" (or a registered proxy does)
+///   Delivered            the household itself signs "received" (or a proxy of its village does)
 ///   Disputed             the household signs "recorded as paid, but I did not receive it"
 ///
 /// The roster never goes on-chain. The public sees totals; each household can prove it is counted,
-/// and only a real household (holder of the receipt key) can confirm or dispute its own line.
+/// and only a real household can confirm or dispute its own line: the receipt address must be one
+/// registered with two signatures in the EligibilityRegistry, so a custodian cannot put its own keys
+/// in a roster and confirm itself. A proxy can only act for households of the village the township
+/// office designated it for, and the household's own signature always overrides the proxy's.
 contract CustodyLedger is Ownable, EIP712 {
     struct Hop {
         uint256 parent; // 0 = straight from a fund
@@ -52,13 +55,19 @@ contract CustodyLedger is Ownable, EIP712 {
     bytes32 public constant RECEIPT_TYPEHASH =
         keccak256("Receipt(uint256 hopId,uint256 batchIndex,address receipt,uint256 amount,bool received)");
 
+    // lineState values. A household's own answer is final; a proxy's can be overridden by the household.
+    uint8 public constant CONFIRMED = 1;
+    uint8 public constant DISPUTED = 2;
+    uint8 public constant PROXY_CONFIRMED = 3;
+    uint8 public constant PROXY_DISPUTED = 4;
+
     IKeptFactory public immutable factory;
+    IEligibilityRegistry public immutable registry;
     address public aidPrograms;
 
     Hop[] internal _hops;
     mapping(uint256 hopId => Batch[]) internal _batches;
-    mapping(bytes32 => uint8) public lineState; // keccak(hopId, batchIndex, receipt) => 1 confirmed, 2 disputed
-    mapping(address => bool) public isProxy; // registered social workers / village chiefs
+    mapping(bytes32 => uint8) public lineState; // keccak(hopId, batchIndex, receipt) => see constants above
 
     event HopCreated(
         uint256 indexed hopId,
@@ -76,8 +85,8 @@ contract CustodyLedger is Ownable, EIP712 {
         uint256 indexed hopId, uint256 indexed batchIndex, bytes32 root, uint256 amount, uint32 households, bytes32 docHash
     );
     event LineConfirmed(uint256 indexed hopId, uint256 indexed batchIndex, bool received, bool byProxy);
+    event ProxyOverridden(uint256 indexed hopId, uint256 indexed batchIndex, uint8 previous);
     event ProgramDelivery(uint256 indexed hopId, uint256 amount);
-    event ProxySet(address indexed proxy, bool active);
 
     error OnlyFund();
     error OnlyRecipient();
@@ -90,20 +99,20 @@ contract CustodyLedger is Ownable, EIP712 {
     error BadSignature();
     error AlreadyRecorded();
     error AlreadySet();
+    error NotRegisteredHousehold();
 
-    constructor(IKeptFactory _factory, address _owner) Ownable(_owner) EIP712("Kept CustodyLedger", "1") {
+    constructor(IKeptFactory _factory, IEligibilityRegistry _registry, address _owner)
+        Ownable(_owner)
+        EIP712("Kept CustodyLedger", "1")
+    {
         factory = _factory;
+        registry = _registry;
         _hops.push(); // index 0 is the "no parent" sentinel
     }
 
     function setAidPrograms(address _aidPrograms) external onlyOwner {
         if (aidPrograms != address(0)) revert AlreadySet();
         aidPrograms = _aidPrograms;
-    }
-
-    function setProxy(address proxy, bool active) external onlyOwner {
-        isProxy[proxy] = active;
-        emit ProxySet(proxy, active);
     }
 
     // ------------------------------------------------------------------
@@ -188,9 +197,13 @@ contract CustodyLedger is Ownable, EIP712 {
         bytes32[] calldata merkleProof,
         bytes calldata signature
     ) external {
-        _hop(hopId);
+        Hop storage h = _hop(hopId);
         Batch storage b = _batches[hopId][batchIndex];
         if (!MerkleProof.verifyCalldata(merkleProof, b.root, leaf(receipt, amount))) revert NotInRoster();
+
+        uint256 disasterId = IReliefFund(h.fund).disasterId();
+        uint32 village = registry.villageOfReceipt(disasterId, receipt);
+        if (village == 0) revert NotRegisteredHousehold();
 
         bytes32 digest = _hashTypedDataV4(
             keccak256(abi.encode(RECEIPT_TYPEHASH, hopId, batchIndex, receipt, amount, received))
@@ -198,15 +211,19 @@ contract CustodyLedger is Ownable, EIP712 {
         address signer = ECDSA.recover(digest, signature);
         bool byProxy;
         if (signer != receipt) {
-            if (!isProxy[signer]) revert BadSignature();
+            if (!registry.isProxy(disasterId, village, signer)) revert BadSignature();
             byProxy = true;
         }
 
         bytes32 key = keccak256(abi.encode(hopId, batchIndex, receipt));
-        if (lineState[key] != 0) revert AlreadyRecorded();
-        lineState[key] = received ? 1 : 2;
+        uint8 prev = lineState[key];
+        // The household's own answer is final. A proxy can only answer an untouched line.
+        if (prev == CONFIRMED || prev == DISPUTED || (prev != 0 && byProxy)) revert AlreadyRecorded();
+        if (prev == PROXY_CONFIRMED) h.proxyConfirmed--;
+        else if (prev == PROXY_DISPUTED) h.disputed--;
+        if (prev != 0) emit ProxyOverridden(hopId, batchIndex, prev);
+        lineState[key] = byProxy ? (received ? PROXY_CONFIRMED : PROXY_DISPUTED) : (received ? CONFIRMED : DISPUTED);
 
-        Hop storage h = _hops[hopId];
         if (!received) h.disputed++;
         else if (byProxy) h.proxyConfirmed++;
         else h.confirmed++;

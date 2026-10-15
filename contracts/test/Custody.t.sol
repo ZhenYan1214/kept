@@ -20,8 +20,11 @@ contract CustodyTest is Base {
         (alice, aliceKey) = makeAddrAndKey("alice receipt key");
         (bob, bobKey) = makeAddrAndKey("bob receipt key");
         (socialWorker, socialWorkerKey) = makeAddrAndKey("social worker");
-        vm.prank(authority);
-        ledger.setProxy(socialWorker, true);
+        // Alice lives in village A, Bob in village B. The social worker may sign for village A only.
+        _register(chiefA, office, 0, VILLAGE_A, 501, alice);
+        _register(chiefB, office, 1, VILLAGE_B, 502, bob);
+        vm.prank(office);
+        registry.setProxy(disasterId, VILLAGE_A, socialWorker, true);
 
         _donate(1_000_000);
         vm.prank(c1);
@@ -142,6 +145,80 @@ contract CustodyTest is Base {
         CustodyLedger.Hop memory h = ledger.hop(rootHop);
         assertEq(h.proxyConfirmed, 1);
         assertEq(h.confirmed, 0);
+    }
+
+    function test_CustodianCannotConfirmWithItsOwnReceiptKeys() public {
+        // A custodian puts a key it controls into the roster and signs "received" with it.
+        (address fake, uint256 fakeKey) = makeAddrAndKey("custodian-made receipt key");
+        bytes32 lf = ledger.leaf(fake, 100_000);
+        bytes32 la = ledger.leaf(alice, 200_000);
+        bytes32 root = Hashes.commutativeKeccak256(lf, la);
+        vm.startPrank(ministry);
+        ledger.acknowledge(rootHop);
+        ledger.reconcile(rootHop, root, 300_000, 2, keccak256("padded roster"));
+        vm.stopPrank();
+
+        bytes32[] memory proof = new bytes32[](1);
+        proof[0] = la;
+        bytes memory sig = _sign(fakeKey, rootHop, 0, fake, 100_000, true);
+        vm.expectRevert(CustodyLedger.NotRegisteredHousehold.selector);
+        ledger.confirmLine(rootHop, 0, fake, 100_000, true, proof, sig);
+        assertEq(ledger.hop(rootHop).confirmed, 0);
+    }
+
+    function test_ProxyOnlySignsForItsOwnVillage() public {
+        (bytes32 la,) = _reconciled();
+        bytes32[] memory proof = new bytes32[](1);
+        proof[0] = la;
+        // Bob is in village B; the social worker is designated for village A only.
+        bytes memory sig = _sign(socialWorkerKey, rootHop, 0, bob, 50_000, true);
+        vm.expectRevert(CustodyLedger.BadSignature.selector);
+        ledger.confirmLine(rootHop, 0, bob, 50_000, true, proof, sig);
+    }
+
+    function test_HouseholdOverridesProxy() public {
+        (, bytes32 lb) = _reconciled();
+        bytes32[] memory proof = new bytes32[](1);
+        proof[0] = lb;
+        // The proxy signs "received" first, before Alice can answer.
+        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, _sign(socialWorkerKey, rootHop, 0, alice, 200_000, true));
+        assertEq(ledger.hop(rootHop).proxyConfirmed, 1);
+
+        // Alice says she never got it: her own answer replaces the proxy's.
+        ledger.confirmLine(rootHop, 0, alice, 200_000, false, proof, _sign(aliceKey, rootHop, 0, alice, 200_000, false));
+        CustodyLedger.Hop memory h = ledger.hop(rootHop);
+        assertEq(h.proxyConfirmed, 0);
+        assertEq(h.disputed, 1);
+        assertEq(ledger.lineState(keccak256(abi.encode(rootHop, uint256(0), alice))), ledger.DISPUTED());
+
+        // Her answer is final: neither she nor the proxy can change it again.
+        bytes memory again = _sign(aliceKey, rootHop, 0, alice, 200_000, true);
+        vm.expectRevert(CustodyLedger.AlreadyRecorded.selector);
+        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, again);
+        bytes memory proxyAgain = _sign(socialWorkerKey, rootHop, 0, alice, 200_000, true);
+        vm.expectRevert(CustodyLedger.AlreadyRecorded.selector);
+        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, proxyAgain);
+    }
+
+    function test_ProxyCannotOverrideHousehold() public {
+        (, bytes32 lb) = _reconciled();
+        bytes32[] memory proof = new bytes32[](1);
+        proof[0] = lb;
+        ledger.confirmLine(rootHop, 0, alice, 200_000, false, proof, _sign(aliceKey, rootHop, 0, alice, 200_000, false));
+        bytes memory sig = _sign(socialWorkerKey, rootHop, 0, alice, 200_000, true);
+        vm.expectRevert(CustodyLedger.AlreadyRecorded.selector);
+        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, sig);
+    }
+
+    function test_RevokedProxyCannotSign() public {
+        (, bytes32 lb) = _reconciled();
+        vm.prank(office);
+        registry.setProxy(disasterId, VILLAGE_A, socialWorker, false);
+        bytes32[] memory proof = new bytes32[](1);
+        proof[0] = lb;
+        bytes memory sig = _sign(socialWorkerKey, rootHop, 0, alice, 200_000, true);
+        vm.expectRevert(CustodyLedger.BadSignature.selector);
+        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, sig);
     }
 
     function test_NotInRosterCannotConfirm() public {

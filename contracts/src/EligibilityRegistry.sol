@@ -8,9 +8,14 @@ import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.so
 /// @notice Who counts as a disaster-affected household, decided by accountable humans.
 /// - A household is added to an anonymous Semaphore group only after TWO issuers sign off:
 ///   the village chief (村長) and the township office (公所) of that village.
-/// - Nothing personal goes on-chain: only the Semaphore identity commitment and a blinded
-///   uniqueness tag (an HMAC of the national ID held by the authority) that blocks
+/// - Nothing personal goes on-chain: only the Semaphore identity commitment, the household's
+///   receipt address (a key it generated itself, used to sign "received" / "not received") and a
+///   blinded uniqueness tag (an HMAC of the national ID held by the authority) that blocks
 ///   double registration across villages.
+/// - Only receipt addresses registered here count as households on the custody ledger, so a
+///   custodian cannot invent receipt keys and confirm its own payments.
+/// - Proxies (social workers, chiefs) who may sign for households that cannot are designated by
+///   the township office per disaster and village, publicly.
 /// - Groups are per (disaster, damage tier), never per village, to keep anonymity sets large.
 /// - Anyone, including people never registered, can file an appeal. Appeal counts and
 ///   resolution times per village are public, so exclusion is visible without protests.
@@ -66,6 +71,7 @@ contract EligibilityRegistry is Ownable {
         uint32 village;
         uint8 tier;
         RequestStatus status;
+        address receipt;
     }
 
     struct Appeal {
@@ -108,6 +114,10 @@ contract EligibilityRegistry is Ownable {
     mapping(bytes32 => bool) public tagUsed; // keccak(disasterId, uniqueTag)
     mapping(bytes32 => bool) public commitmentUsed; // keccak(disasterId, commitment)
     mapping(bytes32 => uint32) public commitmentVillage; // keccak(disasterId, commitment) => village, active members only
+    mapping(bytes32 => address) public commitmentReceipt; // keccak(disasterId, commitment) => receipt, active members only
+    mapping(bytes32 => bool) public receiptUsed; // keccak(disasterId, receipt), ever proposed or registered
+    mapping(bytes32 => uint32) internal _receiptVillage; // keccak(disasterId, receipt) => village, active members only
+    mapping(bytes32 => bool) internal _proxy; // keccak(disasterId, village, proxy)
 
     Appeal[] public appeals;
     mapping(uint256 disasterId => mapping(uint32 village => VillageStats)) public villageStats;
@@ -124,6 +134,7 @@ contract EligibilityRegistry is Ownable {
         uint256 indexed disasterId, uint8 tier, uint32 indexed village, address indexed by, bytes32 reasonHash
     );
     event MemberReplaced(uint256 indexed disasterId, uint8 tier, address indexed by, bytes32 reasonHash);
+    event ProxySet(uint256 indexed disasterId, uint32 indexed village, address indexed proxy, bool active, address by);
     event AppealFiled(uint256 indexed id, uint256 indexed disasterId, uint32 indexed village, bytes32 evidenceHash);
     event AppealResolved(uint256 indexed id, bool accepted, address indexed resolver, bytes32 resolutionHash);
     event CoverageReported(
@@ -138,6 +149,7 @@ contract EligibilityRegistry is Ownable {
     error DuplicateHousehold();
     error NotPending();
     error UnknownVillage();
+    error ZeroAddress();
 
     constructor(ISemaphore _semaphore, uint256 _merkleTreeDuration, address _owner) Ownable(_owner) {
         semaphore = _semaphore;
@@ -194,16 +206,24 @@ contract EligibilityRegistry is Ownable {
     // ------------------------------------------------------------------
 
     /// @notice Either issuer of the village proposes; the other one must approve.
-    function proposeRegistration(uint256 disasterId, uint8 tier, uint32 village, uint256 commitment, bytes32 uniqueTag)
-        external
-        returns (uint256 id)
-    {
+    /// @param receipt The household's own receipt address, read from its card or phone together with
+    /// the commitment. Only registered receipt addresses can confirm or dispute payments.
+    function proposeRegistration(
+        uint256 disasterId,
+        uint8 tier,
+        uint32 village,
+        uint256 commitment,
+        bytes32 uniqueTag,
+        address receipt
+    ) external returns (uint256 id) {
         Disaster storage d = disasters[disasterId];
         if (!d.exists) revert UnknownDisaster();
         if (tier >= d.tierCount) revert UnknownTier();
         _requireJurisdiction(msg.sender, village);
         if (tagUsed[keccak256(abi.encode(disasterId, uniqueTag))]) revert DuplicateHousehold();
         if (commitmentUsed[keccak256(abi.encode(disasterId, commitment))]) revert DuplicateHousehold();
+        if (receipt == address(0)) revert ZeroAddress();
+        if (receiptUsed[keccak256(abi.encode(disasterId, receipt))]) revert DuplicateHousehold();
 
         id = registrations.length;
         registrations.push(
@@ -217,7 +237,8 @@ contract EligibilityRegistry is Ownable {
                 decidedAt: 0,
                 village: village,
                 tier: tier,
-                status: RequestStatus.Pending
+                status: RequestStatus.Pending,
+                receipt: receipt
             })
         );
         issuers[msg.sender].proposed++;
@@ -228,10 +249,14 @@ contract EligibilityRegistry is Ownable {
         Registration storage r = _decidable(id);
         bytes32 tagKey = keccak256(abi.encode(r.disasterId, r.uniqueTag));
         bytes32 commitmentKey = keccak256(abi.encode(r.disasterId, r.commitment));
-        if (tagUsed[tagKey] || commitmentUsed[commitmentKey]) revert DuplicateHousehold();
+        bytes32 receiptKey = keccak256(abi.encode(r.disasterId, r.receipt));
+        if (tagUsed[tagKey] || commitmentUsed[commitmentKey] || receiptUsed[receiptKey]) revert DuplicateHousehold();
         tagUsed[tagKey] = true;
         commitmentUsed[commitmentKey] = true;
+        receiptUsed[receiptKey] = true;
         commitmentVillage[commitmentKey] = r.village;
+        commitmentReceipt[commitmentKey] = r.receipt;
+        _receiptVillage[receiptKey] = r.village;
 
         r.status = RequestStatus.Approved;
         r.decider = msg.sender;
@@ -266,6 +291,8 @@ contract EligibilityRegistry is Ownable {
         bytes32 key = keccak256(abi.encode(disasterId, commitment));
         if (commitmentVillage[key] != village) revert OutOfJurisdiction();
         delete commitmentVillage[key];
+        delete _receiptVillage[keccak256(abi.encode(disasterId, commitmentReceipt[key]))];
+        delete commitmentReceipt[key];
         semaphore.removeMember(tierGroup[disasterId][tier], commitment, merkleProofSiblings);
         disasters[disasterId].verifiedHouseholds--;
         villageStats[disasterId][village].verified--;
@@ -273,13 +300,15 @@ contract EligibilityRegistry is Ownable {
         emit MemberRevoked(disasterId, tier, village, msg.sender, reasonHash);
     }
 
-    /// @notice Re-issue a lost or water-damaged card: swap the old commitment for a new one.
+    /// @notice Re-issue a lost or water-damaged card: swap the old commitment and receipt address for
+    /// new ones. The old receipt address stops counting as a household immediately.
     function replaceMember(
         uint256 disasterId,
         uint8 tier,
         uint32 village,
         uint256 oldCommitment,
         uint256 newCommitment,
+        address newReceipt,
         uint256[] calldata merkleProofSiblings,
         bytes32 reasonHash
     ) external {
@@ -288,9 +317,17 @@ contract EligibilityRegistry is Ownable {
         if (commitmentVillage[oldKey] != village) revert OutOfJurisdiction();
         bytes32 newKey = keccak256(abi.encode(disasterId, newCommitment));
         if (commitmentUsed[newKey]) revert DuplicateHousehold();
+        if (newReceipt == address(0)) revert ZeroAddress();
+        bytes32 newReceiptKey = keccak256(abi.encode(disasterId, newReceipt));
+        if (receiptUsed[newReceiptKey]) revert DuplicateHousehold();
         commitmentUsed[newKey] = true;
+        receiptUsed[newReceiptKey] = true;
+        delete _receiptVillage[keccak256(abi.encode(disasterId, commitmentReceipt[oldKey]))];
+        delete commitmentReceipt[oldKey];
         delete commitmentVillage[oldKey];
         commitmentVillage[newKey] = village;
+        commitmentReceipt[newKey] = newReceipt;
+        _receiptVillage[newReceiptKey] = village;
         semaphore.updateMember(tierGroup[disasterId][tier], oldCommitment, newCommitment, merkleProofSiblings);
         emit MemberReplaced(disasterId, tier, msg.sender, reasonHash);
     }
@@ -340,6 +377,17 @@ contract EligibilityRegistry is Ownable {
         emit AppealResolved(id, accepted, msg.sender, resolutionHash);
     }
 
+    /// @notice Designate (or remove) someone who may sign "received" / "not received" for households of
+    /// one village in one disaster, e.g. a social worker for elders without a phone. Township office only.
+    /// A household's own signature always overrides a proxy's.
+    function setProxy(uint256 disasterId, uint32 village, address proxy, bool active) external {
+        if (!disasters[disasterId].exists) revert UnknownDisaster();
+        _requireTownship(msg.sender, village);
+        if (proxy == address(0)) revert ZeroAddress();
+        _proxy[keccak256(abi.encode(disasterId, village, proxy))] = active;
+        emit ProxySet(disasterId, village, proxy, active, msg.sender);
+    }
+
     /// @notice The township office holds the roster legally; it publishes only the count of verified
     /// households in a village that have not yet received any programme.
     function reportCoverage(uint256 disasterId, uint32 village, uint32 unserved) external {
@@ -356,6 +404,15 @@ contract EligibilityRegistry is Ownable {
 
     function verifiedHouseholds(uint256 disasterId) external view returns (uint256) {
         return disasters[disasterId].verifiedHouseholds;
+    }
+
+    /// @notice Village of an active registered household's receipt address; 0 if not registered.
+    function villageOfReceipt(uint256 disasterId, address receipt) external view returns (uint32) {
+        return _receiptVillage[keccak256(abi.encode(disasterId, receipt))];
+    }
+
+    function isProxy(uint256 disasterId, uint32 village, address proxy) external view returns (bool) {
+        return _proxy[keccak256(abi.encode(disasterId, village, proxy))];
     }
 
     function registrationCount() external view returns (uint256) {

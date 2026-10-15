@@ -8,6 +8,9 @@ import { tx, eventArg } from "@/lib/api";
 import { demoUniqueTag, textHash } from "@/lib/scopes";
 import { ROLES, TIERS, VILLAGES, villageName, type RoleName } from "@/lib/scenario";
 import { upsertRoster } from "@/lib/roster";
+import { getDeployment } from "@/lib/config";
+import { publicClient } from "@/lib/chain";
+import { registryAbi } from "@/generated/contracts";
 
 type Reg = { kind: "kept-registration"; label: string; commitment: string; receipt: Address };
 
@@ -103,6 +106,7 @@ export default function IssuerPage() {
 
       {isOffice && <AppealsDesk />}
       {isOffice && <CoverageDesk />}
+      {isOffice && <ProxyDesk />}
     </div>
   );
 }
@@ -128,7 +132,8 @@ function RegisterForm({
   return (
     <div className="space-y-3 rounded-lg border border-line p-3">
       <p className="text-sm font-medium">
-        {msg.label} <span className="font-mono text-xs text-muted">commitment {msg.commitment.slice(0, 10)}…</span>
+        {msg.label} <span className="font-mono text-xs text-muted">commitment {msg.commitment.slice(0, 10)}…</span>{" "}
+        <span className="font-mono text-xs text-muted">receipt {msg.receipt.slice(0, 8)}…</span>
       </p>
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Village">
@@ -161,6 +166,7 @@ function RegisterForm({
             village,
             BigInt(msg.commitment),
             demoUniqueTag(nid),
+            msg.receipt,
           ]);
           const id = Number(eventArg<bigint>(r, "RegistrationProposed", "id"));
           upsertRoster({ label: msg.label, village, tier, commitment: msg.commitment, receipt: msg.receipt, registrationId: id });
@@ -247,6 +253,59 @@ function CoverageDesk() {
       </Note>
       <div className="mt-2">
         <Badge tone="muted">{snap!.villageStats.filter((s) => s.coverageAsOf).length} village(s) reported</Badge>
+      </div>
+    </Card>
+  );
+}
+
+function ProxyDesk() {
+  const { snap, roles } = useSnapshot();
+  const [village, setVillage] = useState<number>(VILLAGES[0].code);
+  const worker = roles.socialWorker;
+  const [proxies, setProxies] = useState<Record<number, boolean>>({});
+  const block = snap?.block;
+  useEffect(() => {
+    if (!worker || !snap?.disaster) return;
+    (async () => {
+      const d = getDeployment();
+      const out: Record<number, boolean> = {};
+      for (const v of VILLAGES) {
+        out[v.code] = await publicClient.readContract({
+          address: d.registry,
+          abi: registryAbi,
+          functionName: "isProxy",
+          args: [snap.disaster!.id, v.code, worker],
+        });
+      }
+      setProxies(out);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [worker, block]);
+  if (!worker) return null;
+  const active = !!proxies[village];
+  return (
+    <Card>
+      <SectionTitle title="Proxies">
+        A proxy (here, a registered social worker) may sign “received” or “not received” for elders of one village who cannot do
+        it themselves. It is designated per village, publicly, and a household&apos;s own answer always replaces the proxy&apos;s.
+      </SectionTitle>
+      <div className="flex flex-wrap items-end gap-3">
+        <Field label="Village">
+          <select className={inputCls} value={village} onChange={(e) => setVillage(Number(e.target.value))}>
+            {VILLAGES.map((v) => (
+              <option key={v.code} value={v.code}>
+                {v.name}
+                {proxies[v.code] ? " (proxy active)" : ""}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <ActionButton
+          variant={active ? "secondary" : "primary"}
+          onClick={() => tx("office", "registry", "setProxy", [snap!.disaster!.id, village, worker, !active])}
+        >
+          {active ? "Remove social worker as proxy" : "Designate social worker as proxy"}
+        </ActionButton>
       </div>
     </Card>
   );

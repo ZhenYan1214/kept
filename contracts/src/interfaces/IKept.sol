@@ -10,6 +10,13 @@ interface IEligibilityRegistry {
     function groupTier(uint256 groupId) external view returns (uint8);
     function isGroup(uint256 groupId) external view returns (bool);
     function verifiedHouseholds(uint256 disasterId) external view returns (uint256);
+    function villageOfReceipt(uint256 disasterId, address receipt) external view returns (uint32);
+    function isProxy(uint256 disasterId, uint32 village, address proxy) external view returns (bool);
+}
+
+/// @notice What the other modules need to know about a fund.
+interface IReliefFund {
+    function disasterId() external view returns (uint256);
 }
 
 /// @notice The factory is the single source of truth for which funds follow the audited template.

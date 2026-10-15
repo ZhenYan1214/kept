@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Card, Empty, Field, Note, SectionTitle, inputCls, ntd } from "@/components/ui";
-import { ProposalList, CharterPanel } from "@/components/panels";
+import { ActionButton, Card, Empty, Field, Note, SectionTitle, formatDate, formatDuration, inputCls, ntd } from "@/components/ui";
+import { ProposalList, CharterPanel, reviewPending } from "@/components/panels";
 import { tx, postJSON } from "@/lib/api";
 import { CHAIN_ID } from "@/lib/config";
 import { textHash } from "@/lib/scopes";
@@ -41,10 +41,11 @@ export default function CommitteePage() {
         </Field>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Allocate member={member} />
         <CapChange member={member} />
         <Extension member={member} />
+        <Surplus member={member} />
       </div>
 
       <Card>
@@ -75,7 +76,16 @@ export default function CommitteePage() {
                   </ActionButton>
                 </>
               )}
-              {p.status === 1 && CHAIN_ID === 31337 && snap.timestamp < p.executeAfter && (
+              {reviewPending(p) && (
+                <ActionButton
+                  variant="secondary"
+                  disabled={snap.timestamp < p.executeAfter}
+                  onClick={() => tx(member, "fund", "concludeReview", [BigInt(p.id)], f.address)}
+                >
+                  Settle household review
+                </ActionButton>
+              )}
+              {(p.status === 1 || reviewPending(p)) && CHAIN_ID === 31337 && snap.timestamp < p.executeAfter && (
                 <ActionButton variant="secondary" onClick={() => postJSON("/api/dev/time", { seconds: p.executeAfter - snap.timestamp + 1 })}>
                   Devnet: skip waiting period
                 </ActionButton>
@@ -193,8 +203,15 @@ function CapChange({ member }: { member: RoleName }) {
           <input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={emergency} onChange={(e) => setEmergency(e.target.checked)} />
-          Emergency (needs {f.emergencyThreshold} of {f.committee.length}, applies at once, households review afterwards)
+          <input
+            type="checkbox"
+            checked={emergency}
+            disabled={f.emergencyRevoked}
+            onChange={(e) => setEmergency(e.target.checked)}
+          />
+          {f.emergencyRevoked
+            ? "Emergency path revoked: households overturned an earlier emergency change"
+            : `Emergency (needs ${f.emergencyThreshold} of ${f.committee.length}, applies at once; must only move cap; a household veto on review returns the unspent part and revokes this path)`}
         </label>
         <ActionButton
           onClick={() =>
@@ -225,7 +242,8 @@ function Extension({ member }: { member: RoleName }) {
       <div className="space-y-3">
         <Note tone="muted">
           <span className="text-xs">
-            The fund never forces money out at the deadline. Unspent money stays locked until households accept an extension.
+            The fund never forces money out at the deadline. An extension waits through the public period ({formatDuration(f.timelock)})
+            and goes ahead unless households veto it.
           </span>
         </Note>
         <Field label="Extend by (days)">
@@ -239,6 +257,63 @@ function Extension({ member }: { member: RoleName }) {
         >
           Propose
         </ActionButton>
+      </div>
+    </Card>
+  );
+}
+
+function Surplus({ member }: { member: RoleName }) {
+  const { snap, roles } = useSnapshot();
+  const f = snap!.fund!;
+  const [to, setTo] = useState<RoleName>("county");
+  const [amount, setAmount] = useState(1_000_000);
+  const [est, setEst] = useState(30);
+  const [note, setNote] = useState("Rebuild the Datong community kitchen");
+  const open = snap!.timestamp <= f.deadline;
+  return (
+    <Card>
+      <SectionTitle title="Use the surplus" />
+      <div className="space-y-3">
+        <Note tone="muted">
+          <span className="text-xs">
+            After the deadline ({formatDate(f.deadline)}), unspent money may only go to “{f.purposes[f.surplusPurposeId]?.name}”,
+            after a public waiting period in which households can veto it. No other purpose can receive it.
+          </span>
+        </Note>
+        <Field label="To custodian">
+          <select className={inputCls} value={to} onChange={(e) => setTo(e.target.value as RoleName)}>
+            {RECIPIENTS.map((r) => (
+              <option key={r} value={r}>
+                {ROLES[r].label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Amount (NT$)">
+            <input type="number" className={inputCls} value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+          </Field>
+          <Field label="Est. households">
+            <input type="number" className={inputCls} value={est} onChange={(e) => setEst(Number(e.target.value))} />
+          </Field>
+        </div>
+        <Field label="Public reason (fingerprint on-chain)">
+          <input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} />
+        </Field>
+        <div className="flex flex-wrap gap-2">
+          <ActionButton
+            disabled={open}
+            onClick={() => tx(member, "fund", "proposeSurplus", [roles[to]!, BigInt(amount), est, textHash(note)], f.address)}
+          >
+            Propose
+          </ActionButton>
+          {open && CHAIN_ID === 31337 && (
+            <ActionButton variant="secondary" onClick={() => postJSON("/api/dev/time", { seconds: f.deadline - snap!.timestamp + 1 })}>
+              Devnet: jump past the deadline
+            </ActionButton>
+          )}
+        </div>
+        {open && <p className="text-xs text-muted">Available after the deadline.</p>}
       </div>
     </Card>
   );

@@ -75,7 +75,9 @@ export const ABIS: Record<Target, Abi> = {
 };
 
 const CHIEF = ["proposeRegistration", "approveRegistration", "rejectRegistration"];
-const COMMITTEE = { fund: ["proposeAllocation", "proposeCapChange", "proposeExtension", "approve", "execute", "cancel"] };
+const COMMITTEE = {
+  fund: ["proposeAllocation", "proposeCapChange", "proposeExtension", "proposeSurplus", "approve", "execute", "concludeReview", "cancel"],
+};
 const CUSTODIAN_FLOW = {
   ledger: ["acknowledge", "forward", "reconcile"],
   programs: ["createProgram", "claim", "closeProgram"],
@@ -85,7 +87,7 @@ const CUSTODIAN_FLOW = {
 export const ALLOWED: Record<RoleName, Partial<Record<Target, string[]>>> = {
   authority: { registry: ["setVillage", "setIssuer", "createDisaster"] },
   office: {
-    registry: [...CHIEF, "revokeMember", "replaceMember", "resolveAppeal", "reportCoverage"],
+    registry: [...CHIEF, "revokeMember", "replaceMember", "resolveAppeal", "reportCoverage", "setProxy"],
   },
   chief0: { registry: CHIEF },
   chief1: { registry: CHIEF },
@@ -95,13 +97,13 @@ export const ALLOWED: Record<RoleName, Partial<Record<Target, string[]>>> = {
   c1: COMMITTEE,
   c2: COMMITTEE,
   c3: COMMITTEE,
-  custodian: { factory: ["createFund"], fund: ["execute"] },
+  custodian: { factory: ["createFund"], fund: ["execute", "concludeReview"] },
   ministry: CUSTODIAN_FLOW,
   county: CUSTODIAN_FLOW,
   ngo: CUSTODIAN_FLOW,
   donor: { token: ["faucet", "approve"], fund: ["donate"] },
   socialWorker: {},
-  relayer: { voice: ["castVote"], ledger: ["confirmLine"], registry: ["fileAppeal"], fund: ["execute"] },
+  relayer: { voice: ["castVote"], ledger: ["confirmLine"], registry: ["fileAppeal"], fund: ["execute", "concludeReview"] },
 };
 
 export function targetAddress(target: Exclude<Target, "fund">): Address {

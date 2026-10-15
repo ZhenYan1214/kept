@@ -66,12 +66,15 @@ contract ReliefFundTest is Base {
     }
 
     function test_NoAllocationAfterDeadlineWithoutExtension() public {
-        vm.warp(fund.deadline() + 1);
         vm.prank(c1);
         uint256 id = fund.proposeAllocation(0, ministry, 1000, 1, bytes32(0));
+        vm.warp(fund.deadline() + 1);
         vm.prank(c2);
         vm.expectRevert(ReliefFund.FundExpired.selector);
         fund.approve(id);
+        vm.prank(c1);
+        vm.expectRevert(ReliefFund.FundExpired.selector);
+        fund.proposeAllocation(0, ministry, 1000, 1, bytes32(0));
     }
 
     // ---------------- governed changes & household veto ----------------
@@ -181,18 +184,182 @@ contract ReliefFundTest is Base {
         ReliefFund.Proposal memory p = fund.proposal(id);
         assertEq(uint8(p.status), uint8(ReliefFund.Status.Executed));
         assertEq(fund.purpose(1).capBps, 4000);
-        assertTrue(p.voteKey != bytes32(0), "retroactive household review opened");
+        assertEq(p.movedBps, 1000);
+        assertTrue(p.voteKey != bytes32(0), "household review opened");
+        assertEq(p.executeAfter, block.timestamp + 7 days, "review closes after the waiting period");
+    }
+
+    function _emergencyMove() internal returns (uint256 id, bytes32 voteKey) {
+        // Move 10 points of cap from livelihood relief (60%) to housing repair (30%), at once.
+        vm.prank(c1);
+        id = fund.proposeCapChange(0, 1, 5000, 4000, true, keccak256("temporary housing needed now"));
+        vm.prank(c2);
+        fund.approve(id);
+        vm.prank(c3);
+        fund.approve(id);
+        voteKey = fund.proposal(id).voteKey;
+    }
+
+    function test_EmergencyMustOnlyMoveCap() public {
+        vm.startPrank(c1);
+        // Raising one cap without lowering another by the same amount is not an emergency move.
+        vm.expectRevert(ReliefFund.EmergencyMustMoveCap.selector);
+        fund.proposeCapChange(0, 1, 5000, 3500, true, bytes32(0));
+        vm.expectRevert(ReliefFund.EmergencyMustMoveCap.selector);
+        fund.proposeCapChange(0, 1, 6000, 3000, true, bytes32(0));
+        vm.stopPrank();
+    }
+
+    function test_EmergencyVetoedOnReviewReturnsUnspentCapAndRevokesPath() public {
+        (uint256 id, bytes32 voteKey) = _emergencyMove();
+        // Spend part of the extra cap: housing gets 350,000 (cap now 400,000; it was 300,000).
+        vm.prank(c1);
+        uint256 a = fund.proposeAllocation(1, ministry, 350_000, 10, keccak256("temporary housing"));
+        vm.prank(c2);
+        fund.approve(a);
+
+        vm.expectRevert(ReliefFund.ReviewNotClosed.selector);
+        fund.concludeReview(id);
+
+        uint256 scope = voice.scopeOf(voteKey);
+        voice.castVote(voteKey, _group(0), _proof(1001, 0, scope, true));
+        voice.castVote(voteKey, _group(1), _proof(1002, 0, scope, true));
+        voice.castVote(voteKey, _group(2), _proof(1003, 0, scope, true));
+        vm.warp(block.timestamp + 7 days);
+        fund.concludeReview(id); // anyone can settle it
+
+        // 5 of the 10 points were spent and stay spent; the other 5 go back.
+        assertEq(fund.purpose(1).capBps, 3500);
+        assertEq(fund.purpose(0).capBps, 5500);
+        assertEq(uint8(fund.proposal(id).status), uint8(ReliefFund.Status.Overturned));
+        assertTrue(fund.emergencyRevoked());
+
+        vm.prank(c1);
+        vm.expectRevert(ReliefFund.EmergencyPathRevoked.selector);
+        fund.proposeCapChange(0, 2, 5000, 1500, true, bytes32(0));
+        vm.expectRevert(ReliefFund.InvalidState.selector);
+        fund.concludeReview(id);
+    }
+
+    function test_EmergencyUpheldWhenNotVetoed() public {
+        (uint256 id, bytes32 voteKey) = _emergencyMove();
+        voice.castVote(voteKey, _group(0), _proof(1001, 1, voice.scopeOf(voteKey), true));
+        vm.warp(block.timestamp + 7 days);
+        fund.concludeReview(id);
+        ReliefFund.Proposal memory p = fund.proposal(id);
+        assertEq(uint8(p.status), uint8(ReliefFund.Status.Executed));
+        assertTrue(p.reviewConcluded);
+        assertEq(fund.purpose(1).capBps, 4000);
+        assertFalse(fund.emergencyRevoked());
+    }
+
+    function test_OnlyEmergencyChangesHaveAReview() public {
+        (uint256 id,) = _queueCapChange();
+        vm.warp(block.timestamp + 7 days);
+        fund.execute(id);
+        vm.expectRevert(ReliefFund.InvalidState.selector);
+        fund.concludeReview(id);
+    }
+
+    // ---------------- deadline, extension and surplus ----------------
+
+    function _extend(uint64 newDeadline) internal returns (uint256 id, bytes32 voteKey) {
+        vm.prank(c1);
+        id = fund.proposeExtension(newDeadline, keccak256("rebuilding takes longer: reasons"));
+        vm.prank(c2);
+        fund.approve(id);
+        voteKey = fund.proposal(id).voteKey;
     }
 
     function test_ExtensionUnlocksSpendingAfterDeadline() public {
-        uint64 newDeadline = fund.deadline() + 180 days;
+        uint64 oldDeadline = fund.deadline();
+        uint64 newDeadline = oldDeadline + 180 days;
+        (uint256 id,) = _extend(newDeadline);
+        vm.warp(block.timestamp + 7 days);
+        fund.execute(id); // nobody vetoed
+        assertEq(fund.deadline(), newDeadline);
+
+        vm.warp(oldDeadline + 1);
         vm.prank(c1);
-        uint256 id = fund.proposeExtension(newDeadline, keccak256("rebuilding takes longer: reasons"));
+        uint256 a = fund.proposeAllocation(0, ministry, 1000, 1, bytes32(0));
         vm.prank(c2);
-        fund.approve(id);
+        fund.approve(a);
+        assertEq(uint8(fund.proposal(a).status), uint8(ReliefFund.Status.Executed));
+    }
+
+    function test_HouseholdsCanVetoExtension() public {
+        uint64 oldDeadline = fund.deadline();
+        (uint256 id, bytes32 voteKey) = _extend(oldDeadline + 180 days);
+        uint256 scope = voice.scopeOf(voteKey);
+        voice.castVote(voteKey, _group(0), _proof(1001, 0, scope, true));
+        voice.castVote(voteKey, _group(1), _proof(1002, 0, scope, true));
         vm.warp(block.timestamp + 7 days);
         fund.execute(id);
-        assertEq(fund.deadline(), newDeadline);
+        assertEq(uint8(fund.proposal(id).status), uint8(ReliefFund.Status.Vetoed));
+        assertEq(fund.deadline(), oldDeadline);
+    }
+
+    function test_ExtensionNeverMovesDeadlineBack() public {
+        uint64 d = fund.deadline();
+        (uint256 longer,) = _extend(d + 180 days);
+        (uint256 shorter,) = _extend(d + 90 days);
+        vm.warp(block.timestamp + 7 days);
+        fund.execute(longer);
+        vm.expectRevert(ReliefFund.BadParams.selector);
+        fund.execute(shorter);
+        assertEq(fund.deadline(), d + 180 days);
+    }
+
+    function test_SurplusOnlyAfterDeadline() public {
+        vm.prank(c1);
+        vm.expectRevert(ReliefFund.FundStillOpen.selector);
+        fund.proposeSurplus(county, 100_000, 50, bytes32(0));
+    }
+
+    function _proposeSurplus(uint256 amount) internal returns (uint256 id, bytes32 voteKey) {
+        vm.warp(fund.deadline() + 1);
+        vm.prank(c1);
+        id = fund.proposeSurplus(county, amount, 50, keccak256("rebuild the village hall"));
+        vm.prank(c2);
+        fund.approve(id);
+        ReliefFund.Proposal memory p = fund.proposal(id);
+        assertEq(uint8(p.status), uint8(ReliefFund.Status.Queued), "surplus waits for the public period");
+        assertEq(p.purposeId, SURPLUS);
+        voteKey = p.voteKey;
+    }
+
+    function test_SurplusGoesOnlyToTheSurplusPurpose() public {
+        (uint256 id,) = _proposeSurplus(500_000);
+        // Other purposes are closed after the deadline.
+        vm.prank(c1);
+        vm.expectRevert(ReliefFund.FundExpired.selector);
+        fund.proposeAllocation(0, county, 1, 1, bytes32(0));
+
+        vm.warp(block.timestamp + 7 days);
+        fund.execute(id);
+        assertEq(twd.balanceOf(county), 500_000);
+        assertEq(fund.purpose(SURPLUS).allocated, 500_000, "cap no longer limits the surplus purpose");
+        CustodyLedger.Hop memory h = ledger.hop(fund.proposal(id).hopId);
+        assertEq(h.purposeId, SURPLUS);
+        assertEq(h.to, county);
+    }
+
+    function test_HouseholdsCanVetoSurplusUse() public {
+        (uint256 id, bytes32 voteKey) = _proposeSurplus(500_000);
+        uint256 scope = voice.scopeOf(voteKey);
+        voice.castVote(voteKey, _group(0), _proof(1001, 0, scope, true));
+        voice.castVote(voteKey, _group(1), _proof(1002, 0, scope, true));
+        vm.warp(block.timestamp + 7 days);
+        fund.execute(id);
+        assertEq(uint8(fund.proposal(id).status), uint8(ReliefFund.Status.Vetoed));
+        assertEq(fund.balance(), 1_000_000, "money stays in the fund");
+    }
+
+    function test_SurplusPurposeMustBeInCharter() public {
+        ReliefFund.InitParams memory p = _params();
+        p.surplusPurposeId = 4;
+        vm.expectRevert(ReliefFund.BadParams.selector);
+        factory.createFund(p);
     }
 
     function test_OnlyFactoryFundsCanOpenVotesOrRecordHops() public {

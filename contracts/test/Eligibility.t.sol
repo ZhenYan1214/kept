@@ -7,7 +7,7 @@ import {EligibilityRegistry} from "../src/EligibilityRegistry.sol";
 contract EligibilityTest is Base {
     function test_TwoSignatureRegistration() public {
         vm.prank(chiefA);
-        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, keccak256("A-1"));
+        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, keccak256("A-1"), _receiptOf(111));
         assertEq(registry.verifiedHouseholds(disasterId), 0, "not verified before second signature");
 
         vm.prank(office);
@@ -20,7 +20,7 @@ contract EligibilityTest is Base {
 
     function test_SameRoleCannotApprove() public {
         vm.prank(office);
-        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, keccak256("A-1"));
+        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, keccak256("A-1"), _receiptOf(111));
         vm.prank(office);
         vm.expectRevert(EligibilityRegistry.SameRoleCannotApprove.selector);
         registry.approveRegistration(id);
@@ -29,12 +29,12 @@ contract EligibilityTest is Base {
     function test_ChiefCannotActOutsideOwnVillage() public {
         vm.prank(chiefA);
         vm.expectRevert(EligibilityRegistry.OutOfJurisdiction.selector);
-        registry.proposeRegistration(disasterId, 0, VILLAGE_B, 111, keccak256("B-1"));
+        registry.proposeRegistration(disasterId, 0, VILLAGE_B, 111, keccak256("B-1"), _receiptOf(111));
     }
 
     function test_OfficeCannotActOutsideTownship() public {
         vm.prank(chiefA);
-        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, keccak256("A-1"));
+        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, keccak256("A-1"), _receiptOf(111));
         vm.prank(otherOffice);
         vm.expectRevert(EligibilityRegistry.OutOfJurisdiction.selector);
         registry.approveRegistration(id);
@@ -43,18 +43,18 @@ contract EligibilityTest is Base {
     function test_SameHouseholdCannotRegisterTwiceAcrossVillages() public {
         bytes32 tag = keccak256("HMAC(national id)");
         vm.prank(chiefA);
-        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, tag);
+        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, tag, _receiptOf(111));
         vm.prank(office);
         registry.approveRegistration(id);
 
         vm.prank(chiefB);
         vm.expectRevert(EligibilityRegistry.DuplicateHousehold.selector);
-        registry.proposeRegistration(disasterId, 2, VILLAGE_B, 222, tag);
+        registry.proposeRegistration(disasterId, 2, VILLAGE_B, 222, tag, _receiptOf(222));
     }
 
     function test_RejectionIsCountedAgainstIssuer() public {
         vm.prank(chiefA);
-        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, keccak256("A-1"));
+        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, keccak256("A-1"), _receiptOf(111));
         vm.prank(office);
         registry.rejectRegistration(id, keccak256("not a resident"));
         (,,, uint64 proposed, uint64 approved, uint64 rejected,,,) = registry.issuers(office);
@@ -104,10 +104,62 @@ contract EligibilityTest is Base {
         _register(chiefA, office, 0, VILLAGE_A, 111);
         uint256[] memory siblings;
         vm.prank(office);
-        registry.replaceMember(disasterId, 0, VILLAGE_A, 111, 999, siblings, keccak256("card lost in flood"));
+        registry.replaceMember(disasterId, 0, VILLAGE_A, 111, 999, _receiptOf(999), siblings, keccak256("card lost in flood"));
         assertTrue(sem.isMember(_group(0), 999));
         assertFalse(sem.isMember(_group(0), 111));
         assertEq(registry.verifiedHouseholds(disasterId), 1);
+        assertEq(registry.villageOfReceipt(disasterId, _receiptOf(111)), 0, "old receipt key stops counting");
+        assertEq(registry.villageOfReceipt(disasterId, _receiptOf(999)), VILLAGE_A);
+    }
+
+    // ---------------- receipt addresses and proxies ----------------
+
+    function test_ReceiptAddressCountsOnlyAfterSecondSignature() public {
+        address receipt = _receiptOf(111);
+        vm.prank(chiefA);
+        uint256 id = registry.proposeRegistration(disasterId, 0, VILLAGE_A, 111, keccak256("A-1"), receipt);
+        assertEq(registry.villageOfReceipt(disasterId, receipt), 0);
+        vm.prank(office);
+        registry.approveRegistration(id);
+        assertEq(registry.villageOfReceipt(disasterId, receipt), VILLAGE_A);
+        assertEq(registry.villageOfReceipt(disasterId + 1, receipt), 0, "scoped to the disaster");
+    }
+
+    function test_ReceiptAddressCannotBeReusedOrZero() public {
+        _register(chiefA, office, 0, VILLAGE_A, 111, _receiptOf(111));
+        vm.prank(chiefB);
+        vm.expectRevert(EligibilityRegistry.DuplicateHousehold.selector);
+        registry.proposeRegistration(disasterId, 0, VILLAGE_B, 222, keccak256("B-1"), _receiptOf(111));
+        vm.prank(chiefB);
+        vm.expectRevert(EligibilityRegistry.ZeroAddress.selector);
+        registry.proposeRegistration(disasterId, 0, VILLAGE_B, 222, keccak256("B-1"), address(0));
+    }
+
+    function test_RevokedHouseholdReceiptStopsCounting() public {
+        _register(chiefA, office, 0, VILLAGE_A, 111);
+        uint256[] memory siblings;
+        vm.prank(office);
+        registry.revokeMember(disasterId, 0, VILLAGE_A, 111, siblings, keccak256("registered in error"));
+        assertEq(registry.villageOfReceipt(disasterId, _receiptOf(111)), 0);
+    }
+
+    function test_ProxiesAreDesignatedPerVillageByTheTownshipOffice() public {
+        address worker = makeAddr("social worker");
+        vm.prank(chiefA);
+        vm.expectRevert(EligibilityRegistry.NotIssuer.selector);
+        registry.setProxy(disasterId, VILLAGE_A, worker, true);
+        vm.prank(otherOffice);
+        vm.expectRevert(EligibilityRegistry.OutOfJurisdiction.selector);
+        registry.setProxy(disasterId, VILLAGE_A, worker, true);
+
+        vm.prank(office);
+        registry.setProxy(disasterId, VILLAGE_A, worker, true);
+        assertTrue(registry.isProxy(disasterId, VILLAGE_A, worker));
+        assertFalse(registry.isProxy(disasterId, VILLAGE_B, worker), "only for the village designated");
+
+        vm.prank(office);
+        registry.setProxy(disasterId, VILLAGE_A, worker, false);
+        assertFalse(registry.isProxy(disasterId, VILLAGE_A, worker));
     }
 
     function test_CoverageReport() public {

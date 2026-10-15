@@ -261,7 +261,9 @@ function Votes({ card, registered }: { card: HouseholdCard; registered: boolean 
             <div key={p.id} className="rounded-lg border border-line p-3">
               <p className="font-medium">{proposalTitle(p, snap)}</p>
               <p className="mb-2 text-xs text-muted">
-                {p.emergency ? "Emergency change already applied — your vote is a public review." : "Not applied until the waiting period ends."}{" "}
+                {p.emergency
+                  ? "Emergency change already applied. If households vote it down, the part not yet spent goes back and the committee loses its emergency power."
+                  : "Not applied until the waiting period ends; it goes ahead unless households vote it down."}{" "}
                 So far: {p.vote!.yes} yes · {p.vote!.no} no
               </p>
               {voted[p.vote!.key] ? (
@@ -358,11 +360,18 @@ function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) 
                 ) : state === 2 ? (
                   <Badge tone="bad">You disputed this payment</Badge>
                 ) : (
-                  <div className="flex gap-2">
-                    <ActionButton onClick={() => answer(p, true)}>I received it</ActionButton>
-                    <ActionButton variant="danger" onClick={() => answer(p, false)}>
-                      I did not receive it
-                    </ActionButton>
+                  <div className="space-y-2">
+                    {(state === 3 || state === 4) && (
+                      <p className="text-xs text-muted">
+                        Your proxy recorded “{state === 3 ? "received" : "not received"}” for you. Your own answer replaces it.
+                      </p>
+                    )}
+                    <div className="flex gap-2">
+                      <ActionButton onClick={() => answer(p, true)}>I received it</ActionButton>
+                      <ActionButton variant="danger" onClick={() => answer(p, false)}>
+                        I did not receive it
+                      </ActionButton>
+                    </div>
                   </div>
                 )}
               </div>

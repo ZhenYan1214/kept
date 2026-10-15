@@ -117,8 +117,8 @@ export default function Why() {
         <h2 className="text-xl font-semibold">Kept: two promises, made verifiable</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
-            ["Commitment", "Purposes, caps and the surplus rule are fixed when money is raised. Purposes outside the charter cannot be funded. Changes wait through a public period."],
-            ["Custody", "Every hand records and acknowledges each tranche. Payment rosters are committed as Merkle roots: each household can prove it is counted and confirm or dispute its own line."],
+            ["Commitment", "Purposes, caps and the surplus purpose are fixed when money is raised. Purposes outside the charter cannot be funded. Changes wait through a public period in which households can veto them."],
+            ["Custody", "Every hand records and acknowledges each tranche. Payment rosters are committed as Merkle roots: each registered household can prove it is counted and confirm or dispute its own line."],
             ["Voice", "The same credential that lets a household receive aid gives it one anonymous vote on changes, and a public appeal when it is left out."],
           ].map(([t, d]) => (
             <div key={t} className="rounded-xl border border-line bg-card p-4">

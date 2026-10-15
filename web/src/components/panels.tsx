@@ -3,20 +3,31 @@ import type { Hop, Proposal, Snapshot } from "@/lib/snapshot";
 import { villageName, VILLAGES, PURPOSES } from "@/lib/scenario";
 import { Addr, Badge, Bar, Card, Empty, Hash, SectionTitle, formatDate, formatDuration, ntd, pct } from "./ui";
 
-export const KIND = ["Allocation", "Cap change", "Deadline extension"];
-export const STATUS = ["Pending approvals", "Public waiting period", "Executed", "Vetoed by households", "Cancelled"];
+export const KIND = ["Allocation", "Cap change", "Deadline extension", "Surplus use"];
+export const STATUS = [
+  "Pending approvals",
+  "Public waiting period",
+  "Executed",
+  "Vetoed by households",
+  "Cancelled",
+  "Overturned by households on review",
+];
 
 export function proposalTitle(p: Proposal, snap: Snapshot) {
   const purposes = snap.fund?.purposes ?? [];
   if (p.kind === 0) return `${ntd(p.amount)} for ${purposes[p.purposeId]?.name ?? "?"}`;
   if (p.kind === 1)
     return `Move cap: ${purposes[p.purposeId]?.name} → ${p.newCapFrom / 100}%, ${purposes[p.toPurposeId]?.name} → ${p.newCapTo / 100}%`;
+  if (p.kind === 3) return `${ntd(p.amount)} of the surplus for ${purposes[p.purposeId]?.name ?? "?"}`;
   return `Extend deadline to ${formatDate(p.newDeadline)}`;
 }
 
 export function statusTone(status: number) {
-  return (["warn", "info", "ok", "bad", "muted"] as const)[status];
+  return (["warn", "info", "ok", "bad", "muted", "bad"] as const)[status];
 }
+
+/** True while an emergency change's household review is open or waiting to be settled. */
+export const reviewPending = (p: Proposal) => p.emergency && p.status === 2 && !!p.vote && !p.reviewConcluded;
 
 export function CharterPanel({ snap }: { snap: Snapshot }) {
   const f = snap.fund!;
@@ -46,24 +57,44 @@ export function CharterPanel({ snap }: { snap: Snapshot }) {
         <div className="rounded-lg bg-ink/5 p-3 sm:col-span-2">
           <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Surplus rule</dt>
           <dd className="mt-1">{f.surplusRule}</dd>
+          <dd className="mt-1 text-xs text-muted">
+            Enforced by the contract: after the deadline, money can only go to “{f.purposes[f.surplusPurposeId]?.name}”, and only
+            after a public waiting period in which households can veto it.
+          </dd>
         </div>
         <div>
           <dt className="text-xs text-muted">Deadline</dt>
           <dd>
             {formatDate(f.deadline)}{" "}
-            <span className="text-xs text-muted">— never forces spending; extending needs household approval</span>
+            <span className="text-xs text-muted">
+              — never forces spending; an extension waits through the public period and households can veto it
+            </span>
           </dd>
         </div>
         <div>
           <dt className="text-xs text-muted">Committee</dt>
           <dd>
-            {f.threshold} of {f.committee.length} to allocate · {f.emergencyThreshold} of {f.committee.length} for emergencies
+            {f.threshold} of {f.committee.length} to allocate ·{" "}
+            {f.emergencyRevoked ? (
+              <Badge tone="bad">Emergency path revoked by households</Badge>
+            ) : (
+              <>
+                {f.emergencyThreshold} of {f.committee.length} for emergencies
+              </>
+            )}
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">Changes to caps or deadline</dt>
+          <dt className="text-xs text-muted">Changes to caps, deadline or surplus</dt>
           <dd>
             Public waiting period of {formatDuration(f.timelock)}; households can veto (quorum {f.quorumBps / 100}%)
+          </dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="text-xs text-muted">Emergencies</dt>
+          <dd>
+            May only move cap between charter purposes and apply at once. Households review them afterwards: a veto returns the
+            unspent part and revokes the emergency path for this fund.
           </dd>
         </div>
         <div>
@@ -124,7 +155,7 @@ export function FunnelPanel({ snap }: { snap: Snapshot }) {
         </div>
         <div className="rounded-lg bg-ok/10 p-2">
           <p className="text-lg font-semibold tabular-nums text-ok">{t.confirmed}</p>
-          <p className="text-[11px] text-muted">confirmed by the household</p>
+          <p className="text-[11px] text-muted">confirmed by the household (or its proxy)</p>
         </div>
         <div className="rounded-lg bg-bad/10 p-2">
           <p className="text-lg font-semibold tabular-nums text-bad">{t.disputed}</p>
@@ -293,6 +324,8 @@ export function ProposalList({ snap, actions }: { snap: Snapshot; actions?: (p: 
               <div className="flex flex-wrap items-center gap-1.5">
                 <Badge tone={statusTone(p.status)}>{STATUS[p.status]}</Badge>
                 {p.emergency && <Badge tone="warn">Emergency path</Badge>}
+                {reviewPending(p) && <Badge tone="info">Household review {left > 0 ? "open" : "closed, awaiting settlement"}</Badge>}
+                {p.emergency && p.reviewConcluded && p.status === 2 && <Badge tone="ok">Upheld on review</Badge>}
                 <span className="text-xs text-muted">
                   {p.approvals} approval(s) · proposed {formatDate(p.createdAt)}
                   {p.kind === 0 && p.recipient && (
@@ -307,7 +340,7 @@ export function ProposalList({ snap, actions }: { snap: Snapshot; actions?: (p: 
                 <p className="text-xs text-muted">
                   Household vote: <span className="text-ok">{p.vote.yes} yes</span> · <span className="text-bad">{p.vote.no} no</span> ·
                   turnout {pct(p.vote.yes + p.vote.no, p.vote.eligible)}% of {p.vote.eligible} (veto quorum {p.vote.quorumBps / 100}%)
-                  {p.status === 1 && (left > 0 ? ` · closes in ${formatDuration(left)}` : " · waiting period over")}
+                  {(p.status === 1 || reviewPending(p)) && (left > 0 ? ` · closes in ${formatDuration(left)}` : " · voting closed")}
                   {p.vote.vetoed && <Badge tone="bad">Veto threshold reached</Badge>}
                 </p>
               )}

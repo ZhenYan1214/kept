@@ -5,8 +5,18 @@ import { Identity } from "@semaphore-protocol/core";
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { ABIS, ensureGas, waitReceipt, publicClient, roleAccount, targetAddress, walletFor, withRoleLock, type Target } from "./roles";
 import { chain, getDeployment, CHAIN_ID } from "@/lib/config";
-import { DISASTER_NAME, FUND_NAME, PURPOSES, SURPLUS_RULE, TIERS, TOWNSHIP, VILLAGES, type RoleName } from "@/lib/scenario";
-import { ledgerAbi } from "@/generated/contracts";
+import {
+  DISASTER_NAME,
+  FUND_NAME,
+  PURPOSE_CAPS,
+  PURPOSES,
+  SURPLUS_PURPOSE,
+  SURPLUS_RULE,
+  TIERS,
+  TOWNSHIP,
+  VILLAGES,
+  type RoleName,
+} from "@/lib/scenario";
 import { receiptDomain, RECEIPT_TYPES } from "@/lib/receipt";
 
 const SIM_SEED = process.env.SIM_SEED ?? "kept-simulated-households";
@@ -79,16 +89,8 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
   const created = await send("authority", "registry", "createDisaster", [DISASTER_NAME, [...TIERS]]);
   const disasterId = (created.find((l) => l.eventName === "DisasterCreated") as unknown as { args: { disasterId: bigint } })
     .args.disasterId;
-  await withRoleLock("authority", async () => {
-    const hash = await walletFor("authority").writeContract({
-      address: d.ledger,
-      abi: ledgerAbi,
-      functionName: "setProxy",
-      args: [roleAccount("socialWorker").address, true],
-      chain,
-    });
-    await waitReceipt(hash);
-  });
+  // The township office designates the social worker as proxy for elders in Datong only.
+  await send("office", "registry", "setProxy", [disasterId, VILLAGES[0].code, roleAccount("socialWorker").address, true]);
   log.push(`Disaster #${disasterId} created with ${TIERS.length} damage tiers; ${VILLAGES.length} villages and issuers set`);
 
   // 2. Fund from the audited template
@@ -97,6 +99,7 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
     {
       name: FUND_NAME,
       surplusRule: SURPLUS_RULE,
+      surplusPurposeId: SURPLUS_PURPOSE,
       custodian: roleAccount("custodian").address,
       token: d.token,
       disasterId,
@@ -107,7 +110,7 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
       quorumBps: 1000,
       committee: [roleAccount("c1").address, roleAccount("c2").address, roleAccount("c3").address],
       purposeNames: [...PURPOSES],
-      purposeCaps: [6000, 3000, 1000],
+      purposeCaps: PURPOSE_CAPS,
     },
   ]);
   const fund = (fundLogs.find((l) => l.eventName === "FundCreated") as unknown as { args: { fund: Address } }).args.fund;
@@ -124,10 +127,17 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
   // 4. Households: two signatures each
   const p = plan();
   for (const [i, h] of p.entries()) {
-    const { identity } = simHousehold(i);
+    const { identity, receipt } = simHousehold(i);
     const chief = `chief${VILLAGES.findIndex((v) => v.code === h.village)}` as RoleName;
     const tag = keccak256(toHex(`${SIM_SEED}/hmac/${i}`));
-    const logs = await send(chief, "registry", "proposeRegistration", [disasterId, h.tier, h.village, identity.commitment, tag]);
+    const logs = await send(chief, "registry", "proposeRegistration", [
+      disasterId,
+      h.tier,
+      h.village,
+      identity.commitment,
+      tag,
+      receipt.address,
+    ]);
     const id = (logs.find((l) => l.eventName === "RegistrationProposed") as unknown as { args: { id: bigint } }).args.id;
     await send("office", "registry", "approveRegistration", [id]);
   }
@@ -179,10 +189,11 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
   await send("ministry", "ledger", "reconcile", [livelihoodHop, roster.root, 600_000n, paid.length, keccak256(toHex("roster batch 1"))]);
   const domain = receiptDomain(d.ledger);
   for (const [idx, [addr]] of roster.entries()) {
-    if (idx >= 9) break; // 9 of 12 answer; one of them disputes
+    if (idx >= 10) break; // 10 of 12 answer: 8 confirm, 1 disputes, 1 elder is confirmed by the Datong proxy
     const received = idx !== 4;
     const { receipt } = simHousehold(paid.find((i) => simHousehold(i).receipt.address === addr)!);
-    const signature = await receipt.signTypedData({
+    const signer = idx === 9 ? roleAccount("socialWorker") : receipt;
+    const signature = await signer.signTypedData({
       domain,
       types: RECEIPT_TYPES,
       primaryType: "Receipt",
@@ -190,7 +201,7 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
     });
     await send("relayer", "ledger", "confirmLine", [livelihoodHop, 0n, addr, 50_000n, received, roster.getProof(idx), signature]);
   }
-  log.push("Custody chain seeded: 3 allocations, 1 forward, 1 roster batch, 8 confirmations, 1 dispute");
+  log.push("Custody chain seeded: 3 allocations, 1 forward, 1 roster batch, 8 confirmations + 1 by proxy, 1 dispute");
 
   return { fund, log };
 }

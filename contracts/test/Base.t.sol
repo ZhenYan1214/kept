@@ -19,6 +19,7 @@ abstract contract Base is Test {
     uint32 constant VILLAGE_B = 100102; // 南富村 (simulated)
     uint32 constant OTHER_TOWNSHIP = 2002;
     uint32 constant VILLAGE_X = 200201;
+    uint8 constant SURPLUS = 3; // charter purpose that receives the surplus
 
     MockSemaphore sem;
     EligibilityRegistry registry;
@@ -48,7 +49,7 @@ abstract contract Base is Test {
         sem = new MockSemaphore();
         registry = new EligibilityRegistry(ISemaphore(address(sem)), 30 days, authority);
         factory = new KeptFactory();
-        ledger = new CustodyLedger(IKeptFactory(address(factory)), authority);
+        ledger = new CustodyLedger(IKeptFactory(address(factory)), IEligibilityRegistry(address(registry)), authority);
         voice = new VoiceModule(IEligibilityRegistry(address(registry)), IKeptFactory(address(factory)));
         programs = new AidPrograms(IEligibilityRegistry(address(registry)), ICustodyLedger(address(ledger)));
         factory.setModules(ICustodyLedger(address(ledger)), IVoiceModule(address(voice)));
@@ -78,17 +79,20 @@ abstract contract Base is Test {
         committee[0] = c1;
         committee[1] = c2;
         committee[2] = c3;
-        string[] memory names = new string[](3);
+        string[] memory names = new string[](4);
         names[0] = "Livelihood relief";
         names[1] = "Housing repair";
         names[2] = "Community & mental-health recovery";
-        uint16[] memory caps = new uint16[](3);
+        names[3] = "Long-term recovery of the affected villages";
+        uint16[] memory caps = new uint16[](4);
         caps[0] = 6000;
         caps[1] = 3000;
         caps[2] = 1000;
+        caps[3] = 0; // only receives the surplus after the deadline
         p = ReliefFund.InitParams({
             name: "Guangfu Relief Fund (simulated)",
-            surplusRule: "Surplus may only fund charter purposes for this disaster; never other disasters or general public works.",
+            surplusRule: "After the deadline, unspent money may only fund long-term recovery of the affected villages.",
+            surplusPurposeId: SURPLUS,
             custodian: custodian,
             token: twd,
             disasterId: disasterId,
@@ -104,10 +108,26 @@ abstract contract Base is Test {
     }
 
     function _register(address proposer, address approver, uint8 tier, uint32 village, uint256 commitment) internal {
+        _register(proposer, approver, tier, village, commitment, _receiptOf(commitment));
+    }
+
+    function _register(
+        address proposer,
+        address approver,
+        uint8 tier,
+        uint32 village,
+        uint256 commitment,
+        address receipt
+    ) internal {
+        bytes32 tag = keccak256(abi.encode(commitment));
         vm.prank(proposer);
-        uint256 id = registry.proposeRegistration(disasterId, tier, village, commitment, keccak256(abi.encode(commitment)));
+        uint256 id = registry.proposeRegistration(disasterId, tier, village, commitment, tag, receipt);
         vm.prank(approver);
         registry.approveRegistration(id);
+    }
+
+    function _receiptOf(uint256 commitment) internal pure returns (address) {
+        return address(uint160(uint256(keccak256(abi.encode("receipt", commitment)))));
     }
 
     function _donate(uint256 amount) internal {

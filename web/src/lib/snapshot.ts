@@ -80,9 +80,11 @@ export type Vote = {
 
 export type Proposal = {
   id: number;
-  kind: number; // 0 allocation, 1 cap change, 2 extension
-  status: number; // 0 pending, 1 queued, 2 executed, 3 vetoed, 4 cancelled
+  kind: number; // 0 allocation, 1 cap change, 2 extension, 3 surplus use
+  status: number; // 0 pending, 1 queued, 2 executed, 3 vetoed, 4 cancelled, 5 overturned on review
   emergency: boolean;
+  movedBps: number;
+  reviewConcluded: boolean;
   purposeId: number;
   toPurposeId: number;
   approvals: number;
@@ -107,6 +109,8 @@ export type Fund = {
   address: Address;
   name: string;
   surplusRule: string;
+  surplusPurposeId: number;
+  emergencyRevoked: boolean;
   custodian: Address;
   disasterId: bigint;
   deadline: number;
@@ -387,6 +391,8 @@ async function loadFund(address: Address, fromBlock: bigint, toBlock: bigint): P
   const [
     name,
     surplusRule,
+    surplusPurposeId,
+    emergencyRevoked,
     custodian,
     disasterId,
     deadline,
@@ -404,6 +410,8 @@ async function loadFund(address: Address, fromBlock: bigint, toBlock: bigint): P
   ] = await Promise.all([
     read("name"),
     read("surplusRule"),
+    read("surplusPurposeId"),
+    read("emergencyRevoked"),
     read("custodian"),
     read("disasterId"),
     read("deadline"),
@@ -463,6 +471,8 @@ async function loadFund(address: Address, fromBlock: bigint, toBlock: bigint): P
         kind: n(p.kind),
         status: n(p.status),
         emergency: p.emergency as boolean,
+        movedBps: n(p.movedBps),
+        reviewConcluded: p.reviewConcluded as boolean,
         purposeId: n(p.purposeId),
         toPurposeId: n(p.toPurposeId),
         approvals: n(p.approvals),
@@ -493,6 +503,8 @@ async function loadFund(address: Address, fromBlock: bigint, toBlock: bigint): P
     address,
     name: name as string,
     surplusRule: surplusRule as string,
+    surplusPurposeId: n(surplusPurposeId as number),
+    emergencyRevoked: emergencyRevoked as boolean,
     custodian: custodian as Address,
     disasterId: disasterId as bigint,
     deadline: n(deadline as bigint),
