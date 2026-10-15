@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { decodeEventLog, type Hex, type Log } from "viem";
 import { Group, generateProof } from "@semaphore-protocol/core";
-import { ABIS, publicClient, roleAccount, walletFor, waitReceipt, withRoleLock } from "@/server/roles";
+import { ABIS, ensureRoleGas, publicClient, roleAccount, walletFor, waitReceipt, withRoleLock } from "@/server/roles";
 import { plan, simHousehold } from "@/server/seed";
 import { chain, getDeployment, DEMO_MODE } from "@/lib/config";
 import { registryAbi, semaphoreGroupsAbi, voiceAbi } from "@/generated/contracts";
@@ -43,6 +43,7 @@ export async function POST(req: Request) {
   const g = await groups();
   const scope = BigInt(voteKey) >> 8n;
   const wanted = [...Array(yes).fill(1n), ...Array(no).fill(0n)] as bigint[];
+  await ensureRoleGas("relayer");
   let cast = 0;
   for (const [i, h] of plan().entries()) {
     if (cast >= wanted.length) break;

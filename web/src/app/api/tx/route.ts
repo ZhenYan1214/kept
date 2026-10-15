@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { BaseError, ContractFunctionRevertedError, parseEventLogs, type Address, type Abi } from "viem";
-import { ABIS, ALLOWED, assertFund, publicClient, roleAccount, targetAddress, walletFor, withRoleLock, waitReceipt, type Target } from "@/server/roles";
+import { ABIS, ALLOWED, assertFund, publicClient, roleAccount, targetAddress, walletFor, withRoleLock, waitReceipt, ensureRoleGas, type Target } from "@/server/roles";
 import { ROLES, type RoleName } from "@/lib/scenario";
 import { fromJSONSafe, toJSONSafe } from "@/lib/serialize";
 import { DEMO_MODE, chain } from "@/lib/config";
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
     }
     const abi = ABIS[target];
     const account = roleAccount(role);
+    await ensureRoleGas(role);
     const { hash, receipt } = await withRoleLock(role, async () => {
       const { request } = await publicClient.simulateContract({ account, address, abi, functionName, args, chain });
       const hash = await walletFor(role).writeContract(request);

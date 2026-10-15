@@ -120,7 +120,10 @@ export async function assertFund(address: Address) {
 }
 
 /** Keep every demo role topped up with gas from the authority account. */
-export async function ensureGas(minEth = "0.05", topUpEth = "0.2") {
+export async function ensureGas(
+  minEth = CHAIN_ID === 31337 ? "0.05" : "0.0005",
+  topUpEth = CHAIN_ID === 31337 ? "0.2" : "0.002",
+) {
   const funder = walletFor("authority");
   for (const role of Object.keys(ROLES) as RoleName[]) {
     if (role === "authority") continue;
@@ -131,6 +134,22 @@ export async function ensureGas(minEth = "0.05", topUpEth = "0.2") {
       await waitReceipt(hash);
     }
   }
+}
+
+/** Top up a single role from the authority if it is running low (testnet demo resilience). */
+export async function ensureRoleGas(role: RoleName) {
+  if (role === "authority") return;
+  const min = parseEther(CHAIN_ID === 31337 ? "0.05" : "0.0005");
+  const address = roleAccount(role).address;
+  if ((await publicClient.getBalance({ address })) >= min) return;
+  await withRoleLock("authority", async () => {
+    const hash = await walletFor("authority").sendTransaction({
+      to: address,
+      value: parseEther(CHAIN_ID === 31337 ? "0.2" : "0.002"),
+      chain,
+    });
+    await waitReceipt(hash);
+  });
 }
 
 const locks = new Map<RoleName, Promise<unknown>>();

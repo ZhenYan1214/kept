@@ -9,7 +9,8 @@
   "scripts": {
     "test": "forge test",
     "deploy:local": "node scripts/ensure-poseidon.mjs && forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast",
-    "e2e": "node scripts/e2e.mjs"
+    "e2e": "node scripts/e2e.mjs",
+    "deploy:base-sepolia": "node scripts/deploy-testnet.mjs"
   },
   "license": "MIT",
   "type": "module",
