@@ -9,5 +9,3 @@ contracts/deployments/31337.json
 .next/
 contracts/.anvil-state.json
 
-# Private handoff notes (copy manually between machines)
-HANDOFF.md
