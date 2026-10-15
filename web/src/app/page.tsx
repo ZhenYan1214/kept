@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useSnapshot } from "@/components/snapshot";
 import { Card, Empty, SectionTitle, Stat, ntd, pct } from "@/components/ui";
 import {
+  AlertsPanel,
   CharterPanel,
   ExclusionPanel,
   FunnelPanel,
@@ -70,9 +71,11 @@ export default function Dashboard() {
         />
       </div>
 
+      <AlertsPanel snap={snap} />
+
       <div className="grid gap-6 lg:grid-cols-2">
-        <CharterPanel snap={snap} />
         <FunnelPanel snap={snap} />
+        <CharterPanel snap={snap} />
       </div>
 
       <Card>

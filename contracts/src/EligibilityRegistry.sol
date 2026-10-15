@@ -122,6 +122,13 @@ contract EligibilityRegistry is Ownable {
     Appeal[] public appeals;
     mapping(uint256 disasterId => mapping(uint32 village => VillageStats)) public villageStats;
 
+    /// @notice Verified households can say, anonymously and once per period, "I am still waiting for
+    /// aid". The count does not depend on custodians recording anything, so a payment that was never
+    /// recorded still shows up as a household that is waiting.
+    uint64 public constant WAITING_PERIOD = 7 days;
+    mapping(uint256 disasterId => mapping(uint64 period => mapping(uint32 village => uint32))) public waitingReports;
+    mapping(bytes32 => bool) public waitingNullifierUsed; // keccak(disasterId, period, nullifier)
+
     event IssuerSet(address indexed issuer, Role role, uint32 region, bool active, string name);
     event VillageSet(uint32 indexed village, uint32 indexed township);
     event DisasterCreated(uint256 indexed disasterId, string name, uint8 tierCount);
@@ -137,6 +144,7 @@ contract EligibilityRegistry is Ownable {
     event ProxySet(uint256 indexed disasterId, uint32 indexed village, address indexed proxy, bool active, address by);
     event AppealFiled(uint256 indexed id, uint256 indexed disasterId, uint32 indexed village, bytes32 evidenceHash);
     event AppealResolved(uint256 indexed id, bool accepted, address indexed resolver, bytes32 resolutionHash);
+    event WaitingReported(uint256 indexed disasterId, uint64 indexed period, uint32 indexed village);
     event CoverageReported(
         uint256 indexed disasterId, uint32 indexed village, uint32 verified, uint32 unserved, address by
     );
@@ -150,6 +158,9 @@ contract EligibilityRegistry is Ownable {
     error NotPending();
     error UnknownVillage();
     error ZeroAddress();
+    error WrongScope();
+    error InvalidProof();
+    error AlreadyReported();
 
     constructor(ISemaphore _semaphore, uint256 _merkleTreeDuration, address _owner) Ownable(_owner) {
         semaphore = _semaphore;
@@ -386,6 +397,34 @@ contract EligibilityRegistry is Ownable {
         if (proxy == address(0)) revert ZeroAddress();
         _proxy[keccak256(abi.encode(disasterId, village, proxy))] = active;
         emit ProxySet(disasterId, village, proxy, active, msg.sender);
+    }
+
+    /// @notice Anonymous "verified, still waiting for aid" report, relayed for the household. The proof
+    /// shows membership in a tier group of this disaster; its message is the village the household
+    /// declares (not checked: groups are per disaster and tier, never per village, to keep anonymity
+    /// sets large); its nullifier allows one report per household per period.
+    function reportWaiting(uint256 disasterId, uint256 groupId, ISemaphore.SemaphoreProof calldata proof) external {
+        if (!disasters[disasterId].exists) revert UnknownDisaster();
+        if (!isGroup[groupId] || groupDisaster[groupId] != disasterId) revert InvalidProof();
+        uint64 period = currentPeriod(disasterId);
+        if (proof.scope != waitingScope(disasterId, period)) revert WrongScope();
+        if (proof.message > type(uint32).max || townshipOf[uint32(proof.message)] == 0) revert UnknownVillage();
+        bytes32 key = keccak256(abi.encode(disasterId, period, proof.nullifier));
+        if (waitingNullifierUsed[key]) revert AlreadyReported();
+        if (!semaphore.verifyProof(groupId, proof)) revert InvalidProof();
+        waitingNullifierUsed[key] = true;
+        uint32 village = uint32(proof.message);
+        waitingReports[disasterId][period][village]++;
+        emit WaitingReported(disasterId, period, village);
+    }
+
+    function currentPeriod(uint256 disasterId) public view returns (uint64) {
+        return uint64((block.timestamp - disasters[disasterId].createdAt) / WAITING_PERIOD);
+    }
+
+    /// @notice Semaphore scope for the waiting reports of one disaster in one period.
+    function waitingScope(uint256 disasterId, uint64 period) public view returns (uint256) {
+        return uint256(keccak256(abi.encode(address(this), "waiting", disasterId, period))) >> 8;
     }
 
     /// @notice The township office holds the roster legally; it publishes only the count of verified

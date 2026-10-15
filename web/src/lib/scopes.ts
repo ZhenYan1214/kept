@@ -10,6 +10,24 @@ export function voteScope(voteKey: Hex) {
   return BigInt(voteKey) >> 8n;
 }
 
+/** Mirrors EligibilityRegistry.waitingScope(disasterId, period). */
+export function waitingScope(registry: Address, disasterId: bigint, period: number) {
+  return (
+    BigInt(
+      keccak256(
+        encodeAbiParameters(
+          [{ type: "address" }, { type: "string" }, { type: "uint256" }, { type: "uint64" }],
+          [registry, "waiting", disasterId, BigInt(period)],
+        ),
+      ),
+    ) >> 8n
+  );
+}
+
+/** Mirrors EligibilityRegistry.currentPeriod: whole weeks since the disaster was created. */
+export const WAITING_PERIOD = 7 * 86400;
+export const waitingPeriod = (now: number, disasterCreatedAt: number) => Math.floor((now - disasterCreatedAt) / WAITING_PERIOD);
+
 /** Mirrors CustodyLedger's lineState key: keccak256(abi.encode(hopId, batchIndex, receipt)). */
 export function lineKey(hopId: bigint, batchIndex: bigint, receipt: Address) {
   return keccak256(

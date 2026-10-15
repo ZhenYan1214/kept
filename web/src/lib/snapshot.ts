@@ -58,6 +58,8 @@ export type VillageStats = {
   unserved: number;
   resolutionSecondsTotal: number;
   coverageAsOf: number;
+  waitingNow: number; // anonymous "still waiting" reports this period (self-declared village)
+  waitingLast: number; // ... and the previous period
 };
 
 export type Tier = { tier: number; name: string; groupId: bigint };
@@ -280,12 +282,23 @@ export async function loadSnapshot(): Promise<Snapshot> {
     disaster
       ? Promise.all(
           [...villages.keys()].map(async (code) => {
-            const r = await publicClient.readContract({
-              address: d.registry,
-              abi: registryAbi,
-              functionName: "villageStats",
-              args: [disaster!.id, code],
-            });
+            const period = BigInt(Math.max(0, Math.floor((n(head.timestamp) - disaster!.createdAt) / (7 * 86400))));
+            const waiting = (p: bigint) =>
+              p < 0n
+                ? Promise.resolve(0)
+                : publicClient
+                    .readContract({ address: d.registry, abi: registryAbi, functionName: "waitingReports", args: [disaster!.id, p, code] })
+                    .then(n);
+            const [r, waitingNow, waitingLast] = await Promise.all([
+              publicClient.readContract({
+                address: d.registry,
+                abi: registryAbi,
+                functionName: "villageStats",
+                args: [disaster!.id, code],
+              }),
+              waiting(period),
+              waiting(period - 1n),
+            ]);
             return {
               code,
               verified: n(r[0]),
@@ -296,6 +309,8 @@ export async function loadSnapshot(): Promise<Snapshot> {
               unserved: n(r[5]),
               resolutionSecondsTotal: n(r[6]),
               coverageAsOf: n(r[7]),
+              waitingNow,
+              waitingLast,
             } satisfies VillageStats;
           }),
         )

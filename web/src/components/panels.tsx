@@ -1,6 +1,7 @@
 "use client";
 import type { Hop, Proposal, Snapshot } from "@/lib/snapshot";
 import { villageName, VILLAGES, PURPOSES } from "@/lib/scenario";
+import { computeAlerts, RULES } from "@/lib/alerts";
 import { Addr, Badge, Bar, Card, Empty, Hash, SectionTitle, formatDate, formatDuration, ntd, pct } from "./ui";
 
 export const KIND = ["Allocation", "Cap change", "Deadline extension", "Surplus use"];
@@ -224,11 +225,12 @@ export function ExclusionPanel({ snap }: { snap: Snapshot }) {
   return (
     <Card>
       <SectionTitle kicker="Promise to households" title="Who may be left out">
-        Appeals and their handling are public per village, so exclusion is visible on day one instead of after a protest. Counts
-        under 5 are hidden to protect small villages.
+        Appeals and their handling are public per village, so exclusion is visible on day one instead of after a protest. Verified
+        households can also report anonymously, once a week, that they are still waiting: that count does not depend on any
+        custodian recording anything. Counts under 5 are hidden on this page; see the limitations for what the chain itself shows.
       </SectionTitle>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wide text-muted">
               <th className="py-2 font-medium">Village</th>
@@ -238,6 +240,9 @@ export function ExclusionPanel({ snap }: { snap: Snapshot }) {
               <th className="font-medium">Accepted / rejected</th>
               <th className="font-medium">Avg. handling</th>
               <th className="font-medium">Verified, no aid yet</th>
+              <th className="font-medium" title="Anonymous reports by verified households, this week / last week">
+                Still waiting (households say)
+              </th>
               <th className="font-medium"></th>
             </tr>
           </thead>
@@ -256,6 +261,9 @@ export function ExclusionPanel({ snap }: { snap: Snapshot }) {
                   </td>
                   <td className="tabular-nums">{resolved ? formatDuration(s!.resolutionSecondsTotal / resolved) : "—"}</td>
                   <td className="tabular-nums">{s!.coverageAsOf ? kAnon(s!.unserved) : <span className="text-muted">not reported</span>}</td>
+                  <td className="tabular-nums">
+                    {kAnon(s!.waitingNow)} <span className="text-xs text-muted">/ {kAnon(s!.waitingLast)}</span>
+                  </td>
                   <td>{flag && <Badge tone="bad">Possible exclusion</Badge>}</td>
                 </tr>
               );
@@ -350,5 +358,30 @@ export function ProposalList({ snap, actions }: { snap: Snapshot; actions?: (p: 
         );
       })}
     </div>
+  );
+}
+
+export function AlertsPanel({ snap }: { snap: Snapshot }) {
+  const alerts = computeAlerts(snap);
+  return (
+    <Card>
+      <SectionTitle kicker="Where to look" title={`Accountability alerts (${alerts.length})`}>
+        Simple published rules over the public record: acknowledgement within {RULES.ackDays} days, money not held for more than{" "}
+        {RULES.heldDays} days, appeals answered within {RULES.appealDays} days, households&apos; own reports. They show where to
+        look, not who is to blame.
+      </SectionTitle>
+      {alerts.length === 0 ? (
+        <Empty>No alerts.</Empty>
+      ) : (
+        <ul className="divide-y divide-line">
+          {alerts.map((a, i) => (
+            <li key={i} className="flex flex-col gap-1 py-2 text-sm sm:flex-row sm:items-start sm:gap-3">
+              <Badge tone={a.tone}>{a.rule}</Badge>
+              <span className="text-muted">{a.detail}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   );
 }

@@ -8,6 +8,7 @@ import { CHAIN_ID, DEMO_MODE } from "@/lib/config";
 const PUBLIC = [
   { href: "/", label: "Public dashboard" },
   { href: "/why", label: "Why Kept" },
+  { href: "/replay", label: "Guangfu, real data" },
   { href: "/donate", label: "Donate" },
 ];
 

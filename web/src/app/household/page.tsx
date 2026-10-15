@@ -18,7 +18,7 @@ import {
 import { findTier, proveMembership } from "@/lib/semaphore";
 import { postInbox, useInbox } from "@/lib/inbox";
 import { tx } from "@/lib/api";
-import { lineKey, programScope, textHash, voteScope } from "@/lib/scopes";
+import { lineKey, programScope, textHash, voteScope, waitingPeriod, waitingScope } from "@/lib/scopes";
 import { getDeployment } from "@/lib/config";
 import { publicClient } from "@/lib/chain";
 import { ledgerAbi, voiceAbi } from "@/generated/contracts";
@@ -163,6 +163,7 @@ function WithCard({ card, onReset }: { card: HouseholdCard; onReset: () => void 
         <div className="space-y-6">
           <Programmes identityTier={tier} card={card} />
           <Votes card={card} registered={tier !== null && tier !== undefined} />
+          {tier !== null && tier !== undefined && <StillWaiting card={card} />}
         </div>
       </div>
       <Payments receipt={receipt.address} card={card} />
@@ -280,6 +281,49 @@ function Votes({ card, registered }: { card: HouseholdCard; registered: boolean 
               )}
             </div>
           ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function StillWaiting({ card }: { card: HouseholdCard }) {
+  const { snap } = useSnapshot();
+  const d = getDeployment();
+  const [village, setVillage] = useState<number>(VILLAGES[0].code);
+  const [sentFor, setSentFor] = useState<number | null>(null);
+  if (!snap?.disaster) return null;
+  const period = waitingPeriod(snap.timestamp, snap.disaster.createdAt);
+  return (
+    <Card>
+      <SectionTitle title="Still waiting for aid?">
+        Say so anonymously, once a week. Only the count per village is public, and it does not depend on any custodian having
+        recorded a payment for you.
+      </SectionTitle>
+      {sentFor === period ? (
+        <Badge tone="info">Reported for this week. You can report again next week if nothing arrives.</Badge>
+      ) : (
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label="My village">
+            <select className={inputCls} value={village} onChange={(e) => setVillage(Number(e.target.value))}>
+              {VILLAGES.map((v) => (
+                <option key={v.code} value={v.code}>
+                  {v.name} ({v.zh})
+                </option>
+              ))}
+            </select>
+          </Field>
+          <ActionButton
+            variant="secondary"
+            onClick={async () => {
+              const scope = waitingScope(d.registry, snap.disaster!.id, period);
+              const { groupId, proof } = await proveMembership(cardIdentity(card), snap.disaster!.tiers, BigInt(village), scope);
+              await tx("relayer", "registry", "reportWaiting", [snap.disaster!.id, groupId, proof]);
+              setSentFor(period);
+            }}
+          >
+            I am still waiting
+          </ActionButton>
         </div>
       )}
     </Card>

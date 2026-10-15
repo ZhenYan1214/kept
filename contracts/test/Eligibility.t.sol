@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {Base} from "./Base.t.sol";
 import {EligibilityRegistry} from "../src/EligibilityRegistry.sol";
+import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.sol";
 
 contract EligibilityTest is Base {
     function test_TwoSignatureRegistration() public {
@@ -177,5 +178,44 @@ contract EligibilityTest is Base {
         assertTrue(registry.verifyMembership(disasterId, _group(0), _proof(1, 0, 0, true)));
         assertFalse(registry.verifyMembership(disasterId + 1, _group(0), _proof(1, 0, 0, true)));
         assertFalse(registry.verifyMembership(disasterId, _group(0), _proof(1, 0, 0, false)));
+    }
+
+    // ---------------- anonymous "still waiting" reports ----------------
+
+    function _waitingProof(uint256 nullifier, uint256 village, uint64 period) internal view returns (ISemaphore.SemaphoreProof memory) {
+        return _proof(nullifier, village, registry.waitingScope(disasterId, period), true);
+    }
+
+    function test_VerifiedHouseholdReportsWaitingOncePerPeriod() public {
+        _register(chiefA, office, 0, VILLAGE_A, 111);
+        uint256 g0 = _group(0);
+        registry.reportWaiting(disasterId, g0, _waitingProof(7, VILLAGE_A, 0)); // relayed by anyone
+        assertEq(registry.waitingReports(disasterId, 0, VILLAGE_A), 1);
+
+        ISemaphore.SemaphoreProof memory again = _waitingProof(7, VILLAGE_A, 0);
+        vm.expectRevert(EligibilityRegistry.AlreadyReported.selector);
+        registry.reportWaiting(disasterId, g0, again);
+
+        // A week later the same household can say it is still waiting.
+        vm.warp(block.timestamp + 7 days);
+        assertEq(registry.currentPeriod(disasterId), 1);
+        registry.reportWaiting(disasterId, g0, _waitingProof(8, VILLAGE_A, 1));
+        assertEq(registry.waitingReports(disasterId, 1, VILLAGE_A), 1);
+    }
+
+    function test_WaitingReportChecksProofScopeAndVillage() public {
+        uint256 g0 = _group(0);
+        ISemaphore.SemaphoreProof memory p = _waitingProof(1, VILLAGE_A, 0);
+        p.points[0] = 0; // not a member
+        vm.expectRevert(EligibilityRegistry.InvalidProof.selector);
+        registry.reportWaiting(disasterId, g0, p);
+
+        ISemaphore.SemaphoreProof memory stale = _waitingProof(2, VILLAGE_A, 1); // wrong period
+        vm.expectRevert(EligibilityRegistry.WrongScope.selector);
+        registry.reportWaiting(disasterId, g0, stale);
+
+        ISemaphore.SemaphoreProof memory nowhere = _waitingProof(3, 999, 0);
+        vm.expectRevert(EligibilityRegistry.UnknownVillage.selector);
+        registry.reportWaiting(disasterId, g0, nowhere);
     }
 }

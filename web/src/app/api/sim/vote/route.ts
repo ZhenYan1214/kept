@@ -1,35 +1,15 @@
 import { NextResponse } from "next/server";
-import { decodeEventLog, type Hex, type Log } from "viem";
-import { Group, generateProof } from "@semaphore-protocol/core";
+import { type Hex } from "viem";
+import { generateProof } from "@semaphore-protocol/core";
 import { ABIS, ensureRoleGas, publicClient, roleAccount, walletFor, waitReceipt, withRoleLock } from "@/server/roles";
 import { plan, simHousehold } from "@/server/seed";
 import { chain, getDeployment, DEMO_MODE } from "@/lib/config";
-import { registryAbi, semaphoreGroupsAbi, voiceAbi } from "@/generated/contracts";
+import { registryAbi, voiceAbi } from "@/generated/contracts";
+import { groups } from "@/server/groups";
 import { fromJSONSafe } from "@/lib/serialize";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
-
-async function groups(): Promise<Map<bigint, Group>> {
-  const d = getDeployment();
-  const logs = (await publicClient.getLogs({
-    address: d.semaphore,
-    events: semaphoreGroupsAbi.filter((x) => x.type === "event" && ["MemberAdded", "MembersAdded", "MemberUpdated", "MemberRemoved"].includes(x.name)) as never,
-    fromBlock: BigInt(d.deployBlock),
-  })) as Log[];
-  const out = new Map<bigint, Group>();
-  for (const log of logs) {
-    const ev = decodeEventLog({ abi: semaphoreGroupsAbi, data: log.data, topics: log.topics });
-    const a = ev.args as Record<string, bigint | bigint[]>;
-    const g = out.get(a.groupId as bigint) ?? new Group();
-    out.set(a.groupId as bigint, g);
-    if (ev.eventName === "MemberAdded") g.addMember(a.identityCommitment as bigint);
-    else if (ev.eventName === "MembersAdded") g.addMembers(a.identityCommitments as bigint[]);
-    else if (ev.eventName === "MemberUpdated") g.updateMember(Number(a.index), a.newIdentityCommitment as bigint);
-    else if (ev.eventName === "MemberRemoved") g.removeMember(Number(a.index));
-  }
-  return out;
-}
 
 /**
  * DEMO ONLY: other (simulated) verified households cast real anonymous votes, so a veto can be shown

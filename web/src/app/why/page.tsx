@@ -13,6 +13,51 @@ const Fact = ({ figure, children }: { figure: string; children: React.ReactNode 
   </div>
 );
 
+const EVIDENCE = [
+  {
+    who: "Affected household",
+    text: "“Only after a year did we find out nearly NT$400M of the donations was still left.”",
+    source: "PTS, 2025-03-31",
+    href: "https://news.pts.org.tw/article/744652",
+    kept: "public commitments and progress",
+  },
+  {
+    who: "Affected household",
+    text: "A ground-floor household living alone missed aid several times because agencies used different criteria.",
+    source: "SETN, 2025-12-18",
+    href: "https://www.setn.com/news/1767342",
+    kept: "public appeals; “verified, not yet paid” reports",
+  },
+  {
+    who: "Indigenous representative",
+    text: "Appointed to a reconstruction committee, then received “no meeting notice or call” for seven months.",
+    source: "Newsmarket, 2026-09-21",
+    href: "https://www.newsmarket.com.tw/blog/242854/",
+    kept: "a household voice that does not depend on being invited",
+  },
+  {
+    who: "NGO",
+    text: "“With the township office's help, the household roster was finally confirmed at the end of November”; aid was handed out about ten weeks after the disaster.",
+    source: "CCRA final report, 2026-01-07",
+    href: "https://www.ccra.org.tw/pdf/report/0923%20%20final%20project%20report_20260107.pdf",
+    kept: "eligibility checks without handing the roster to each NGO",
+  },
+  {
+    who: "Custodian",
+    text: "Pre-allocations are checked against each agency's relief roster later; a year on, NT$49M of NT$1.21bn is reconciled.",
+    source: "relief foundation disclosure",
+    href: "https://www.tf4dr.org/fundraising_plans/156/credits",
+    kept: "roster fingerprints and household receipts as reconciliation evidence",
+  },
+  {
+    who: "Donors and citizens",
+    text: "Hualien's 2024 allocation was under a fifth of 2018's; a councillor said people “would rather give to the central government”; nearly 300 petitioned for an ordinance.",
+    source: "PTS, 2024-05-17",
+    href: "https://news.pts.org.tw/article/695533",
+    kept: "a fund custodians can prove they kept",
+  },
+];
+
 export default function Why() {
   return (
     <article className="mx-auto max-w-3xl space-y-10 pb-8">
@@ -107,9 +152,41 @@ export default function Why() {
           deduplicates aid across agencies and the Spanish Red Cross runs zero-knowledge eligibility credentials.
         </p>
         <p className="text-sm">
-          What we could not find anywhere: <strong>a fund whose promises are enforced by code</strong>,{" "}
-          <strong>a custody trail that follows money past the first hand</strong>, and{" "}
-          <strong>a vote for the people the money is for</strong>.
+          What we could not find anywhere: <strong>a custody trail that follows money past the first hand</strong> until
+          households confirm it, <strong>promises the custodian cannot rewrite</strong>, and{" "}
+          <strong>a voice for the people the money is for</strong>.
+        </p>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold">Evidence of need, in stakeholders&apos; own words</h2>
+        <p className="text-sm text-muted">
+          We have not yet interviewed practitioners. Every group Kept serves has, however, already described the problem in public.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {EVIDENCE.map((e) => (
+            <div key={e.text} className="rounded-xl border border-line bg-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-accent">{e.who}</p>
+              <p className="mt-1 text-sm">{e.text}</p>
+              <p className="mt-2 text-xs text-muted">
+                <Src href={e.href}>{e.source}</Src> · Kept: {e.kept}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">Where Kept starts: reconciliation</h2>
+        <p className="text-sm text-muted">
+          The relief foundation already publishes every transfer it makes. But more than NT$1.1bn of the Guangfu donations was
+          pre-allocated to the ministry, and from there the public sees nothing until reconciliation, which a year later covers
+          about 4%. The foundation needs that evidence too.
+        </p>
+        <p className="text-sm">
+          Kept gives every downstream custodian one simple tool: acknowledge what you received, commit each payment roster as a
+          fingerprint, and let each household confirm or dispute its own line. The custodian gets reconciliation evidence it now
+          assembles by hand; the public sees past the first hand; households can say &quot;this never reached me&quot;.
         </p>
       </section>
 
@@ -117,8 +194,8 @@ export default function Why() {
         <h2 className="text-xl font-semibold">Kept: two promises, made verifiable</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
-            ["Commitment", "Purposes, caps and the surplus purpose are fixed when money is raised. Purposes outside the charter cannot be funded. Changes wait through a public period in which households can veto them."],
             ["Custody", "Every hand records and acknowledges each tranche. Payment rosters are committed as Merkle roots: each registered household can prove it is counted and confirm or dispute its own line."],
+            ["Commitment", "Purposes, caps and the surplus purpose are fixed when money is raised and cannot be rewritten. Changes wait through a public period in which households can veto them. While donations stay in banks, this binds the public record, not the bank account."],
             ["Voice", "The same credential that lets a household receive aid gives it one anonymous vote on changes, and a public appeal when it is left out."],
           ].map(([t, d]) => (
             <div key={t} className="rounded-xl border border-line bg-card p-4">

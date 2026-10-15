@@ -20,7 +20,7 @@ export default function DonatePage() {
         <p className="text-xs font-semibold uppercase tracking-wider text-accent">Donate</p>
         <h1 className="text-2xl font-semibold">Give to a fund that cannot change its promises</h1>
         <p className="max-w-2xl text-sm text-muted">
-          Read the charter below before you give. It was fixed when this fund was created and is enforced by the contract.
+          Read the charter below before you give. It was fixed when this fund was created and cannot be rewritten; the contract enforces it on the money it holds.
         </p>
       </header>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.3fr]">

@@ -1,7 +1,7 @@
 import "server-only";
 import { keccak256, toHex, parseEventLogs, zeroHash, type Address, type Abi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { Identity } from "@semaphore-protocol/core";
+import { Identity, generateProof } from "@semaphore-protocol/core";
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { ABIS, ensureGas, waitReceipt, publicClient, roleAccount, targetAddress, walletFor, withRoleLock, type Target } from "./roles";
 import { chain, getDeployment, CHAIN_ID } from "@/lib/config";
@@ -18,6 +18,8 @@ import {
   type RoleName,
 } from "@/lib/scenario";
 import { receiptDomain, RECEIPT_TYPES } from "@/lib/receipt";
+import { waitingPeriod, waitingScope } from "@/lib/scopes";
+import { groups } from "./groups";
 
 const SIM_SEED = process.env.SIM_SEED ?? "kept-simulated-households";
 
@@ -202,6 +204,40 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
     await send("relayer", "ledger", "confirmLine", [livelihoodHop, 0n, addr, 50_000n, received, roster.getProof(idx), signature]);
   }
   log.push("Custody chain seeded: 3 allocations, 1 forward, 1 roster batch, 8 confirmations + 1 by proxy, 1 dispute");
+
+  // 7. Four verified households outside the roster say, anonymously, that they are still waiting.
+  const [, , disasterCreatedAt] = (await publicClient.readContract({
+    address: d.registry,
+    abi: ABIS.registry,
+    functionName: "disasters",
+    args: [disasterId],
+  })) as [boolean, number, bigint];
+  const period = waitingPeriod(Number((await publicClient.getBlock()).timestamp), Number(disasterCreatedAt));
+  const scope = waitingScope(d.registry, disasterId, period);
+  const g = await groups();
+  for (const i of [12, 13, 18, 19]) {
+    const h = p[i];
+    const groupId = (await publicClient.readContract({
+      address: d.registry,
+      abi: ABIS.registry,
+      functionName: "tierGroup",
+      args: [disasterId, h.tier],
+    })) as bigint;
+    const proof = await generateProof(simHousehold(i).identity, g.get(groupId)!, BigInt(h.village), scope);
+    await send("relayer", "registry", "reportWaiting", [
+      disasterId,
+      groupId,
+      {
+        merkleTreeDepth: BigInt(proof.merkleTreeDepth),
+        merkleTreeRoot: BigInt(proof.merkleTreeRoot),
+        nullifier: BigInt(proof.nullifier),
+        message: BigInt(proof.message),
+        scope: BigInt(proof.scope),
+        points: proof.points.map(BigInt),
+      },
+    ]);
+  }
+  log.push("4 verified households reported anonymously that they are still waiting");
 
   return { fund, log };
 }
