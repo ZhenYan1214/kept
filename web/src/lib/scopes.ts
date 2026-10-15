@@ -1,0 +1,30 @@
+import { encodeAbiParameters, keccak256, type Address, type Hex } from "viem";
+
+/** Mirrors AidPrograms.scopeOf(programId). */
+export function programScope(programs: Address, programId: number | bigint) {
+  return BigInt(keccak256(encodeAbiParameters([{ type: "address" }, { type: "uint256" }], [programs, BigInt(programId)]))) >> 8n;
+}
+
+/** Mirrors VoiceModule.scopeOf(voteKey). */
+export function voteScope(voteKey: Hex) {
+  return BigInt(voteKey) >> 8n;
+}
+
+/** Mirrors CustodyLedger's lineState key: keccak256(abi.encode(hopId, batchIndex, receipt)). */
+export function lineKey(hopId: bigint, batchIndex: bigint, receipt: Address) {
+  return keccak256(
+    encodeAbiParameters([{ type: "uint256" }, { type: "uint256" }, { type: "address" }], [hopId, batchIndex, receipt]),
+  );
+}
+
+/**
+ * Demo stand-in for the authority's blinded uniqueness tag: HMAC(national ID) with a key the
+ * authority keeps. Here a fixed demo key is used; the ID itself never leaves the issuer's screen.
+ */
+export function demoUniqueTag(nationalId: string): Hex {
+  return keccak256(new TextEncoder().encode(`kept-demo-hmac-key|${nationalId.trim().toUpperCase()}`));
+}
+
+export function textHash(text: string): Hex {
+  return keccak256(new TextEncoder().encode(text));
+}

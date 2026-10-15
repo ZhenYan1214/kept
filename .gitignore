@@ -7,3 +7,4 @@ contracts/deployments/31337.json
 .env.*
 !.env.example
 .next/
+contracts/.anvil-state.json

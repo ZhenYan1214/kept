@@ -18,7 +18,10 @@ import {IEligibilityRegistry, IKeptFactory, ICustodyLedger, IVoiceModule} from "
 /// deployment; otherwise a fresh Semaphore + verifier is deployed (local chains).
 contract Deploy is Script {
     function run() external {
-        uint256 pk = vm.envUint("PRIVATE_KEY");
+        // Defaults to anvil account #0 for local runs.
+        uint256 pk = vm.envOr(
+            "PRIVATE_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80)
+        );
         address owner = vm.addr(pk);
         address semaphoreAddr = vm.envOr("SEMAPHORE_ADDRESS", address(0));
         uint256 merkleTreeDuration = vm.envOr("MERKLE_TREE_DURATION", uint256(30 days));
