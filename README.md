@@ -134,7 +134,7 @@ flowchart TB
   AP --> ER
   CL -->|"registered receipts only"| ER
   ER --> S
-  CHAIN -.->|"plain contract reads"| DB
+  CL -.->|"plain contract reads, every contract"| DB
 ```
 
 Every fund is a clone of one audited template (`KeptFactory`), so a custodian cannot deploy a look-alike without the commitments. Households never pay gas: a relayer submits their signatures and proofs. Rosters and personal data stay with the township office.
