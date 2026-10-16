@@ -16,7 +16,7 @@ import {
   type HouseholdCard,
 } from "@/lib/household";
 import { findTier, proveMembership } from "@/lib/semaphore";
-import { postInbox, useInbox } from "@/lib/inbox";
+import { postInbox } from "@/lib/inbox";
 import { tx } from "@/lib/api";
 import { lineKey, programScope, textHash, voteScope, waitingPeriod, waitingScope } from "@/lib/scopes";
 import { getDeployment } from "@/lib/config";
@@ -24,7 +24,6 @@ import { publicClient } from "@/lib/chain";
 import { ledgerAbi, voiceAbi } from "@/generated/contracts";
 import { receiptDomain, RECEIPT_TYPES } from "@/lib/receipt";
 import { TIERS, VILLAGES, tierName } from "@/lib/scenario";
-import type { RosterProof } from "@/lib/roster";
 import { toJSONSafe } from "@/lib/serialize";
 
 export default function HouseholdPage() {
@@ -330,97 +329,91 @@ function StillWaiting({ card }: { card: HouseholdCard }) {
   );
 }
 
+type MyLine = { hopId: number; batchIndex: number; amount: bigint; custodian: Address; state: number };
+
 function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) {
   const d = getDeployment();
-  const proofs = useInbox<RosterProof>("roster-proof", true).filter((m) => m.payload.receipt.toLowerCase() === receipt.toLowerCase());
-  const [states, setStates] = useState<Record<string, number>>({});
-  const [included, setIncluded] = useState<Record<string, boolean>>({});
-  const { snap } = useSnapshot();
+  const { snap, labelOf } = useSnapshot();
+  const [lines, setLines] = useState<MyLine[] | null>(null);
   useEffect(() => {
+    if (!snap) return;
     (async () => {
-      const out: Record<string, number> = {};
-      const inc: Record<string, boolean> = {};
-      for (const m of proofs) {
-        const p = m.payload;
-        const key = lineKey(BigInt(p.hopId), BigInt(p.batchIndex), receipt);
-        out[m.id] = Number(await publicClient.readContract({ address: d.ledger, abi: ledgerAbi, functionName: "lineState", args: [key] }));
-        // Check the household's own line against the root committed on-chain.
-        inc[m.id] = await publicClient.readContract({
-          address: d.ledger,
-          abi: ledgerAbi,
-          functionName: "verifyInclusion",
-          args: [BigInt(p.hopId), BigInt(p.batchIndex), p.receipt, BigInt(p.amount), p.proof],
-        });
+      // The lines are public: look for this household's receipt address in every published batch.
+      const found: MyLine[] = [];
+      for (const h of snap.hops) {
+        for (const b of h.batches) {
+          const amount = await publicClient.readContract({
+            address: d.ledger,
+            abi: ledgerAbi,
+            functionName: "lineAmount",
+            args: [BigInt(h.id), BigInt(b.index), receipt],
+          });
+          if (amount === 0n) continue;
+          const state = await publicClient.readContract({
+            address: d.ledger,
+            abi: ledgerAbi,
+            functionName: "lineState",
+            args: [lineKey(BigInt(h.id), BigInt(b.index), receipt)],
+          });
+          found.push({ hopId: h.id, batchIndex: b.index, amount, custodian: h.to, state: Number(state) });
+        }
       }
-      setStates(out);
-      setIncluded(inc);
+      setLines(found);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proofs.length, snap?.block]);
+  }, [snap?.block, receipt]);
 
-  const answer = async (p: RosterProof, received: boolean) => {
+  const answer = async (l: MyLine, received: boolean) => {
     const account = cardReceipt(card);
-    const message = {
-      hopId: BigInt(p.hopId),
-      batchIndex: BigInt(p.batchIndex),
-      receipt: p.receipt,
-      amount: BigInt(p.amount),
-      received,
-    };
+    const message = { hopId: BigInt(l.hopId), batchIndex: BigInt(l.batchIndex), receipt, amount: l.amount, received };
     const signature = await account.signTypedData({ domain: receiptDomain(d.ledger), types: RECEIPT_TYPES, primaryType: "Receipt", message });
-    await tx("relayer", "ledger", "confirmLine", [message.hopId, message.batchIndex, p.receipt, message.amount, received, p.proof, signature]);
+    await tx("relayer", "ledger", "confirmLine", [message.hopId, message.batchIndex, receipt, received, signature]);
   };
 
   return (
     <Card>
       <SectionTitle title="Payments recorded for my household">
-        When a custodian reports a payment batch, it commits only a fingerprint (Merkle root) of the list. You can check that you
-        are in it — and say whether the money actually reached you.
+        Custodians publish each payment batch as pseudonymous lines. This screen finds your line by itself, without asking the
+        custodian, and lets you say whether the money actually reached you. Getting paid never requires this step; it is how you
+        can say if something went wrong.
       </SectionTitle>
-      {proofs.length === 0 ? (
-        <Empty>No payment has been reported for this household yet.</Empty>
+      {lines === null ? (
+        <Empty>Looking for your line in the published rosters…</Empty>
+      ) : lines.length === 0 ? (
+        <Empty>No payment has been recorded for this household yet. If you expected one, use “Still waiting for aid?”.</Empty>
       ) : (
         <div className="space-y-3">
-          {proofs.map((m) => {
-            const p = m.payload;
-            const state = states[m.id];
-            return (
-              <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line p-3">
-                <div>
-                  <p className="font-medium">
-                    {ntd(BigInt(p.amount))} reported paid by {p.custodianLabel}
-                  </p>
-                  <p className="text-xs text-muted">
-                    Tranche #{p.hopId} · batch {p.batchIndex} ·{" "}
-                    {included[m.id] === undefined
-                      ? "checking inclusion…"
-                      : included[m.id]
-                        ? "✓ your line is in the roster committed on-chain"
-                        : "✗ this line does NOT match the on-chain roster"}
-                  </p>
-                </div>
-                {state === 1 ? (
-                  <Badge tone="ok">You confirmed receipt</Badge>
-                ) : state === 2 ? (
-                  <Badge tone="bad">You disputed this payment</Badge>
-                ) : (
-                  <div className="space-y-2">
-                    {(state === 3 || state === 4) && (
-                      <p className="text-xs text-muted">
-                        Your proxy recorded “{state === 3 ? "received" : "not received"}” for you. Your own answer replaces it.
-                      </p>
-                    )}
-                    <div className="flex gap-2">
-                      <ActionButton onClick={() => answer(p, true)}>I received it</ActionButton>
-                      <ActionButton variant="danger" onClick={() => answer(p, false)}>
-                        I did not receive it
-                      </ActionButton>
-                    </div>
-                  </div>
-                )}
+          {lines.map((l) => (
+            <div key={`${l.hopId}-${l.batchIndex}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line p-3">
+              <div>
+                <p className="font-medium">
+                  {ntd(l.amount)} recorded as paid by {labelOf(l.custodian) ?? "a custodian"}
+                </p>
+                <p className="text-xs text-muted">
+                  Tranche #{l.hopId} · batch {l.batchIndex} · found in the roster published on-chain
+                </p>
               </div>
-            );
-          })}
+              {l.state === 1 ? (
+                <Badge tone="ok">You confirmed receipt</Badge>
+              ) : l.state === 2 ? (
+                <Badge tone="bad">You disputed this payment</Badge>
+              ) : (
+                <div className="space-y-2">
+                  {(l.state === 3 || l.state === 4) && (
+                    <p className="text-xs text-muted">
+                      Your proxy recorded “{l.state === 3 ? "received" : "not received"}” for you. Your own answer replaces it.
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <ActionButton onClick={() => answer(l, true)}>I received it</ActionButton>
+                    <ActionButton variant="danger" onClick={() => answer(l, false)}>
+                      I did not receive it
+                    </ActionButton>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </Card>

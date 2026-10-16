@@ -111,6 +111,32 @@ contract ReliefFundTest is Base {
         assertEq(fund.purpose(1).capBps, 3000, "cap unchanged");
     }
 
+    function test_VetoStartsACooldownForThatKindOfChange() public {
+        (uint256 id, bytes32 voteKey) = _queueCapChange();
+        uint256 scope = voice.scopeOf(voteKey);
+        voice.castVote(voteKey, _group(0), _proof(1001, 0, scope, true));
+        voice.castVote(voteKey, _group(1), _proof(1002, 0, scope, true));
+        vm.warp(block.timestamp + 7 days);
+        fund.execute(id);
+        uint64 until = fund.vetoCooldownUntil(ReliefFund.Kind.CapChange);
+        assertEq(until, block.timestamp + 4 * 7 days);
+
+        // The committee cannot simply propose the same change again.
+        vm.prank(c1);
+        vm.expectRevert(abi.encodeWithSelector(ReliefFund.VetoCooldown.selector, until));
+        fund.proposeCapChange(2, 1, 500, 3500, false, keccak256("same change again"));
+
+        // Other kinds of change are not affected.
+        uint64 later = fund.deadline() + 30 days;
+        vm.prank(c1);
+        fund.proposeExtension(later, keccak256("unrelated"));
+
+        // After the cooldown, a cap change can be proposed again (and households can veto again).
+        vm.warp(until);
+        vm.prank(c1);
+        fund.proposeCapChange(2, 1, 500, 3500, false, keccak256("after cooldown, with a public response"));
+    }
+
     function test_CapChangePassesWithoutVeto() public {
         (uint256 id, bytes32 voteKey) = _queueCapChange();
         uint256 scope = voice.scopeOf(voteKey);

@@ -22,7 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
           <footer className="mx-auto max-w-6xl px-4 pb-10 pt-4 text-xs text-muted">
             Kept · open source (MIT) · built for the Web3 for Social Good Hackathon 2026. Personal data never goes on-chain:
-            only commitments, hashes and Merkle roots.
+            only commitments, hashes and pseudonymous receipt addresses.
           </footer>
         </SnapshotProvider>
       </body>

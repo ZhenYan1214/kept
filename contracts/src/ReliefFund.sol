@@ -15,7 +15,8 @@ import {ICustodyLedger, IVoiceModule} from "./interfaces/IKept.sol";
 /// - Allocations need committee approval and are written to the custody ledger as the first hop.
 /// - Changing caps or extending the deadline goes through a public waiting period during which
 ///   verified households vote; a majority "no" with quorum vetoes the change. Silence is consent:
-///   a change nobody vetoes goes through.
+///   a change nobody vetoes goes through. After a veto, the same kind of change cannot be proposed
+///   again for four waiting periods, so a veto cannot be outlasted by re-proposing.
 /// - Emergencies take a stricter committee threshold and can only move cap from one charter purpose
 ///   to another. They apply at once and open a household review. If households veto the review,
 ///   the cap the emergency moved and has not yet been spent goes back, and the committee loses the
@@ -99,6 +100,11 @@ contract ReliefFund is Initializable, ReentrancyGuard {
     string public surplusRule;
     uint8 public surplusPurposeId;
     bool public emergencyRevoked;
+
+    /// @notice After households veto a change, the same kind of change cannot be proposed again for
+    /// this many waiting periods, so a veto cannot simply be outlasted by re-proposing.
+    uint32 public constant VETO_COOLDOWN_PERIODS = 4;
+    mapping(Kind => uint64) public vetoCooldownUntil;
     address public custodian;
     IERC20 public token;
     uint256 public disasterId;
@@ -158,6 +164,7 @@ contract ReliefFund is Initializable, ReentrancyGuard {
     error EmergencyMustMoveCap();
     error FundStillOpen();
     error ReviewNotClosed();
+    error VetoCooldown(uint64 until);
 
     modifier onlyCommittee() {
         if (!isCommittee[msg.sender]) revert NotCommittee();
@@ -254,6 +261,8 @@ contract ReliefFund is Initializable, ReentrancyGuard {
         if (emergency) {
             if (emergencyRevoked) revert EmergencyPathRevoked();
             _movedBps(fromId, toId, newCapFrom, newCapTo);
+        } else {
+            _requireNoCooldown(Kind.CapChange);
         }
         Proposal storage pr = _newProposal(Kind.CapChange, emergency, docHash);
         pr.purposeId = fromId;
@@ -266,6 +275,7 @@ contract ReliefFund is Initializable, ReentrancyGuard {
 
     function proposeExtension(uint64 newDeadline, bytes32 docHash) external onlyCommittee returns (uint256 id) {
         if (newDeadline <= deadline) revert BadParams();
+        _requireNoCooldown(Kind.Extension);
         Proposal storage pr = _newProposal(Kind.Extension, false, docHash);
         pr.newDeadline = newDeadline;
         id = _proposals.length - 1;
@@ -282,6 +292,7 @@ contract ReliefFund is Initializable, ReentrancyGuard {
     {
         if (block.timestamp <= deadline) revert FundStillOpen();
         if (recipient == address(0) || amount == 0) revert BadParams();
+        _requireNoCooldown(Kind.Surplus);
         Proposal storage pr = _newProposal(Kind.Surplus, false, docHash);
         pr.purposeId = surplusPurposeId;
         pr.recipient = recipient;
@@ -328,6 +339,7 @@ contract ReliefFund is Initializable, ReentrancyGuard {
         if (block.timestamp < pr.executeAfter) revert TimelockActive();
         if (voice.isVetoed(pr.voteKey)) {
             pr.status = Status.Vetoed;
+            vetoCooldownUntil[pr.kind] = uint64(block.timestamp) + uint64(timelock) * VETO_COOLDOWN_PERIODS;
             emit Vetoed(id, pr.voteKey);
             return;
         }
@@ -386,6 +398,11 @@ contract ReliefFund is Initializable, ReentrancyGuard {
     // ------------------------------------------------------------------
     // Internal
     // ------------------------------------------------------------------
+
+    function _requireNoCooldown(Kind kind) internal view {
+        uint64 until = vetoCooldownUntil[kind];
+        if (block.timestamp < until) revert VetoCooldown(until);
+    }
 
     function _newProposal(Kind kind, bool emergency, bytes32 docHash) internal returns (Proposal storage pr) {
         pr = _proposals.push();

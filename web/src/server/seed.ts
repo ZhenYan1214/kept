@@ -2,7 +2,6 @@ import "server-only";
 import { keccak256, toHex, parseEventLogs, zeroHash, type Address, type Abi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { Identity, generateProof } from "@semaphore-protocol/core";
-import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { ABIS, ensureGas, waitReceipt, publicClient, roleAccount, targetAddress, walletFor, withRoleLock, type Target } from "./roles";
 import { chain, getDeployment, CHAIN_ID } from "@/lib/config";
 import {
@@ -207,26 +206,26 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
   await send("county", "ledger", "acknowledge", [countyHop]);
   await send("ngo", "programs", "createProgram", [ngoHop, disasterId, 0b111, 10_000n, "Household essentials kit"]);
 
-  // Ministry reconciles livelihood relief for the first 12 households (NT$50,000 each)
-  const paid = Array.from({ length: 12 }, (_, i) => i);
-  const roster = StandardMerkleTree.of(
-    paid.map((i) => [simHousehold(i).receipt.address, "50000"]),
-    ["address", "uint256"],
-  );
-  await send("ministry", "ledger", "reconcile", [livelihoodHop, roster.root, 600_000n, paid.length, keccak256(toHex("roster batch 1"))]);
+  // Ministry publishes livelihood relief for the first 12 households (NT$50,000 each) as pseudonymous lines
+  const paid = Array.from({ length: 12 }, (_, i) => simHousehold(i).receipt);
+  await send("ministry", "ledger", "reconcile", [
+    livelihoodHop,
+    paid.map((r) => r.address),
+    paid.map(() => 50_000n),
+    keccak256(toHex("roster batch 1")),
+  ]);
   const domain = receiptDomain(d.ledger);
-  for (const [idx, [addr]] of roster.entries()) {
+  for (const [idx, receipt] of paid.entries()) {
     if (idx >= 10) break; // 10 of 12 answer: 8 confirm, 1 disputes, 1 elder is confirmed by the Datong proxy
     const received = idx !== 4;
-    const { receipt } = simHousehold(paid.find((i) => simHousehold(i).receipt.address === addr)!);
     const signer = idx === 9 ? roleAccount("socialWorker") : receipt;
     const signature = await signer.signTypedData({
       domain,
       types: RECEIPT_TYPES,
       primaryType: "Receipt",
-      message: { hopId: livelihoodHop, batchIndex: 0n, receipt: addr as Address, amount: 50_000n, received },
+      message: { hopId: livelihoodHop, batchIndex: 0n, receipt: receipt.address, amount: 50_000n, received },
     });
-    await send("relayer", "ledger", "confirmLine", [livelihoodHop, 0n, addr, 50_000n, received, roster.getProof(idx), signature]);
+    await send("relayer", "ledger", "confirmLine", [livelihoodHop, 0n, receipt.address, received, signature]);
   }
   log.push("Custody chain seeded: 3 allocations, 1 forward, 1 roster batch, 8 confirmations + 1 by proxy, 1 dispute");
 

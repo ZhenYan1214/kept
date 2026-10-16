@@ -1,14 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
-import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { useSnapshot } from "@/components/snapshot";
 import { ActionButton, Addr, Badge, Card, Empty, Field, Note, SectionTitle, inputCls, ntd, NotReady } from "@/components/ui";
 import { HopTree } from "@/components/panels";
-import { tx, eventArg } from "@/lib/api";
+import { tx } from "@/lib/api";
 import { textHash } from "@/lib/scopes";
 import { PURPOSES, ROLES, TIERS, villageName, type RoleName } from "@/lib/scenario";
-import { loadRoster, type RosterEntry, type RosterProof } from "@/lib/roster";
-import { postInbox } from "@/lib/inbox";
+import { loadRoster, type RosterEntry } from "@/lib/roster";
 import type { Hop } from "@/lib/snapshot";
 
 const CUSTODIANS: RoleName[] = ["ministry", "county", "ngo"];
@@ -27,8 +25,8 @@ export default function CustodyPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-accent">Custodians</p>
           <h1 className="text-2xl font-semibold">Every hand signs for what it holds</h1>
           <p className="max-w-2xl text-sm text-muted">
-            Acknowledge what you received, record what you pass on, and commit each payment batch as a Merkle root. The roster
-            itself never leaves your office.
+            Acknowledge what you received, record what you pass on, and publish each payment batch as pseudonymous lines (a
+            receipt address and an amount, never a name). Every household can then find its own line without asking you.
           </p>
         </div>
         <Field label="Acting as">
@@ -160,29 +158,20 @@ function Reconcile({ h, me, held }: { h: Hop; me: RoleName; held: bigint }) {
       </Field>
       <ActionButton
         disabled={!chosen.length || total > held}
-        onClick={async () => {
-          const tree = StandardMerkleTree.of(
-            chosen.map((e) => [e.receipt, String(amount)]),
-            ["address", "uint256"],
-          );
-          const r = await tx(me, "ledger", "reconcile", [BigInt(h.id), tree.root, total, chosen.length, textHash(`roster ${Date.now()}`)]);
-          const batchIndex = eventArg<bigint>(r, "Reconciled", "batchIndex");
-          // Each household receives only its own proof (by SMS / QR in reality).
-          for (const [i, [receipt]] of tree.entries()) {
-            postInbox<RosterProof>("roster-proof", {
-              hopId: String(h.id),
-              batchIndex: String(batchIndex),
-              receipt: receipt as `0x${string}`,
-              amount: String(amount),
-              proof: tree.getProof(i) as `0x${string}`[],
-              custodianLabel: ROLES[me].short,
-            });
-          }
-        }}
+        onClick={() =>
+          tx(me, "ledger", "reconcile", [
+            BigInt(h.id),
+            chosen.map((e) => e.receipt),
+            chosen.map(() => BigInt(amount)),
+            textHash(`roster ${Date.now()}`),
+          ])
+        }
       >
-        Commit roster root ({ntd(total)})
+        Publish payment lines ({ntd(total)})
       </ActionButton>
-      <p className="text-xs text-muted">Only the Merkle root goes on-chain. Each household gets its own inclusion proof.</p>
+      <p className="text-xs text-muted">
+        The contract adds up the lines itself and publicly counts any line that is not a registered household.
+      </p>
     </div>
   );
 }

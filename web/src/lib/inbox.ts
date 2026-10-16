@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
  * browser's localStorage so another tab (the township office, the NGO counter...) can pick them up.
  * Only public data or zero-knowledge proofs travel this way — never a household's secrets.
  */
-export type InboxKind = "registration" | "claim" | "roster-proof" | "township-roster";
+export type InboxKind = "registration" | "claim" | "township-roster";
 
 export type InboxMessage<T = unknown> = { id: string; kind: InboxKind; at: number; payload: T; consumed?: boolean };
 

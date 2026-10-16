@@ -192,7 +192,7 @@ export function HopTree({ snap }: { snap: Snapshot }) {
           </div>
           <div className="flex flex-wrap items-start gap-1.5">
             {h.ackAt ? <Badge tone="ok">Acknowledged</Badge> : <Badge tone="warn">Awaiting acknowledgement</Badge>}
-            {h.batches.length > 0 && <Badge tone="info">{h.batches.length} roster batch(es)</Badge>}
+            {h.batches.length > 0 && <Badge tone="info">{h.batches.length} published roster batch(es)</Badge>}
             {h.confirmed + h.proxyConfirmed > 0 && (
               <Badge tone="ok">
                 {h.confirmed + h.proxyConfirmed} confirmed{h.proxyConfirmed ? ` (${h.proxyConfirmed} by proxy)` : ""}
@@ -200,6 +200,7 @@ export function HopTree({ snap }: { snap: Snapshot }) {
             )}
             {h.programDelivered > 0 && <Badge tone="ok">{h.programDelivered} handed over in person (ZK-verified)</Badge>}
             {h.disputed > 0 && <Badge tone="bad">{h.disputed} disputed</Badge>}
+            {h.unregistered > 0 && <Badge tone="bad">{h.unregistered} line(s) not a registered household</Badge>}
           </div>
         </div>
         {children(h.id).map((c) => (

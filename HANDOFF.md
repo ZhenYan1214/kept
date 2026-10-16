@@ -13,9 +13,9 @@
 | **初賽截止** | **2026/10/25 00:00（未標時區，目標 10/24 中午前送出）** |
 | 題目 | **Kept**：讓災難善款的兩個承諾都可驗證：對捐款人承諾錢怎麼用，對災民承諾不漏掉任何人 |
 | 程式碼 | https://github.com/ZhenYan1214/kept （`main` 分支） |
-| 合約 | 6 份，**64 個**單元測試全過（2026-10-15 修正後，含匿名「仍在等待」回報）；端對端腳本用**真實 Semaphore ZK 證明**跑通。**合約已改，舊的本機部署要重新部署** |
+| 合約 | 6 份，**69 個**單元測試全過；端對端腳本用**真實 Semaphore ZK 證明**跑通（14 項）。2026-10-16 監管鏈改為**公開匿名名冊明細**、否決後加冷卻期，合約已重新部署 |
 | 前端 | Next.js，9 個頁面，完整 Demo 流程已在瀏覽器實測跑通，`next build` 成功 |
-| **測試網** | 2026-10-16 已部署 Base Sepolia（`contracts/deployments/84532.json`，factory `0x4332…7702`、registry `0x85C5…C9e1`、ledger `0xD975…f0b7`），seed 在本機對測試網執行（`npm run dev:testnet` 後 `POST localhost:3001/api/seed`） |
+| **測試網** | 2026-10-16 已部署 Base Sepolia（`contracts/deployments/84532.json`，factory `0xE101…5eE2`、registry `0x7b17…48E0`、ledger `0x3d3B…696f`（2026-10-16 第二次重新部署）），seed 在本機對測試網執行（`npm run dev:testnet` 後 `POST localhost:3001/api/seed`） |
 | **RPC** | 官方 `sepolia.base.org` 的 `eth_getLogs` 只允許 200 個區塊範圍，所以前端改成**完全不讀 event log**：registry 新增 `issuerList`、`villageList`、`groupMembers`（Semaphore 葉子依序，撤銷為 0），基金新增 `donation(receiptNo)`。`.env` 的 RPC 改用 `https://base-sepolia-rpc.publicnode.com`。公開 RPC 由多個節點負載平衡，剛寫入的狀態可能讀不到：seed 的 simulate 會重試，帳戶用 viem `nonceManager` 本地管理 nonce |
 | **網站** | 2026-10-16 已部署 Vercel：**https://kept-lilac.vercel.app**（專案 `zhenyans-projects/kept`，從本機 `web/` 用 `npx vercel deploy --prod` 部署，未連 GitHub）。環境變數：`NEXT_PUBLIC_CHAIN_ID`、`NEXT_PUBLIC_RPC_URL`（publicnode）、`DEMO_TIMELOCK_SECONDS`、`DEMO_PRIVATE_KEY`（Secret，使用者自行加入）。已確認公開可讀、可寫（測試申訴 #4） |
 | **卡住的事** | 無；剩影片、提交表單與 push 到 GitHub |
@@ -141,7 +141,7 @@
 
 ### 三個核心機制
 - **M1 承諾**：建立基金時就寫死用途清單（章程外的用途永遠不能撥款）、各用途上限（佔募得總額比例）、**結餘用途**（`surplusPurposeId`）。改上限、延長期限、動用結餘都要走公開冷靜期，**沒有被否決就通過**（災民可以否決，需達投票率門檻）。**到期後只能撥給章程指定的結餘用途**（例如同一災區的長期重建），而且必須經過冷靜期。緊急情況走較高門檻、立即生效，但**只能在章程用途之間移動上限**；事後由災民檢討，若被否決，**尚未花掉的上限退回**、該基金的**緊急路徑永久取消**，已撥出的錢不追回。**到期不強迫花完**（不懲罰審慎）。
-- **M2 監管鏈**：每一筆都是「轉出方記錄＋接收方簽收」，可以往下轉撥；發放時上傳名冊的 Merkle root，大眾看得到總額，每戶能證明自己有被算進去，並用**收據金鑰簽章**表示「已收到」或「被記成已領、實際沒拿到」。**收據地址在雙重簽核時就登記**，只有登記過的地址才算數，所以保管方不能在名冊裡塞自己的金鑰再自己簽收。**代簽人**（社工）由公所**按災害＋村**公開指定，只能替該村的戶簽；**災民本人的回答一律覆蓋代簽**，本人回答後不能再改。
+- **M2 監管鏈**：每一筆都是「轉出方記錄＋接收方簽收」，可以往下轉撥；發放時把名冊以**匿名明細**公開上鏈（收據地址＋金額，沒有姓名、身分證、帳號）：每戶**不必靠保管方**就找得到自己那一筆，合約自己加總金額與戶數，並公開計算「不是已登記災民」的明細筆數（幽靈戶直接被看見）；災民用**收據金鑰簽章**表示「已收到」或「被記成已領、實際沒拿到」。〔2026-10-16 由 Merkle root 改為公開明細：原設計中，災民要靠保管方給的 Merkle proof 才能確認，等於查核權握在被查核者手上，且總額是保管方自報〕**收據地址在雙重簽核時就登記**，只有登記過的地址才算數，所以保管方不能在名冊裡塞自己的金鑰再自己簽收。**代簽人**（社工）由公所**按災害＋村**公開指定，只能替該村的戶簽；**災民本人的回答一律覆蓋代簽**，本人回答後不能再改。
 - **M3 災民之聲**：通過認證的災民可以匿名、一戶一票對變更投票（Semaphore）；任何人（包括沒被登記的人）都能申訴，各村的申訴件數與處理天數公開。
 
 ### 資格層（借用，不宣稱原創）
@@ -202,14 +202,14 @@ kept/
 |---|---|
 | `KeptFactory` | 用 OZ Clones 從同一份範本建立基金；`isFund` 是其他模組唯一承認的來源；`setModules` 只能呼叫一次 |
 | `ReliefFund` | `InitParams`（name, surplusRule, **surplusPurposeId**, custodian, token, disasterId, deadline, threshold, emergencyThreshold, timelock, quorumBps, committee[], purposeNames[], purposeCaps[]）。`donate`／`proposeAllocation`（`purposeId >= 用途數` → `PurposeNotInCharter`；Demo 用 255 代表「一般公共工程」；過期 → `FundExpired`）／`proposeCapChange`（emergency 必須是純移動，否則 `EmergencyMustMoveCap`）／`proposeExtension`（執行時新期限必須晚於現行期限）／**`proposeSurplus`**（只限到期後、只撥給結餘用途、走冷靜期）／`approve`／`execute`（冷靜期後；`voice.isVetoed` → Vetoed）／**`concludeReview`**（緊急變更的檢討投票結束後任何人可結算；被否決 → 狀態 `Overturned`、退回未花掉的上限、`emergencyRevoked = true`）／`cancel`。撥款執行時把 token 轉給收款方並呼叫 `ledger.recordAllocation` |
-| `CustodyLedger` | 建構子多了 `registry`。Hop{parent, fund, from, to, amount, forwarded, reconciled, ackAt, estHouseholds, reconciledHouseholds, confirmed, proxyConfirmed, disputed, programDelivered, purposeId}。`acknowledge`／`forward`／`reconcile(root, amount, households)`／`confirmLine`（EIP-712 `Receipt(hopId,batchIndex,receipt,amount,received)`；收據地址必須在 registry 登記過，否則 `NotRegisteredHousehold`；簽章者必須是收據地址本人，或該村的代簽人；`lineState` 1 本人確認、2 本人異議、3 代簽確認、4 代簽異議，本人可覆蓋 3／4）／`verifyInclusion`。葉子＝OZ StandardMerkleTree (address,uint256)。**全域 `setProxy` 已移除** |
+| `CustodyLedger` | 建構子多了 `registry`。Hop{parent, fund, from, to, amount, forwarded, reconciled, ackAt, estHouseholds, reconciledHouseholds, confirmed, proxyConfirmed, disputed, programDelivered, purposeId}。`acknowledge`／`forward`／`reconcile(hopId, receipts[], amounts[], docHash)`（每批最多 500 筆；合約自己加總、擋重複、計算未登記筆數 `unregistered`）／`confirmLine(hopId, batchIndex, receipt, received, signature)`（金額從鏈上明細讀取；EIP-712 `Receipt(hopId,batchIndex,receipt,amount,received)`；收據地址必須在 registry 登記過，否則 `NotRegisteredHousehold`；簽章者必須是收據地址本人，或該村的代簽人；`lineState` 1 本人確認、2 本人異議、3 代簽確認、4 代簽異議，本人可覆蓋 3／4）／`lineAmount`、`batchLines`。**全域 `setProxy` 已移除** |
 | `EligibilityRegistry` | 角色：VillageChief(1)/TownshipOffice(2)；`createDisaster` 為每個等級建立 Semaphore 群組（admin＝本合約）；`proposeRegistration(..., receipt)`→`approveRegistration`（不同角色；核准時登記收據地址）／`reject`／`revokeMember`（收據地址同時失效）／`replaceMember(..., newReceipt, ...)`（遺失卡片，換新收據地址）；`fileAppeal`（任何人）／`resolveAppeal`（公所）／`reportCoverage`；**`setProxy(disasterId, village, proxy, active)`**（公所）；`villageOfReceipt`、`isProxy`；`villageStats` |
 | `VoiceModule` | 只有工廠產生的基金能 `openVote`；`castVote(voteKey, groupId, proof)`：scope＝`uint256(voteKey)>>8`，message 0/1，自己記錄 nullifier（避免被搶先送出 Semaphore 證明而失敗）；否決＝反對>贊成且投票率≥quorum |
 | `AidPrograms` | NGO `createProgram(hopId, disasterId, tierMask, amountPerHousehold, name)`；`claim` 只能由 NGO 自己的終端機送出；scope＝`keccak(address(this), programId)>>8`；有連結 hop 時記為當面交付 |
 | `MockTWD` | 0 位小數、公開水龍頭，代表未來的合規台幣穩定幣（**僅測試網**） |
 
 - Semaphore v4.14.3（`@semaphore-protocol/contracts`）。PoseidonT3 用**確定性地址** `0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93`（foundry.toml `libraries`）。Base Sepolia 上官方 Semaphore v4：`0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`（已確認可用，groupCounter=362），Poseidon 和 Multicall3 也都有。
-- 單元測試用 `test/mocks/MockSemaphore.sol`（`points[0]==1` 視為有效）；真實證明由 `npm run e2e` 驗證（13 項通過，含「未登記的收據金鑰被拒」）。
+- 單元測試用 `test/mocks/MockSemaphore.sol`（`points[0]==1` 視為有效）；真實證明由 `npm run e2e` 驗證（14 項通過，含「未登記的收據金鑰被拒」「總額由鏈上計算、未登記明細被標出」）。
 
 ### 前端與 Demo 伺服器
 - 鏈上狀態由 `lib/snapshot.ts` 讀取（readContract＋分段 getLogs），`SnapshotProvider` 每 4 秒（本機）／10 秒（測試網）輪詢
@@ -349,7 +349,7 @@ cd ../web && npm install && npm run dev                          # http://localh
 | 會被認定為未經許可的勸募嗎？ | Kept 不募款，是給已取得勸募許可的單位使用的工具 |
 | 抵稅收據要姓名和身分證 | 收據由保管方在鏈下開立，鏈上只放雜湊 |
 | 手機或卡片在災害中遺失 | 公所可以 `replaceMember` 換發新身分，鏈上留紀錄 |
-| 一個人做得完嗎？／永續性 | 開源數位公共財；**已實測**：以真實 Semaphore 驗證器量測每種操作的 gas，套用光復規模（4,039 戶、48 筆撥款）約 47 億 gas，在假設的 L2 價格下約 140–1,400 美元，最多為善款的 0.003%（見 `/replay` 頁）；賽後資助管道見 10.6 |
+| 一個人做得完嗎？／永續性 | 開源數位公共財；**已實測**：以真實 Semaphore 驗證器量測每種操作的 gas，套用光復規模（4,039 戶、48 筆撥款）約 49 億 gas，在假設的 L2 價格下約 150–1,500 美元，最多為善款的 0.003%（見 `/replay` 頁）；賽後資助管道見 10.6 |
 
 ### 10.4 各角色的使用者旅程
 - **捐款人**：捐款 → 收據 → 看到款項所在基金走到監管鏈哪一步 → 用途變更時收到通知（通知功能未實作）
@@ -404,6 +404,13 @@ cd ../web && npm install && npm run dev                          # http://localh
 - **IEEE S&P 2023 "Not Yet Another Digital ID"**（EPFL×ICRC）：每戶每輪一次、智慧卡版。
 - **Frontiers in Blockchain 2026**：歐盟 306 個公部門用例中，SDG 2、6、14 較少被涵蓋。
 - 原始筆記在 `docs/research_notes/`（見 §9）。
+
+### 10.10 2026-10-16 第四輪：概念層級的修正
+- **監管鏈**：由 Merkle root 改為公開匿名明細（理由見上方 M2）。代價：每戶「收到多少」以匿名地址公開，但簽收時本來就會上鏈。成本重測後約 49 億 gas、150–1,500 美元。
+- **否決冷卻期**：被否決後，同類變更在 4 個等待期內不能再提（`vetoCooldownUntil`），避免委員會一直重提直到大家不投。緊急路徑仍可用，但事後檢討被否決就失去緊急路徑。
+- **限制新增**：多數否決可能不利少數（例如只有少數重災戶需要的中繼屋）；只是假名、不是完全匿名。
+- **論述**：登記搭在政府原本的逐戶訪查上；拿錢不需要災民做任何事，確認是可選的。
+- README 精簡為約 190 行；影片由使用者本人配音。
 
 ### 10.9 2026-10-16 評審視角再反思（第三輪）
 - **競爭**：UMA 冠軍（Proof of Aid：需求登錄、交付驗證、追蹤捐款、保護受助者資料）題目幾乎重疊，技術細節未公開。相近作品 OpenRelief（ETHGlobal Cannes，Self.xyz＋USDC）、AidRoute、AidChain、UNICEF Aidlink 都沒有「逐手簽收＋災民對自己那一筆確認或異議＋資格證明＋匿名否決與回報」的組合。差異要講成：**他們證明錢送出去了；Kept 讓收到的人自己說有沒有收到**。

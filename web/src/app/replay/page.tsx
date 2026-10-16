@@ -86,7 +86,7 @@ export default function ReplayPage() {
           </ol>
           <p className="mt-4 rounded-lg bg-accent/10 p-3 text-sm">
             <strong>With Kept</strong>, each of the 21 pre-allocations would be acknowledged by the ministry or NGO that received
-            it, each payment batch would be committed as a roster fingerprint, and each household could check its own line and say
+            it, each payment batch would be published as pseudonymous lines, and each household could find its own line and say
             “received” or “not received”. The foundation would get its reconciliation evidence as it happens, not a year later.
           </p>
         </Card>

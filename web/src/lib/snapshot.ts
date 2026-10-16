@@ -130,7 +130,7 @@ export type Fund = {
   proposals: Proposal[];
 };
 
-export type Batch = { index: number; root: Hex; amount: bigint; households: number; docHash: Hex; at: number };
+export type Batch = { index: number; amount: bigint; households: number; unregistered: number; docHash: Hex; at: number };
 
 export type Hop = {
   id: number;
@@ -151,6 +151,7 @@ export type Hop = {
   disputed: number;
   programDelivered: number;
   purposeId: number;
+  unregistered: number; // roster lines that are not registered households
   batches: Batch[];
 };
 
@@ -363,7 +364,14 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
             functionName: "batch",
             args: [BigInt(id), BigInt(b)],
           });
-          return { index: b, root: r.root, amount: r.amount, households: n(r.households), docHash: r.docHash, at: n(r.at) } satisfies Batch;
+          return {
+            index: b,
+            amount: r.amount,
+            households: n(r.households),
+            unregistered: n(r.unregistered),
+            docHash: r.docHash,
+            at: n(r.at),
+          } satisfies Batch;
         }),
       );
       return {
@@ -385,6 +393,7 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
         disputed: n(h.disputed),
         programDelivered: n(h.programDelivered),
         purposeId: n(h.purposeId),
+        unregistered: n(h.unregistered),
         batches,
       } satisfies Hop;
     }),

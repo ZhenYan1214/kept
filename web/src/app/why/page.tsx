@@ -47,7 +47,7 @@ const EVIDENCE = [
     text: "Pre-allocations are checked against each agency's relief roster later; a year on, NT$49M of NT$1.21bn is reconciled.",
     source: "relief foundation disclosure",
     href: "https://www.tf4dr.org/fundraising_plans/156/credits",
-    kept: "roster fingerprints and household receipts as reconciliation evidence",
+    kept: "published payment lines and household receipts as reconciliation evidence",
   },
   {
     who: "Donors and citizens",
@@ -184,8 +184,8 @@ export default function Why() {
           payment, and reconciliation a year later covers about 4%. The foundation needs that evidence too.
         </p>
         <p className="text-sm">
-          Kept gives every downstream custodian one simple tool: acknowledge what you received, commit each payment roster as a
-          fingerprint, and let each household confirm or dispute its own line. The custodian gets reconciliation evidence it now
+          Kept gives every downstream custodian one simple tool: acknowledge what you received, publish each payment batch as
+          pseudonymous lines, and let each household confirm or dispute its own line. The custodian gets reconciliation evidence it now
           assembles by hand; the public sees past the first hand; households can say &quot;this never reached me&quot;.
         </p>
       </section>
@@ -194,7 +194,7 @@ export default function Why() {
         <h2 className="text-xl font-semibold">Kept: two promises, made verifiable</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
-            ["Custody", "Every hand records and acknowledges each tranche. Payment rosters are committed as Merkle roots: each registered household can prove it is counted and confirm or dispute its own line."],
+            ["Custody", "Every hand records and acknowledges each tranche. Payment rosters are published as pseudonymous lines, so each registered household finds its own line without asking the custodian, and confirms or disputes it."],
             ["Commitment", "Purposes, caps and the surplus purpose are fixed when money is raised and cannot be rewritten. Changes wait through a public period in which households can veto them. While donations stay in banks, this binds the public record, not the bank account."],
             ["Voice", "The same credential that lets a household receive aid gives it one anonymous vote on changes, and a public appeal when it is left out."],
           ].map(([t, d]) => (

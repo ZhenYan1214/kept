@@ -15,14 +15,14 @@ Disaster-relief promises you can verify: past the first hand, with a voice for t
 
 ## Short description (about 280 characters)
 
-When disaster donations are pre-allocated, the public loses sight of them after the first hand. Kept lets every custodian record and acknowledge each tranche, commit payment rosters as Merkle roots, and lets verified households confirm, dispute, appeal and veto, anonymously.
+When disaster donations are pre-allocated, the public loses sight of them after the first hand. Kept lets every custodian acknowledge each tranche and publish payments as pseudonymous lines, so verified households can confirm or dispute their own payment, appeal, and veto changes.
 
 ## Links
 
 - Demo: https://kept-lilac.vercel.app
 - Video: [https://… (YouTube, unlisted is fine)]
 - Code: https://github.com/ZhenYan1214/kept
-- Contracts on Base Sepolia (chain 84532): KeptFactory `0x433256da41BB19bD111843f0AEA63FCdd01e7702`, CustodyLedger `0xD97508E6b9DBbB809B0Bb5F138FDB0908490f0b7`, EligibilityRegistry `0x85C52d03A3606Df24B1ca1321e6494AC329aC9e1`, VoiceModule `0x482741b3A7074f53EC79c49581936D39ae0B9293`, AidPrograms `0x12D40B048fC83f34AB1652498806A3C3b5F403Bf` (Semaphore v4 `0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`)
+- Contracts on Base Sepolia (chain 84532): KeptFactory `0xE1014fd9E4ffaB6FdB283B980B4E0fA8ADE05eE2`, CustodyLedger `0x3d3BCa042Dc8a021A70186be2d5C0aAd90FC696f`, EligibilityRegistry `0x7b1763E6b1EeAC98C2f69524F35aFb9fDA5A48E0`, VoiceModule `0x3493B41b7B734A15e4DbE9520dEFe7B70f67F28F`, AidPrograms `0x4167Aa2358d942F1e0D0C0672C28cE2Ad90cBFb7` (Semaphore v4 `0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`)
 
 ## Track
 
@@ -51,13 +51,13 @@ Two more gaps from the same disaster: three villages outside the "red zone" were
 
 ### What Kept does
 
-1. **Custody chain (where Kept starts).** Each tranche is recorded by the sender and acknowledged by the receiver, hand by hand. When a custodian pays households, it commits the payment roster as a Merkle root: the public sees totals, each household can prove it is counted and sign "received" or "not received" for its own line. Only receipt addresses registered with two signatures count, so a custodian cannot pad a roster with its own keys and confirm itself. Social workers can sign for elders, but only in the village the township office designated them for, and the household's own answer always replaces theirs.
+1. **Custody chain (where Kept starts).** Each tranche is recorded by the sender and acknowledged by the receiver, hand by hand. When a custodian pays households, it publishes the payment batch as pseudonymous lines (a receipt address and an amount, never a name). Each household finds its own line without asking the custodian and signs "received" or "not received". The contract adds up the lines itself and publicly counts any line that is not a household registered with two signatures, so a padded roster shows up, and only real households can sign. Social workers can sign for elders, but only in the village the township office designated them for, and the household's own answer always replaces theirs.
 2. **Eligibility without sharing the roster.** A household is verified only after two signatures (village chief and township office). An NGO then checks eligibility on the spot with a zero-knowledge proof (Semaphore) and never receives the roster; per-programme nullifiers block double claims and stop claims being linked across programmes.
 3. **Voice.** The same credential gives each household one anonymous vote on changes, a public appeal when it is left out, and a weekly anonymous "I am still waiting" report. Waiting reports do not depend on any custodian recording anything, so unrecorded payments still show up.
 4. **Commitments that cannot be rewritten.** Purposes, caps and the surplus purpose are fixed when money is raised. Cap changes, deadline extensions and uses of the surplus wait through a public period and go ahead unless households veto them. After the deadline, money can only go to the charter's surplus purpose. Emergencies need a stricter committee threshold and may only move cap between purposes; households review them afterwards, and a veto returns the unspent part and revokes the emergency path.
 5. **Accountability alerts.** Published rules over the public record flag where to look: tranches not acknowledged within 14 days, money held over 90 days, disputes, heavy proxy use, appeals waiting over 14 days, and villages where households say they are waiting while the township reports nothing.
 
-**Never on-chain:** names, ID numbers, bank accounts, rosters. Only commitments, hashes and Merkle roots. Eligibility is still decided by people; Kept makes their decisions attributable.
+**Never on-chain:** names, ID numbers, bank accounts. Payment rosters appear only as pseudonymous lines (a receipt address and an amount); a household's confirmation would reveal the same line anyway. Eligibility is still decided by people; Kept makes their decisions attributable.
 
 ### Why Web3, and where we deliberately do not use it
 
@@ -65,14 +65,14 @@ Two more gaps from the same disaster: three villages outside the "red zone" were
 - **Several independent custodians need shared state** (foundation, ministries, county, NGOs), and none of them is a natural operator for the others.
 - **Households need anonymous standing.** In small communities a named "no" carries social cost; zero-knowledge proofs give "a verified household, one vote, not saying which".
 - **Law acts after the fact; code acts before.** Taiwan's reform of donation law has stalled since 2020; Kept can be the technical implementation of the county ordinance that nearly 300 people petitioned for.
-- **Off-chain on purpose:** personal data, rosters and bank payments. In phase 1, while donations stay in banks, the contracts bind the public record, not the bank account: spending outside the charter cannot be recorded as compliant, but it can still happen off the record. We say so plainly.
+- **Off-chain on purpose:** personal data and bank payments. In phase 1, while donations stay in banks, the contracts bind the public record, not the bank account: spending outside the charter cannot be recorded as compliant, but it can still happen off the record. We say so plainly.
 
 ### Built and tested
 
-- 6 Solidity contracts (Foundry): `ReliefFund`, `KeptFactory`, `CustodyLedger`, `EligibilityRegistry`, `VoiceModule`, `AidPrograms`. 64 unit tests, plus an end-to-end script with real Semaphore v4 proofs (13 checks).
+- 6 Solidity contracts (Foundry): `ReliefFund`, `KeptFactory`, `CustodyLedger`, `EligibilityRegistry`, `VoiceModule`, `AidPrograms`. 69 unit tests, plus an end-to-end script with real Semaphore v4 proofs (14 checks).
 - Next.js app with a public dashboard and a screen for each role (household, village chief and township office, fund committee, custodians, NGO counter), a "Why Kept" page with sources, and a **real-data page** replaying the foundation's 48 Guangfu transfers.
 - Deployed on Base Sepolia (addresses above). Households never need crypto: a relayer pays gas, and the credential can live on a phone or be printed as a QR code.
-- Borrowed, not reinvented: Semaphore v4 (PSE), OpenZeppelin, Merkle trees. Prior art we build on: WFP Building Blocks (cross-agency deduplication), Spanish Red Cross RedChain (ZK eligibility), "Not Yet Another Digital ID" (EPFL × ICRC, IEEE S&P 2023).
+- Borrowed, not reinvented: Semaphore v4 (PSE), OpenZeppelin. Prior art we build on: WFP Building Blocks (cross-agency deduplication), Spanish Red Cross RedChain (ZK eligibility), "Not Yet Another Digital ID" (EPFL × ICRC, IEEE S&P 2023).
 
 ### Evidence of need
 
@@ -82,7 +82,7 @@ We have not yet interviewed practitioners. Our evidence is nine public statement
 
 - **Path to adoption.** Phase 0 needs no one's permission: civil-society volunteers can already turn a custodian's published disclosures into open data and alerts, as our real-data page does for Guangfu. Phase 1 works under current law: money stays in banks, custodians join voluntarily and get a verifiable record that helps them win back donors. Phase 2: a county ordinance or legal amendment requires the format for government donation accounts. Phase 3: once regulated NT$ stablecoins exist (Taiwan's Virtual Asset Service Act passed in June 2026), funds can sit in the contract and the charter is enforced on the money itself.
 - **Most likely pilot:** the national relief foundation, which already publishes every transfer and funded the civic platform guangfu.tw. Kept is complementary to guangfu.tw: it provides the verifiable payment and eligibility data such a platform can display.
-- **Cost, measured.** Gas per operation was measured with the real zero-knowledge verifier. At Guangfu's scale (4,039 households, 48 transfers, one confirmation and one NGO claim per household, two votes at 25% turnout) the whole disaster needs about 4.7 billion gas: roughly US$140–1,400 at assumed L2 prices, at most 0.003% of the money raised.
+- **Cost, measured.** Gas per operation was measured with the real zero-knowledge verifier. At Guangfu's scale (4,039 households, 48 transfers, one confirmation and one NGO claim per household, two votes at 25% turnout) the whole disaster needs about 4.9 billion gas: roughly US$150–1,500 at assumed L2 prices, at most 0.003% of the money raised.
 - **Maintenance:** open source (MIT), designed as a digital public good; funding routes include public-goods and humanitarian innovation grants.
 
 ### Known limitations

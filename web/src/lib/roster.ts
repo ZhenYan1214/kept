@@ -31,13 +31,3 @@ export function upsertRoster(entry: RosterEntry) {
   localStorage.setItem(KEY, JSON.stringify(list));
   window.dispatchEvent(new Event("kept-inbox"));
 }
-
-/** A household's Merkle proof for its own line of a committed payment roster. */
-export type RosterProof = {
-  hopId: string;
-  batchIndex: string;
-  receipt: Address;
-  amount: string;
-  proof: `0x${string}`[];
-  custodianLabel: string;
-};

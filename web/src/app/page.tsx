@@ -83,8 +83,8 @@ export default function Dashboard() {
 
       <Card>
         <SectionTitle kicker="Every hand" title="Custody tree">
-          Each transfer is recorded by the sender and acknowledged by the receiver. Payment rosters are committed as a Merkle
-          root: the public sees totals, each household can prove it is counted, nobody sees the list.
+          Each transfer is recorded by the sender and acknowledged by the receiver. Payment rosters are published as pseudonymous lines (receipt
+          address and amount, never a name): each household finds its own line and confirms or disputes it.
         </SectionTitle>
         <HopTree snap={snap} />
       </Card>

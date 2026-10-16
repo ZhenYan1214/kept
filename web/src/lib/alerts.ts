@@ -39,6 +39,9 @@ export function computeAlerts(snap: Snapshot): Alert[] {
     if (h.proxyConfirmed >= RULES.proxyMin && h.proxyConfirmed / answered > RULES.proxyShare) {
       out.push({ tone: "warn", rule: `Over ${RULES.proxyShare * 100}% confirmed by proxies`, detail: `${label(h.id)}: ${h.proxyConfirmed} of ${answered} confirmations signed by a proxy, not the household.` });
     }
+    if (h.unregistered > 0) {
+      out.push({ tone: "bad", rule: "Roster lists receipts that are not registered households", detail: `${label(h.id)}: ${h.unregistered} published line(s) do not belong to any household verified with two signatures.` });
+    }
     const rosterHouseholds = h.reconciledHouseholds - h.programDelivered;
     if (snap.disaster && rosterHouseholds > snap.disaster.verified) {
       out.push({ tone: "bad", rule: "More households paid than verified", detail: `${label(h.id)}: rosters list ${rosterHouseholds} households; only ${snap.disaster.verified} are verified for this disaster.` });

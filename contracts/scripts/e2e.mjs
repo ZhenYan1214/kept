@@ -14,7 +14,6 @@ import {
 } from "viem";
 import { mnemonicToAccount, generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { Identity, Group, generateProof } from "@semaphore-protocol/core";
-import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 
 const RPC = process.env.RPC_URL ?? "http://127.0.0.1:8545";
 const dep = JSON.parse(readFileSync(new URL("../deployments/31337.json", import.meta.url)));
@@ -190,7 +189,7 @@ await send(donor, fund, "fund", "execute", [changeId]);
 assert((await read(fund, "fund", "proposal", [changeId])).status === 3, "households vetoed the change (status Vetoed)");
 assert((await read(fund, "fund", "purpose", [1])).capBps === 3000, "housing cap unchanged");
 
-console.log("\n7) Custody chain: ministry reconciles a roster; households confirm / dispute");
+console.log("\n7) Custody chain: ministry publishes a roster; households confirm / dispute");
 logs = await send(c1, fund, "fund", "proposeAllocation", [1, ministry.address, 300_000n, 2, keccak256(toHex("housing pre-allocation"))]);
 const a2 = logs.find((l) => l.eventName === "Proposed").args.id;
 await send(c2, fund, "fund", "approve", [a2]);
@@ -199,15 +198,19 @@ await send(ministry, dep.ledger, "ledger", "acknowledge", [mHop]);
 // Two registered households, plus a receipt key the custodian made up to pad the roster.
 const padded = privateKeyToAccount(generatePrivateKey());
 const receiptKeys = [households[0].receipt, households[1].receipt, padded];
-const roster = StandardMerkleTree.of(
-  [
-    [receiptKeys[0].address, "200000"],
-    [receiptKeys[1].address, "50000"],
-    [padded.address, "50000"],
-  ],
-  ["address", "uint256"],
-);
-await send(ministry, dep.ledger, "ledger", "reconcile", [mHop, roster.root, 300_000n, 3, keccak256(toHex("roster batch 1"))]);
+const roster = [
+  [receiptKeys[0].address, 200_000n],
+  [receiptKeys[1].address, 50_000n],
+  [padded.address, 50_000n],
+];
+await send(ministry, dep.ledger, "ledger", "reconcile", [
+  mHop,
+  roster.map(([a]) => a),
+  roster.map(([, amt]) => amt),
+  keccak256(toHex("roster batch 1")),
+]);
+const b0 = await read(dep.ledger, "ledger", "batch", [mHop, 0n]);
+assert(b0.amount === 300_000n && b0.households === 3 && b0.unregistered === 1, "totals computed on-chain; 1 unregistered line flagged");
 const domain = { name: "Kept CustodyLedger", version: "1", chainId: 31337, verifyingContract: dep.ledger };
 const types = {
   Receipt: [
@@ -218,12 +221,12 @@ const types = {
     { name: "received", type: "bool" },
   ],
 };
-for (const [i, [addr, amt]] of [...roster.entries()].map(([i, v]) => [i, v])) {
+for (const [addr, amt] of roster) {
   const received = addr !== households[1].receipt.address;
   const signer = receiptKeys.find((k) => k.address === addr);
-  const message = { hopId: mHop, batchIndex: 0n, receipt: addr, amount: BigInt(amt), received };
+  const message = { hopId: mHop, batchIndex: 0n, receipt: addr, amount: amt, received };
   const signature = await signer.signTypedData({ domain, types, primaryType: "Receipt", message });
-  const args = [mHop, 0n, addr, BigInt(amt), received, roster.getProof(i), signature];
+  const args = [mHop, 0n, addr, received, signature];
   if (addr === padded.address) await expectRevert(donor, dep.ledger, "ledger", "confirmLine", args, "NotRegisteredHousehold");
   else await send(donor, dep.ledger, "ledger", "confirmLine", args);
 }

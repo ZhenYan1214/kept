@@ -4,7 +4,6 @@ pragma solidity ^0.8.28;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {IKeptFactory, IEligibilityRegistry, IReliefFund} from "./interfaces/IKept.sol";
 
 /// @title CustodyLedger
@@ -13,16 +12,20 @@ import {IKeptFactory, IEligibilityRegistry, IReliefFund} from "./interfaces/IKep
 ///   Allocated/Disbursed  fund -> custodian (on-chain transfer, recorded by the fund)
 ///   Acknowledged         the receiving custodian confirms receipt (two-sided record)
 ///   Forwarded            custodian -> next custodian (e.g. foundation -> ministry -> county)
-///   Reconciled           the paying custodian commits a Merkle root of its payment roster
-///                        (one hashed leaf per household: receipt address + amount)
+///   Reconciled           the paying custodian publishes its payment roster as pseudonymous lines
+///                        (receipt address + amount; never a name, ID or bank account)
 ///   Delivered            the household itself signs "received" (or a proxy of its village does)
 ///   Disputed             the household signs "recorded as paid, but I did not receive it"
 ///
-/// The roster never goes on-chain. The public sees totals; each household can prove it is counted,
-/// and only a real household can confirm or dispute its own line: the receipt address must be one
+/// The lines are public, so nothing depends on the custodian afterwards: each household finds its own
+/// line without asking anyone, the contract computes the batch total and household count itself, and
+/// lines whose receipt address is not a registered household are counted publicly (possible ghosts).
+/// Only a real household can confirm or dispute its own line: the receipt address must be one
 /// registered with two signatures in the EligibilityRegistry, so a custodian cannot put its own keys
 /// in a roster and confirm itself. A proxy can only act for households of the village the township
 /// office designated it for, and the household's own signature always overrides the proxy's.
+/// (At national scale the lines could be published off-chain and anchored by a hash; the demo keeps
+/// them on-chain so that no step relies on the custodian.)
 contract CustodyLedger is Ownable, EIP712 {
     struct Hop {
         uint256 parent; // 0 = straight from a fund
@@ -42,15 +45,19 @@ contract CustodyLedger is Ownable, EIP712 {
         uint32 disputed;
         uint32 programDelivered;
         uint8 purposeId;
+        uint32 unregistered; // roster lines whose receipt address is not a registered household
     }
 
     struct Batch {
-        bytes32 root;
-        uint256 amount;
+        uint256 amount; // computed from the lines, not declared by the custodian
         uint32 households;
+        uint32 unregistered;
         bytes32 docHash;
         uint64 at;
     }
+
+    /// @notice Lines per batch; larger rosters are reported in several batches.
+    uint256 public constant MAX_LINES = 500;
 
     bytes32 public constant RECEIPT_TYPEHASH =
         keccak256("Receipt(uint256 hopId,uint256 batchIndex,address receipt,uint256 amount,bool received)");
@@ -68,6 +75,8 @@ contract CustodyLedger is Ownable, EIP712 {
     Hop[] internal _hops;
     mapping(uint256 hopId => Batch[]) internal _batches;
     mapping(bytes32 => uint8) public lineState; // keccak(hopId, batchIndex, receipt) => see constants above
+    mapping(bytes32 => uint256) internal _lineAmount; // keccak(hopId, batchIndex, receipt) => amount (0 = no line)
+    mapping(uint256 hopId => mapping(uint256 batchIndex => address[])) internal _lineReceipts;
 
     event HopCreated(
         uint256 indexed hopId,
@@ -82,7 +91,12 @@ contract CustodyLedger is Ownable, EIP712 {
     );
     event HopAcknowledged(uint256 indexed hopId, address indexed by);
     event Reconciled(
-        uint256 indexed hopId, uint256 indexed batchIndex, bytes32 root, uint256 amount, uint32 households, bytes32 docHash
+        uint256 indexed hopId,
+        uint256 indexed batchIndex,
+        uint256 amount,
+        uint32 households,
+        uint32 unregistered,
+        bytes32 docHash
     );
     event LineConfirmed(uint256 indexed hopId, uint256 indexed batchIndex, bool received, bool byProxy);
     event ProxyOverridden(uint256 indexed hopId, uint256 indexed batchIndex, uint8 previous);
@@ -100,6 +114,8 @@ contract CustodyLedger is Ownable, EIP712 {
     error AlreadyRecorded();
     error AlreadySet();
     error NotRegisteredHousehold();
+    error BadRoster();
+    error DuplicateLine(address receipt);
 
     constructor(IKeptFactory _factory, IEligibilityRegistry _registry, address _owner)
         Ownable(_owner)
@@ -153,22 +169,49 @@ contract CustodyLedger is Ownable, EIP712 {
         hopId = _createHop(parentId, p.fund, msg.sender, to, p.purposeId, amount, estHouseholds, evidenceHash);
     }
 
-    /// @notice Commit a payment roster batch: Merkle root over (receipt address, amount) leaves.
-    function reconcile(uint256 hopId, bytes32 root, uint256 amount, uint32 households, bytes32 docHash)
+    /// @notice Publish a payment batch as pseudonymous lines (receipt address, amount). The total and
+    /// the household count are computed here, and lines that are not registered households are counted.
+    function reconcile(uint256 hopId, address[] calldata receipts, uint256[] calldata amounts, bytes32 docHash)
         external
         returns (uint256 batchIndex)
     {
         Hop storage h = _hop(hopId);
         _requireHolder(h);
-        uint256 rem = remaining(hopId);
-        if (amount == 0 || amount > rem) revert ExceedsRemaining(rem);
-        h.reconciled += amount;
-        h.reconciledHouseholds += households;
+        uint256 n = receipts.length;
+        if (n == 0 || n != amounts.length || n > MAX_LINES) revert BadRoster();
+
+        uint256 disasterId = IReliefFund(h.fund).disasterId();
         batchIndex = _batches[hopId].length;
+        address[] storage list = _lineReceipts[hopId][batchIndex];
+        uint256 total;
+        uint32 unregistered;
+        for (uint256 i = 0; i < n; i++) {
+            address r = receipts[i];
+            uint256 a = amounts[i];
+            if (a == 0) revert BadRoster();
+            bytes32 key = keccak256(abi.encode(hopId, batchIndex, r));
+            if (_lineAmount[key] != 0) revert DuplicateLine(r);
+            _lineAmount[key] = a;
+            list.push(r);
+            total += a;
+            if (registry.villageOfReceipt(disasterId, r) == 0) unregistered++;
+        }
+
+        uint256 rem = remaining(hopId);
+        if (total > rem) revert ExceedsRemaining(rem);
+        h.reconciled += total;
+        h.reconciledHouseholds += uint32(n);
+        h.unregistered += unregistered;
         _batches[hopId].push(
-            Batch({root: root, amount: amount, households: households, docHash: docHash, at: uint64(block.timestamp)})
+            Batch({
+                amount: total,
+                households: uint32(n),
+                unregistered: unregistered,
+                docHash: docHash,
+                at: uint64(block.timestamp)
+            })
         );
-        emit Reconciled(hopId, batchIndex, root, amount, households, docHash);
+        emit Reconciled(hopId, batchIndex, total, uint32(n), unregistered, docHash);
     }
 
     /// @notice An NGO handed aid over in person after verifying a zero-knowledge eligibility proof.
@@ -188,18 +231,13 @@ contract CustodyLedger is Ownable, EIP712 {
     // Household confirmation / dispute (relayed; the household signs, never pays gas)
     // ------------------------------------------------------------------
 
-    function confirmLine(
-        uint256 hopId,
-        uint256 batchIndex,
-        address receipt,
-        uint256 amount,
-        bool received,
-        bytes32[] calldata merkleProof,
-        bytes calldata signature
-    ) external {
+    function confirmLine(uint256 hopId, uint256 batchIndex, address receipt, bool received, bytes calldata signature)
+        external
+    {
         Hop storage h = _hop(hopId);
-        Batch storage b = _batches[hopId][batchIndex];
-        if (!MerkleProof.verifyCalldata(merkleProof, b.root, leaf(receipt, amount))) revert NotInRoster();
+        bytes32 key = keccak256(abi.encode(hopId, batchIndex, receipt));
+        uint256 amount = _lineAmount[key];
+        if (amount == 0) revert NotInRoster();
 
         uint256 disasterId = IReliefFund(h.fund).disasterId();
         uint32 village = registry.villageOfReceipt(disasterId, receipt);
@@ -215,7 +253,6 @@ contract CustodyLedger is Ownable, EIP712 {
             byProxy = true;
         }
 
-        bytes32 key = keccak256(abi.encode(hopId, batchIndex, receipt));
         uint8 prev = lineState[key];
         // The household's own answer is final. A proxy can only answer an untouched line.
         if (prev == CONFIRMED || prev == DISPUTED || (prev != 0 && byProxy)) revert AlreadyRecorded();
@@ -234,17 +271,22 @@ contract CustodyLedger is Ownable, EIP712 {
     // Views
     // ------------------------------------------------------------------
 
-    /// @notice OpenZeppelin StandardMerkleTree leaf encoding for (address, uint256).
-    function leaf(address receipt, uint256 amount) public pure returns (bytes32) {
-        return keccak256(bytes.concat(keccak256(abi.encode(receipt, amount))));
+    /// @notice Amount recorded for a receipt address in a batch (0 = not in that batch).
+    function lineAmount(uint256 hopId, uint256 batchIndex, address receipt) external view returns (uint256) {
+        return _lineAmount[keccak256(abi.encode(hopId, batchIndex, receipt))];
     }
 
-    function verifyInclusion(uint256 hopId, uint256 batchIndex, address receipt, uint256 amount, bytes32[] calldata proof)
+    /// @notice All lines of a batch, in the order the custodian published them.
+    function batchLines(uint256 hopId, uint256 batchIndex)
         external
         view
-        returns (bool)
+        returns (address[] memory receipts, uint256[] memory amounts)
     {
-        return MerkleProof.verifyCalldata(proof, _batches[hopId][batchIndex].root, leaf(receipt, amount));
+        receipts = _lineReceipts[hopId][batchIndex];
+        amounts = new uint256[](receipts.length);
+        for (uint256 i = 0; i < receipts.length; i++) {
+            amounts[i] = _lineAmount[keccak256(abi.encode(hopId, batchIndex, receipts[i]))];
+        }
     }
 
     function remaining(uint256 hopId) public view returns (uint256) {

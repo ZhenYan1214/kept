@@ -4,7 +4,6 @@ pragma solidity ^0.8.28;
 import {Base} from "./Base.t.sol";
 import {CustodyLedger} from "../src/CustodyLedger.sol";
 import {AidPrograms} from "../src/AidPrograms.sol";
-import {Hashes} from "@openzeppelin/contracts/utils/cryptography/Hashes.sol";
 
 contract CustodyTest is Base {
     uint256 rootHop;
@@ -34,10 +33,14 @@ contract CustodyTest is Base {
         rootHop = fund.proposal(id).hopId;
     }
 
-    function _twoLeafRoster(uint256 a, uint256 b) internal view returns (bytes32 root, bytes32 la, bytes32 lb) {
-        la = ledger.leaf(alice, a);
-        lb = ledger.leaf(bob, b);
-        root = Hashes.commutativeKeccak256(la, lb);
+    function _lines(address a, uint256 amountA, address b, uint256 amountB)
+        internal
+        pure
+        returns (address[] memory receipts, uint256[] memory amounts)
+    {
+        receipts = new address[](2);
+        amounts = new uint256[](2);
+        (receipts[0], amounts[0], receipts[1], amounts[1]) = (a, amountA, b, amountB);
     }
 
     function _sign(uint256 key, uint256 hopId, uint256 batchIndex, address receipt, uint256 amount, bool received)
@@ -60,21 +63,22 @@ contract CustodyTest is Base {
         uint256 countyHop = ledger.forward(rootHop, county, 100_000, 400, keccak256("bank slip"));
         assertEq(ledger.remaining(rootHop), 200_000);
 
+        (address[] memory receipts, uint256[] memory amounts) = _lines(alice, 200, bob, 300);
         // County must acknowledge before it can report payments.
         vm.prank(county);
         vm.expectRevert(CustodyLedger.NotAcknowledged.selector);
-        ledger.reconcile(countyHop, bytes32(uint256(1)), 1, 1, bytes32(0));
+        ledger.reconcile(countyHop, receipts, amounts, bytes32(0));
 
         vm.prank(county);
         ledger.acknowledge(countyHop);
-        (bytes32 root,,) = _twoLeafRoster(200, 300);
         vm.prank(county);
-        ledger.reconcile(countyHop, root, 500, 2, keccak256("roster batch 1"));
+        ledger.reconcile(countyHop, receipts, amounts, keccak256("roster batch 1"));
 
         CustodyLedger.Hop memory h = ledger.hop(countyHop);
         assertEq(h.parent, rootHop);
-        assertEq(h.reconciled, 500);
+        assertEq(h.reconciled, 500, "total computed from the lines");
         assertEq(h.reconciledHouseholds, 2);
+        assertEq(h.unregistered, 0);
     }
 
     function test_CannotForwardMoreThanHeld() public {
@@ -93,55 +97,95 @@ contract CustodyTest is Base {
         ledger.forward(rootHop, county, 1, 1, bytes32(0));
     }
 
-    function _reconciled() internal returns (bytes32 la, bytes32 lb) {
-        bytes32 root;
-        (root, la, lb) = _twoLeafRoster(200_000, 50_000);
+    function _reconciled() internal {
+        (address[] memory receipts, uint256[] memory amounts) = _lines(alice, 200_000, bob, 50_000);
         vm.startPrank(ministry);
         ledger.acknowledge(rootHop);
-        ledger.reconcile(rootHop, root, 250_000, 2, keccak256("roster"));
+        ledger.reconcile(rootHop, receipts, amounts, keccak256("roster"));
         vm.stopPrank();
     }
 
-    function test_HouseholdVerifiesInclusionAndConfirms() public {
-        (, bytes32 lb) = _reconciled();
-        bytes32[] memory proof = new bytes32[](1);
-        proof[0] = lb;
-        assertTrue(ledger.verifyInclusion(rootHop, 0, alice, 200_000, proof));
-        assertFalse(ledger.verifyInclusion(rootHop, 0, alice, 999, proof));
+    // ---------------- published lines ----------------
 
+    function test_LinesArePublicAndTotalsComputed() public {
+        _reconciled();
+        (address[] memory receipts, uint256[] memory amounts) = ledger.batchLines(rootHop, 0);
+        assertEq(receipts.length, 2);
+        assertEq(receipts[0], alice);
+        assertEq(amounts[1], 50_000);
+        assertEq(ledger.lineAmount(rootHop, 0, alice), 200_000, "a household finds its own line without asking anyone");
+        assertEq(ledger.lineAmount(rootHop, 0, makeAddr("nobody")), 0);
+        CustodyLedger.Batch memory b = ledger.batch(rootHop, 0);
+        assertEq(b.amount, 250_000);
+        assertEq(b.households, 2);
+    }
+
+    function test_RosterRulesAreChecked() public {
+        vm.startPrank(ministry);
+        ledger.acknowledge(rootHop);
+        (address[] memory receipts, uint256[] memory amounts) = _lines(alice, 200_000, alice, 1);
+        vm.expectRevert(abi.encodeWithSelector(CustodyLedger.DuplicateLine.selector, alice));
+        ledger.reconcile(rootHop, receipts, amounts, bytes32(0));
+
+        (receipts, amounts) = _lines(alice, 200_000, bob, 0);
+        vm.expectRevert(CustodyLedger.BadRoster.selector);
+        ledger.reconcile(rootHop, receipts, amounts, bytes32(0));
+
+        (receipts, amounts) = _lines(alice, 200_000, bob, 100_001); // 300,001 > 300,000 held
+        vm.expectRevert(abi.encodeWithSelector(CustodyLedger.ExceedsRemaining.selector, uint256(300_000)));
+        ledger.reconcile(rootHop, receipts, amounts, bytes32(0));
+        vm.stopPrank();
+    }
+
+    function test_UnregisteredLinesArePubliclyCounted() public {
+        // A custodian pads the roster with a receipt key that is not a registered household.
+        address ghost = makeAddr("ghost receipt key");
+        (address[] memory receipts, uint256[] memory amounts) = _lines(alice, 200_000, ghost, 100_000);
+        vm.startPrank(ministry);
+        ledger.acknowledge(rootHop);
+        ledger.reconcile(rootHop, receipts, amounts, keccak256("padded roster"));
+        vm.stopPrank();
+        assertEq(ledger.batch(rootHop, 0).unregistered, 1);
+        assertEq(ledger.hop(rootHop).unregistered, 1);
+    }
+
+    function test_HouseholdConfirmsItsOwnLine() public {
+        _reconciled();
         bytes memory sig = _sign(aliceKey, rootHop, 0, alice, 200_000, true);
-        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, sig); // relayed by anyone
+        ledger.confirmLine(rootHop, 0, alice, true, sig); // relayed by anyone
         assertEq(ledger.hop(rootHop).confirmed, 1);
 
         vm.expectRevert(CustodyLedger.AlreadyRecorded.selector);
-        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, sig);
+        ledger.confirmLine(rootHop, 0, alice, true, sig);
+    }
+
+    function test_SignatureCoversTheRecordedAmount() public {
+        _reconciled();
+        // Alice signs for an amount different from the line: it does not verify.
+        bytes memory sig = _sign(aliceKey, rootHop, 0, alice, 999, true);
+        vm.expectRevert(CustodyLedger.BadSignature.selector);
+        ledger.confirmLine(rootHop, 0, alice, true, sig);
     }
 
     function test_HouseholdDisputesUndeliveredPayment() public {
-        (bytes32 la,) = _reconciled();
-        bytes32[] memory proof = new bytes32[](1);
-        proof[0] = la;
+        _reconciled();
         bytes memory sig = _sign(bobKey, rootHop, 0, bob, 50_000, false);
-        ledger.confirmLine(rootHop, 0, bob, 50_000, false, proof, sig);
+        ledger.confirmLine(rootHop, 0, bob, false, sig);
         assertEq(ledger.hop(rootHop).disputed, 1);
     }
 
     function test_CustodianCannotForgeConfirmations() public {
-        (, bytes32 lb) = _reconciled();
-        bytes32[] memory proof = new bytes32[](1);
-        proof[0] = lb;
+        _reconciled();
         (, uint256 ministryKey) = makeAddrAndKey("ministry");
         bytes memory forged = _sign(ministryKey, rootHop, 0, alice, 200_000, true);
         vm.expectRevert(CustodyLedger.BadSignature.selector);
-        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, forged);
+        ledger.confirmLine(rootHop, 0, alice, true, forged);
     }
 
     function test_ProxyConfirmationIsLabelled() public {
-        (, bytes32 lb) = _reconciled();
-        bytes32[] memory proof = new bytes32[](1);
-        proof[0] = lb;
+        _reconciled();
         bytes memory sig = _sign(socialWorkerKey, rootHop, 0, alice, 200_000, true);
-        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, sig);
+        ledger.confirmLine(rootHop, 0, alice, true, sig);
         CustodyLedger.Hop memory h = ledger.hop(rootHop);
         assertEq(h.proxyConfirmed, 1);
         assertEq(h.confirmed, 0);
@@ -150,42 +194,34 @@ contract CustodyTest is Base {
     function test_CustodianCannotConfirmWithItsOwnReceiptKeys() public {
         // A custodian puts a key it controls into the roster and signs "received" with it.
         (address fake, uint256 fakeKey) = makeAddrAndKey("custodian-made receipt key");
-        bytes32 lf = ledger.leaf(fake, 100_000);
-        bytes32 la = ledger.leaf(alice, 200_000);
-        bytes32 root = Hashes.commutativeKeccak256(lf, la);
+        (address[] memory receipts, uint256[] memory amounts) = _lines(fake, 100_000, alice, 200_000);
         vm.startPrank(ministry);
         ledger.acknowledge(rootHop);
-        ledger.reconcile(rootHop, root, 300_000, 2, keccak256("padded roster"));
+        ledger.reconcile(rootHop, receipts, amounts, keccak256("padded roster"));
         vm.stopPrank();
 
-        bytes32[] memory proof = new bytes32[](1);
-        proof[0] = la;
         bytes memory sig = _sign(fakeKey, rootHop, 0, fake, 100_000, true);
         vm.expectRevert(CustodyLedger.NotRegisteredHousehold.selector);
-        ledger.confirmLine(rootHop, 0, fake, 100_000, true, proof, sig);
+        ledger.confirmLine(rootHop, 0, fake, true, sig);
         assertEq(ledger.hop(rootHop).confirmed, 0);
     }
 
     function test_ProxyOnlySignsForItsOwnVillage() public {
-        (bytes32 la,) = _reconciled();
-        bytes32[] memory proof = new bytes32[](1);
-        proof[0] = la;
+        _reconciled();
         // Bob is in village B; the social worker is designated for village A only.
         bytes memory sig = _sign(socialWorkerKey, rootHop, 0, bob, 50_000, true);
         vm.expectRevert(CustodyLedger.BadSignature.selector);
-        ledger.confirmLine(rootHop, 0, bob, 50_000, true, proof, sig);
+        ledger.confirmLine(rootHop, 0, bob, true, sig);
     }
 
     function test_HouseholdOverridesProxy() public {
-        (, bytes32 lb) = _reconciled();
-        bytes32[] memory proof = new bytes32[](1);
-        proof[0] = lb;
+        _reconciled();
         // The proxy signs "received" first, before Alice can answer.
-        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, _sign(socialWorkerKey, rootHop, 0, alice, 200_000, true));
+        ledger.confirmLine(rootHop, 0, alice, true, _sign(socialWorkerKey, rootHop, 0, alice, 200_000, true));
         assertEq(ledger.hop(rootHop).proxyConfirmed, 1);
 
         // Alice says she never got it: her own answer replaces the proxy's.
-        ledger.confirmLine(rootHop, 0, alice, 200_000, false, proof, _sign(aliceKey, rootHop, 0, alice, 200_000, false));
+        ledger.confirmLine(rootHop, 0, alice, false, _sign(aliceKey, rootHop, 0, alice, 200_000, false));
         CustodyLedger.Hop memory h = ledger.hop(rootHop);
         assertEq(h.proxyConfirmed, 0);
         assertEq(h.disputed, 1);
@@ -194,40 +230,35 @@ contract CustodyTest is Base {
         // Her answer is final: neither she nor the proxy can change it again.
         bytes memory again = _sign(aliceKey, rootHop, 0, alice, 200_000, true);
         vm.expectRevert(CustodyLedger.AlreadyRecorded.selector);
-        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, again);
+        ledger.confirmLine(rootHop, 0, alice, true, again);
         bytes memory proxyAgain = _sign(socialWorkerKey, rootHop, 0, alice, 200_000, true);
         vm.expectRevert(CustodyLedger.AlreadyRecorded.selector);
-        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, proxyAgain);
+        ledger.confirmLine(rootHop, 0, alice, true, proxyAgain);
     }
 
     function test_ProxyCannotOverrideHousehold() public {
-        (, bytes32 lb) = _reconciled();
-        bytes32[] memory proof = new bytes32[](1);
-        proof[0] = lb;
-        ledger.confirmLine(rootHop, 0, alice, 200_000, false, proof, _sign(aliceKey, rootHop, 0, alice, 200_000, false));
+        _reconciled();
+        ledger.confirmLine(rootHop, 0, alice, false, _sign(aliceKey, rootHop, 0, alice, 200_000, false));
         bytes memory sig = _sign(socialWorkerKey, rootHop, 0, alice, 200_000, true);
         vm.expectRevert(CustodyLedger.AlreadyRecorded.selector);
-        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, sig);
+        ledger.confirmLine(rootHop, 0, alice, true, sig);
     }
 
     function test_RevokedProxyCannotSign() public {
-        (, bytes32 lb) = _reconciled();
+        _reconciled();
         vm.prank(office);
         registry.setProxy(disasterId, VILLAGE_A, socialWorker, false);
-        bytes32[] memory proof = new bytes32[](1);
-        proof[0] = lb;
         bytes memory sig = _sign(socialWorkerKey, rootHop, 0, alice, 200_000, true);
         vm.expectRevert(CustodyLedger.BadSignature.selector);
-        ledger.confirmLine(rootHop, 0, alice, 200_000, true, proof, sig);
+        ledger.confirmLine(rootHop, 0, alice, true, sig);
     }
 
     function test_NotInRosterCannotConfirm() public {
         _reconciled();
         (address eve, uint256 eveKey) = makeAddrAndKey("eve");
-        bytes32[] memory proof = new bytes32[](0);
         bytes memory sig = _sign(eveKey, rootHop, 0, eve, 1, false);
         vm.expectRevert(CustodyLedger.NotInRoster.selector);
-        ledger.confirmLine(rootHop, 0, eve, 1, false, proof, sig);
+        ledger.confirmLine(rootHop, 0, eve, false, sig);
     }
 
     // ---------------- NGO "show your QR" programmes ----------------
