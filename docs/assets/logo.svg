@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-labelledby="t">
+  <title id="t">Kept</title>
+  <!-- Dark tile so the mark reads the same on GitHub's light and dark themes. -->
+  <rect width="160" height="160" rx="28" fill="#0d1117"/>
+  <rect x="0.5" y="0.5" width="159" height="159" rx="27.5" fill="none" stroke="#30363d"/>
+  <!-- The custody chain: three hands passing the money on, closing into a seal. -->
+  <g fill="none" stroke="#8b949e" stroke-width="4" stroke-linecap="round">
+    <path d="M80 34 A46 46 0 0 1 119.84 103"/>
+    <path d="M119.84 103 A46 46 0 0 1 40.16 103"/>
+    <path d="M40.16 103 A46 46 0 0 1 80 34"/>
+  </g>
+  <g fill="#e6edf3" stroke="#0d1117" stroke-width="4">
+    <circle cx="80" cy="34" r="8"/>
+    <circle cx="119.84" cy="103" r="8"/>
+    <circle cx="40.16" cy="103" r="8"/>
+  </g>
+  <!-- Kept: the household's own "received". -->
+  <path d="M61 80 L74 93 L99 66" fill="none" stroke="#3fb950" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
