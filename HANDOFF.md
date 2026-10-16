@@ -17,7 +17,8 @@
 | 前端 | Next.js，9 個頁面，完整 Demo 流程已在瀏覽器實測跑通，`next build` 成功 |
 | **測試網** | 2026-10-16 已部署 Base Sepolia（`contracts/deployments/84532.json`，factory `0x4332…7702`、registry `0x85C5…C9e1`、ledger `0xD975…f0b7`），seed 在本機對測試網執行（`npm run dev:testnet` 後 `POST localhost:3001/api/seed`） |
 | **RPC** | 官方 `sepolia.base.org` 的 `eth_getLogs` 只允許 200 個區塊範圍，所以前端改成**完全不讀 event log**：registry 新增 `issuerList`、`villageList`、`groupMembers`（Semaphore 葉子依序，撤銷為 0），基金新增 `donation(receiptNo)`。`.env` 的 RPC 改用 `https://base-sepolia-rpc.publicnode.com`。公開 RPC 由多個節點負載平衡，剛寫入的狀態可能讀不到：seed 的 simulate 會重試，帳戶用 viem `nonceManager` 本地管理 nonce |
-| **卡住的事** | Vercel 還沒登入 |
+| **網站** | 2026-10-16 已部署 Vercel：**https://kept-lilac.vercel.app**（專案 `zhenyans-projects/kept`，從本機 `web/` 用 `npx vercel deploy --prod` 部署，未連 GitHub）。環境變數：`NEXT_PUBLIC_CHAIN_ID`、`NEXT_PUBLIC_RPC_URL`（publicnode）、`DEMO_TIMELOCK_SECONDS`、`DEMO_PRIVATE_KEY`（Secret，使用者自行加入）。已確認公開可讀、可寫（測試申訴 #4） |
+| **卡住的事** | 無；剩影片、提交表單與 push 到 GitHub |
 | 接下來 | 部署 Base Sepolia → 部署 Vercel → 英文提案 → Demo 影片 → 送出 |
 
 ---
