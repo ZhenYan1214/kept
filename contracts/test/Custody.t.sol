@@ -253,6 +253,137 @@ contract CustodyTest is Base {
         ledger.confirmLine(rootHop, 0, alice, true, sig);
     }
 
+    // ---------------- sample audits ----------------
+
+    function test_AuditSampleSize() public view {
+        assertEq(ledger.auditSampleSize(1), 1);
+        assertEq(ledger.auditSampleSize(5), 5);
+        assertEq(ledger.auditSampleSize(12), 5);
+        assertEq(ledger.auditSampleSize(100), 20);
+        assertEq(ledger.auditSampleSize(500), 59, "capped: 59 confirmed lines bound the undelivered share below 5%");
+    }
+
+    function _publishLines(uint256 count) internal returns (address[] memory receipts) {
+        receipts = new address[](count);
+        uint256[] memory amounts = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            receipts[i] = address(uint160(0x1000 + i));
+            amounts[i] = 1_000;
+        }
+        vm.startPrank(ministry);
+        ledger.acknowledge(rootHop);
+        ledger.reconcile(rootHop, receipts, amounts, keccak256("roster"));
+        vm.stopPrank();
+    }
+
+    function test_AuditIsDrawnFromAFixedLaterBlock() public {
+        address[] memory lines = _publishLines(12);
+        uint256 published = vm.getBlockNumber(); // (block.number is cached under via_ir)
+        // The seed block is fixed at publication: nobody can draw before it exists.
+        vm.expectRevert(CustodyLedger.AuditTooEarly.selector);
+        ledger.drawAudit(rootHop, 0);
+        vm.roll(published + ledger.AUDIT_DELAY());
+        vm.expectRevert(CustodyLedger.AuditTooEarly.selector);
+        ledger.drawAudit(rootHop, 0);
+
+        vm.roll(published + ledger.AUDIT_DELAY() + 1);
+        address[] memory picks = ledger.drawAudit(rootHop, 0); // anyone can draw
+        assertEq(picks.length, 5);
+        for (uint256 i = 0; i < picks.length; i++) {
+            assertGt(ledger.lineAmount(rootHop, 0, picks[i]), 0, "every pick is a published line");
+            for (uint256 j = 0; j < i; j++) {
+                assertTrue(picks[i] != picks[j], "no line is picked twice");
+            }
+        }
+        assertEq(ledger.auditPicks(rootHop, 0).length, 5);
+        assertEq(ledger.auditSeedBlockUsed(rootHop, 0), published + ledger.AUDIT_DELAY());
+        assertEq(lines.length, 12);
+
+        vm.expectRevert(CustodyLedger.AuditAlreadyDrawn.selector);
+        ledger.drawAudit(rootHop, 0);
+    }
+
+    function test_LateDrawUsesTheSameGridAndIsVisible() public {
+        _publishLines(12);
+        uint256 first = vm.getBlockNumber() + ledger.AUDIT_DELAY();
+        vm.roll(first + 300); // too late for the first seed block's hash
+        assertEq(ledger.auditSeedBlock(rootHop, 0), first + 256);
+        vm.roll(first + 256); // still in the first window: the original seed block
+        assertEq(ledger.auditSeedBlock(rootHop, 0), first);
+    }
+
+    function _signVisit(uint256 key, uint256 batchIndex, address receipt, uint256 amount, bool received, address auditor)
+        internal
+        view
+        returns (bytes memory)
+    {
+        bytes32 structHash = keccak256(
+            abi.encode(ledger.AUDIT_VISIT_TYPEHASH(), rootHop, batchIndex, receipt, amount, received, auditor)
+        );
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", ledger.domainSeparator(), structHash));
+        (uint8 v, bytes32 r, bytes32 s_) = vm.sign(key, digest);
+        return abi.encodePacked(r, s_, v);
+    }
+
+    function test_AuditVisitsNeedAnAuditorAndTheHouseholdsOwnSignature() public {
+        address auditor = makeAddr("auditor");
+        vm.prank(ledger.owner());
+        ledger.setAuditor(auditor, true);
+        (address ghost,) = makeAddrAndKey("ghost receipt key");
+        // Alice and Bob are real households; the third line is a made-up receipt.
+        address[] memory receipts = new address[](3);
+        uint256[] memory amounts = new uint256[](3);
+        (receipts[0], receipts[1], receipts[2]) = (alice, bob, ghost);
+        (amounts[0], amounts[1], amounts[2]) = (200_000, 50_000, 50_000);
+        vm.startPrank(ministry);
+        ledger.acknowledge(rootHop);
+        ledger.reconcile(rootHop, receipts, amounts, keccak256("roster"));
+        vm.stopPrank();
+
+        vm.expectRevert(CustodyLedger.NotSampled.selector);
+        vm.prank(auditor);
+        ledger.recordAuditVisit(rootHop, 0, alice, 3, "");
+
+        vm.roll(block.number + ledger.AUDIT_DELAY() + 1);
+        ledger.drawAudit(rootHop, 0); // 3 lines: all are sampled
+
+        bytes memory aliceSays = _signVisit(aliceKey, 0, alice, 200_000, true, auditor);
+        vm.expectRevert(CustodyLedger.NotAuditor.selector);
+        ledger.recordAuditVisit(rootHop, 0, alice, 1, aliceSays);
+
+        // A remote confirmation signature cannot be reused as an audit visit.
+        bytes memory remote = _sign(aliceKey, rootHop, 0, alice, 200_000, true);
+        vm.expectRevert(CustodyLedger.BadSignature.selector);
+        vm.prank(auditor);
+        ledger.recordAuditVisit(rootHop, 0, alice, 1, remote);
+        // Nor can the auditor claim an answer the household did not give.
+        vm.expectRevert(CustodyLedger.BadSignature.selector);
+        vm.prank(auditor);
+        ledger.recordAuditVisit(rootHop, 0, alice, 2, aliceSays);
+
+        vm.startPrank(auditor);
+        vm.expectRevert(CustodyLedger.BadOutcome.selector);
+        ledger.recordAuditVisit(rootHop, 0, alice, 4, "");
+        ledger.recordAuditVisit(rootHop, 0, alice, 1, aliceSays);
+        ledger.recordAuditVisit(rootHop, 0, bob, 2, _signVisit(bobKey, 0, bob, 50_000, false, auditor));
+        ledger.recordAuditVisit(rootHop, 0, ghost, 3, ""); // nobody at the address: the auditor's own word
+        vm.expectRevert(CustodyLedger.AlreadyRecorded.selector);
+        ledger.recordAuditVisit(rootHop, 0, ghost, 3, "");
+        vm.stopPrank();
+
+        assertEq(ledger.auditOutcome(keccak256(abi.encode(rootHop, 0, alice))), 1);
+        assertEq(ledger.auditOutcome(keccak256(abi.encode(rootHop, 0, bob))), 2);
+        assertEq(ledger.auditOutcome(keccak256(abi.encode(rootHop, 0, ghost))), 3);
+        assertEq(ledger.auditedBy(keccak256(abi.encode(rootHop, 0, ghost))), auditor);
+    }
+
+    function test_AuditNeedsAPublishedBatch() public {
+        vm.prank(ministry);
+        ledger.acknowledge(rootHop);
+        vm.expectRevert(CustodyLedger.UnknownBatch.selector);
+        ledger.drawAudit(rootHop, 0);
+    }
+
     function test_NotInRosterCannotConfirm() public {
         _reconciled();
         (address eve, uint256 eveKey) = makeAddrAndKey("eve");

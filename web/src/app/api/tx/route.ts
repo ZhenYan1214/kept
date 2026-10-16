@@ -40,6 +40,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `${ROLES[role].short} may not call ${target}.${functionName}` }, { status: 403 });
   }
 
+  // "Not found at the registered address" is the auditor's own statement; visitors cannot make it.
+  if (role === "auditor" && Number(args[3]) === 3) {
+    return NextResponse.json({ error: "Only the demo's own auditor visits can record 'not found'" }, { status: 403 });
+  }
+
   try {
     let address: Address;
     if (target === "fund") {

@@ -233,5 +233,43 @@ for (const [addr, amt] of roster) {
 const mh = await read(dep.ledger, "ledger", "hop", [mHop]);
 assert(mh.confirmed === 1 && mh.disputed === 1, "one household confirmed, one disputed — via signatures only they can make");
 
+// Sample audit: seeded by a block fixed at publication, so the custodian cannot choose it.
+await pub.request({ method: "evm_mine", params: [] }); // the seed block must exist before the draw
+await send(donor, dep.ledger, "ledger", "drawAudit", [mHop, 0n]);
+const picks = await read(dep.ledger, "ledger", "auditPicks", [mHop, 0n]);
+assert(
+  picks.length === 3 && new Set(picks).size === 3 && picks.every((a) => roster.some(([r]) => r === a)),
+  "audit sample drawn on-chain from the published lines",
+);
+await expectRevert(donor, dep.ledger, "ledger", "drawAudit", [mHop, 0n], "AuditAlreadyDrawn");
+
+// An independent auditor visits the sampled households. A real household signs this visit itself;
+// the made-up receipt has nobody behind it, which the auditor records under its own address.
+const auditor = acct(17); // not one of anvil's pre-funded accounts
+await pub.waitForTransactionReceipt({ hash: await wallet(authority).sendTransaction({ to: auditor.address, value: 10n ** 17n }) });
+await send(authority, dep.ledger, "ledger", "setAuditor", [auditor.address, true]);
+const visitTypes = {
+  AuditVisit: [
+    { name: "hopId", type: "uint256" },
+    { name: "batchIndex", type: "uint256" },
+    { name: "receipt", type: "address" },
+    { name: "amount", type: "uint256" },
+    { name: "received", type: "bool" },
+    { name: "auditor", type: "address" },
+  ],
+};
+const visit = async (addr, amt) => {
+  const message = { hopId: mHop, batchIndex: 0n, receipt: addr, amount: amt, received: true, auditor: auditor.address };
+  return households[0].receipt.signTypedData({ domain, types: visitTypes, primaryType: "AuditVisit", message });
+};
+await send(auditor, dep.ledger, "ledger", "recordAuditVisit", [mHop, 0n, households[0].receipt.address, 1, await visit(households[0].receipt.address, 200_000n)]);
+await send(auditor, dep.ledger, "ledger", "recordAuditVisit", [mHop, 0n, padded.address, 3, "0x"]);
+const outcome = (addr) =>
+  read(dep.ledger, "ledger", "auditOutcome", [keccak256(encodeAbiParameters([{ type: "uint256" }, { type: "uint256" }, { type: "address" }], [mHop, 0n, addr]))]);
+assert(
+  (await outcome(households[0].receipt.address)) === 1 && (await outcome(padded.address)) === 3,
+  "audit visits recorded: a household's own signed answer, and a padded line found to have nobody behind it",
+);
+
 console.log(`\nAll ${passed} end-to-end checks passed with real Semaphore proofs.\n`);
 process.exit(0);

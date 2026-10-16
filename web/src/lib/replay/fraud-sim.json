@@ -1,0 +1,316 @@
+{
+  "generatedBy": "web/scripts/fraud-sim.mjs",
+  "assumptions": {
+    "households": 4039,
+    "batchSize": 500,
+    "responseRate": 0.3,
+    "answerMeanDays": 21,
+    "auditVisitDays": 30,
+    "mistakenRate": 0.01,
+    "notFoundRate": 0.01,
+    "horizonDays": 180,
+    "falseAlarm": 0.05,
+    "trials": 4000,
+    "batches": 9,
+    "auditVisits": 480
+  },
+  "honestBaseline": {
+    "meanSelfSignals": 12.1,
+    "meanAuditSignals": 9.6,
+    "thresholds": {
+      "selfOnly": 18,
+      "selfWithAudit": 19,
+      "audit": 16
+    }
+  },
+  "scenarios": [
+    {
+      "key": "withheld",
+      "label": "Payments withheld from real households",
+      "note": "Lines are published as paid; the households never got the money."
+    },
+    {
+      "key": "targeted",
+      "label": "Withheld from households unlikely to answer",
+      "note": "Same, but aimed at elders and displaced families who would not answer by themselves."
+    },
+    {
+      "key": "ghost",
+      "label": "Ghost households registered by colluding officials",
+      "note": "A village chief and the township office both sign fake households; the colluders confirm the ghosts' lines themselves."
+    },
+    {
+      "key": "excluded",
+      "label": "Eligible households left off every roster",
+      "note": "Never recorded as paid; nothing to dispute."
+    }
+  ],
+  "results": [
+    {
+      "scenario": "withheld",
+      "rate": 0.005,
+      "affected": 20,
+      "self": {
+        "detected": 0.446,
+        "medianDay": 42
+      },
+      "withAudit": {
+        "detected": 0.413,
+        "medianDay": 39
+      }
+    },
+    {
+      "scenario": "withheld",
+      "rate": 0.01,
+      "affected": 40,
+      "self": {
+        "detected": 0.888,
+        "medianDay": 29
+      },
+      "withAudit": {
+        "detected": 0.886,
+        "medianDay": 28
+      }
+    },
+    {
+      "scenario": "withheld",
+      "rate": 0.02,
+      "affected": 81,
+      "self": {
+        "detected": 1,
+        "medianDay": 15
+      },
+      "withAudit": {
+        "detected": 1,
+        "medianDay": 16
+      }
+    },
+    {
+      "scenario": "withheld",
+      "rate": 0.05,
+      "affected": 202,
+      "self": {
+        "detected": 1,
+        "medianDay": 6
+      },
+      "withAudit": {
+        "detected": 1,
+        "medianDay": 7
+      }
+    },
+    {
+      "scenario": "targeted",
+      "rate": 0.005,
+      "affected": 20,
+      "self": {
+        "detected": 0.042,
+        "medianDay": 53
+      },
+      "withAudit": {
+        "detected": 0.117,
+        "medianDay": 28
+      }
+    },
+    {
+      "scenario": "targeted",
+      "rate": 0.01,
+      "affected": 40,
+      "self": {
+        "detected": 0.038,
+        "medianDay": 53
+      },
+      "withAudit": {
+        "detected": 0.281,
+        "medianDay": 27
+      }
+    },
+    {
+      "scenario": "targeted",
+      "rate": 0.02,
+      "affected": 81,
+      "self": {
+        "detected": 0.031,
+        "medianDay": 52
+      },
+      "withAudit": {
+        "detected": 0.728,
+        "medianDay": 24
+      }
+    },
+    {
+      "scenario": "targeted",
+      "rate": 0.05,
+      "affected": 202,
+      "self": {
+        "detected": 0.027,
+        "medianDay": 57
+      },
+      "withAudit": {
+        "detected": 1,
+        "medianDay": 15
+      }
+    },
+    {
+      "scenario": "ghost",
+      "rate": 0.005,
+      "affected": 20,
+      "self": {
+        "detected": 0.035,
+        "medianDay": 55
+      },
+      "withAudit": {
+        "detected": 0.111,
+        "medianDay": 28
+      }
+    },
+    {
+      "scenario": "ghost",
+      "rate": 0.01,
+      "affected": 40,
+      "self": {
+        "detected": 0.038,
+        "medianDay": 56
+      },
+      "withAudit": {
+        "detected": 0.278,
+        "medianDay": 27
+      }
+    },
+    {
+      "scenario": "ghost",
+      "rate": 0.02,
+      "affected": 81,
+      "self": {
+        "detected": 0.03,
+        "medianDay": 55
+      },
+      "withAudit": {
+        "detected": 0.732,
+        "medianDay": 24
+      }
+    },
+    {
+      "scenario": "ghost",
+      "rate": 0.05,
+      "affected": 202,
+      "self": {
+        "detected": 0.027,
+        "medianDay": 55
+      },
+      "withAudit": {
+        "detected": 1,
+        "medianDay": 15
+      }
+    },
+    {
+      "scenario": "excluded",
+      "rate": 0.005,
+      "affected": 20,
+      "self": {
+        "detected": 0.442,
+        "medianDay": 42
+      },
+      "withAudit": {
+        "detected": 0.366,
+        "medianDay": 44
+      }
+    },
+    {
+      "scenario": "excluded",
+      "rate": 0.01,
+      "affected": 40,
+      "self": {
+        "detected": 0.896,
+        "medianDay": 29
+      },
+      "withAudit": {
+        "detected": 0.851,
+        "medianDay": 31
+      }
+    },
+    {
+      "scenario": "excluded",
+      "rate": 0.02,
+      "affected": 81,
+      "self": {
+        "detected": 1,
+        "medianDay": 15
+      },
+      "withAudit": {
+        "detected": 1,
+        "medianDay": 16
+      }
+    },
+    {
+      "scenario": "excluded",
+      "rate": 0.05,
+      "affected": 202,
+      "self": {
+        "detected": 1,
+        "medianDay": 6
+      },
+      "withAudit": {
+        "detected": 1,
+        "medianDay": 7
+      }
+    }
+  ],
+  "sensitivity": [
+    {
+      "scenario": "withheld",
+      "responseRate": 0.1,
+      "rate": 0.01,
+      "affected": 40,
+      "self": {
+        "detected": 0.404,
+        "medianDay": 35
+      },
+      "withAudit": {
+        "detected": 0.564,
+        "medianDay": 28
+      }
+    },
+    {
+      "scenario": "targeted",
+      "responseRate": 0.1,
+      "rate": 0.01,
+      "affected": 40,
+      "self": {
+        "detected": 0.019,
+        "medianDay": 44
+      },
+      "withAudit": {
+        "detected": 0.279,
+        "medianDay": 27
+      }
+    },
+    {
+      "scenario": "withheld",
+      "responseRate": 0.6,
+      "rate": 0.01,
+      "affected": 40,
+      "self": {
+        "detected": 0.995,
+        "medianDay": 25
+      },
+      "withAudit": {
+        "detected": 0.994,
+        "medianDay": 25
+      }
+    },
+    {
+      "scenario": "targeted",
+      "responseRate": 0.6,
+      "rate": 0.01,
+      "affected": 40,
+      "self": {
+        "detected": 0.031,
+        "medianDay": 64
+      },
+      "withAudit": {
+        "detected": 0.289,
+        "medianDay": 27
+      }
+    }
+  ]
+}

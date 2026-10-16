@@ -1,5 +1,6 @@
 import type { Snapshot } from "./snapshot";
 import { villageName } from "./scenario";
+import { summarizeAudit } from "./audit";
 
 /**
  * Accountability alerts: simple, published rules over public on-chain data. Anyone can recompute
@@ -14,6 +15,8 @@ export const RULES = {
   appealDays: 14, // an appeal waiting more than two weeks
   proxyShare: 0.3, // more than 30% of a tranche's confirmations signed by proxies
   proxyMin: 3,
+  auditDrawDays: 7, // a batch's audit sample should be drawn within a week of publication
+  auditVisitDays: 30, // ... and every sampled household visited within a month
 };
 
 const days = (s: number) => Math.floor(s / DAY);
@@ -41,6 +44,22 @@ export function computeAlerts(snap: Snapshot): Alert[] {
     }
     if (h.unregistered > 0) {
       out.push({ tone: "bad", rule: "Roster lists receipts that are not registered households", detail: `${label(h.id)}: ${h.unregistered} published line(s) do not belong to any household verified with two signatures.` });
+    }
+    for (const b of h.batches) {
+      const s = summarizeAudit(b.households, b.audit);
+      const batch = `${label(h.id)}, batch ${b.index}`;
+      if (!s.drawn && now - b.at > RULES.auditDrawDays * DAY) {
+        out.push({ tone: "warn", rule: `Audit sample not drawn within ${RULES.auditDrawDays} days`, detail: `${batch}: published ${days(now - b.at)} days ago; anyone can draw the sample.` });
+      }
+      if (s.notReceived > 0) {
+        out.push({ tone: "bad", rule: "Audited households say they were not paid", detail: `${batch}: ${s.notReceived} of ${s.sample} sampled household(s) signed “not received” in front of the auditor; up to ${s.maxBad} of ${s.lines} lines could be undelivered.` });
+      }
+      if (s.notFound > 0) {
+        out.push({ tone: "bad", rule: "Audit found nobody behind a paid line", detail: `${batch}: at ${s.notFound} sampled line(s) the auditor found nobody at the registered address.` });
+      }
+      if (s.drawn && !s.complete && now - b.at > RULES.auditVisitDays * DAY) {
+        out.push({ tone: "warn", rule: `Audit not finished within ${RULES.auditVisitDays} days`, detail: `${batch}: ${s.pending} sampled household(s) not visited yet.` });
+      }
     }
     const rosterHouseholds = h.reconciledHouseholds - h.programDelivered;
     if (snap.disaster && rosterHouseholds > snap.disaster.verified) {

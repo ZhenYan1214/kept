@@ -13,9 +13,9 @@
 | **初賽截止** | **2026/10/25 00:00（未標時區，目標 10/24 中午前送出）** |
 | 題目 | **Kept**：讓災難善款的兩個承諾都可驗證：對捐款人承諾錢怎麼用，對災民承諾不漏掉任何人 |
 | 程式碼 | https://github.com/ZhenYan1214/kept （`main` 分支） |
-| 合約 | 6 份，**69 個**單元測試全過；端對端腳本用**真實 Semaphore ZK 證明**跑通（14 項）。2026-10-16 監管鏈改為**公開匿名名冊明細**、否決後加冷卻期，合約已重新部署 |
+| 合約 | 6 份，**74 個**單元測試＋**4 條不變量**全過；端對端腳本用**真實 Semaphore ZK 證明**跑通（17 項）。2026-10-16 監管鏈改為**公開匿名名冊明細**、否決後加冷卻期；2026-10-17 加入**抽樣稽核與獨立稽核員到場記錄**、Slither 檢查（`docs/security-review.md`） |
 | 前端 | Next.js，9 個頁面，完整 Demo 流程已在瀏覽器實測跑通，`next build` 成功 |
-| **測試網** | 2026-10-16 已部署 Base Sepolia（`contracts/deployments/84532.json`，factory `0xE101…5eE2`、registry `0x7b17…48E0`、ledger `0x3d3B…696f`（2026-10-16 第二次重新部署）），seed 在本機對測試網執行（`npm run dev:testnet` 後 `POST localhost:3001/api/seed`） |
+| **測試網** | 2026-10-16 已部署 Base Sepolia（`contracts/deployments/84532.json`，factory `0xD2f8…13C0`、registry `0xB784…C016`、ledger `0x36e9…8072`（2026-10-17 第三次重新部署，含抽樣稽核）），seed 在本機對測試網執行（`npm run dev:testnet` 後 `POST localhost:3001/api/seed`） |
 | **RPC** | 官方 `sepolia.base.org` 的 `eth_getLogs` 只允許 200 個區塊範圍，所以前端改成**完全不讀 event log**：registry 新增 `issuerList`、`villageList`、`groupMembers`（Semaphore 葉子依序，撤銷為 0），基金新增 `donation(receiptNo)`。`.env` 的 RPC 改用 `https://base-sepolia-rpc.publicnode.com`。公開 RPC 由多個節點負載平衡，剛寫入的狀態可能讀不到：seed 的 simulate 會重試，帳戶用 viem `nonceManager` 本地管理 nonce |
 | **網站** | 2026-10-16 已部署 Vercel：**https://kept-lilac.vercel.app**（專案 `zhenyans-projects/kept`，從本機 `web/` 用 `npx vercel deploy --prod` 部署，未連 GitHub）。環境變數：`NEXT_PUBLIC_CHAIN_ID`、`NEXT_PUBLIC_RPC_URL`（publicnode）、`DEMO_TIMELOCK_SECONDS`、`DEMO_PRIVATE_KEY`（Secret，使用者自行加入）。已確認公開可讀、可寫（測試申訴 #4） |
 | **卡住的事** | 無；剩影片、提交表單與 push 到 GitHub |
@@ -209,7 +209,7 @@ kept/
 | `MockTWD` | 0 位小數、公開水龍頭，代表未來的合規台幣穩定幣（**僅測試網**） |
 
 - Semaphore v4.14.3（`@semaphore-protocol/contracts`）。PoseidonT3 用**確定性地址** `0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93`（foundry.toml `libraries`）。Base Sepolia 上官方 Semaphore v4：`0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`（已確認可用，groupCounter=362），Poseidon 和 Multicall3 也都有。
-- 單元測試用 `test/mocks/MockSemaphore.sol`（`points[0]==1` 視為有效）；真實證明由 `npm run e2e` 驗證（14 項通過，含「未登記的收據金鑰被拒」「總額由鏈上計算、未登記明細被標出」）。
+- 單元測試用 `test/mocks/MockSemaphore.sol`（`points[0]==1` 視為有效）；真實證明由 `npm run e2e` 驗證（17 項通過，含「未登記的收據金鑰被拒」「總額由鏈上計算、未登記明細被標出」「抽樣在鏈上抽出」「稽核員記錄家戶親簽與查無此戶」）。不變量測試在 `test/Invariants.t.sol`（`foundry.toml` 的 `[invariant]` 設 256 輪）。
 
 ### 前端與 Demo 伺服器
 - 鏈上狀態由 `lib/snapshot.ts` 讀取（readContract＋分段 getLogs），`SnapshotProvider` 每 4 秒（本機）／10 秒（測試網）輪詢
@@ -404,6 +404,15 @@ cd ../web && npm install && npm run dev                          # http://localh
 - **IEEE S&P 2023 "Not Yet Another Digital ID"**（EPFL×ICRC）：每戶每輪一次、智慧卡版。
 - **Frontiers in Blockchain 2026**：歐盟 306 個公部門用例中，SDG 2、6、14 較少被涵蓋。
 - 原始筆記在 `docs/research_notes/`（見 §9）。
+
+### 10.11 2026-10-17 第五輪：四項升級（抽樣稽核、詐欺模擬、外部驗證、真實資料時間線）
+- **抽樣稽核**（`CustodyLedger`）：每批明細抽樣 1/5（最少 5、最多 59），種子是「發布後第 2 個區塊」的雜湊，發布時就固定，誰呼叫 `drawAudit` 都改不了；超過 256 個區塊才抽，會改用同一個 256 格網的下一個區塊，`auditSeedBlockUsed` 公開，晚抽看得出來。
+- **為什麼要獨立稽核員**：如果只看家戶自己的簽收，村長＋公所串通登記假戶，再用假戶金鑰遠端簽「已收到」，抽樣就失效。所以改成 `recordAuditVisit`：稽核員（registry 管理者指派、應獨立於保管方）到場，家戶用自己的收據金鑰簽「這次訪視」（`AuditVisit` 型別，含稽核員地址，舊的簽收簽章不能重用）；「查無此戶」由稽核員以自己的地址記錄、可究責。
+- **面板與警示**：儀表板「Sample audits」顯示每批抽中幾戶、已訪幾戶，並用超幾何分布算 95% 信心上限（未訪視的當作未送達）；警示新增「稽核發現未收到」「查無此戶」「7 天未抽樣」「30 天未訪完」。家戶頁若被抽中，可當著稽核員簽名。公開 API 不允許訪客以稽核員身份記錄「查無此戶」。
+- **詐欺模擬**（`web/scripts/fraud-sim.mjs` → Why Kept 頁）：4,039 戶、每格 4,000 次、誤報率以誠實基準線固定在 5%。1% 受影響時：隨機扣款，自行回報 89%；針對不會回報的家戶扣款或串通假戶，自行回報只有約 4%（等於誤報水準），加上稽核 28%（2% 時 73%、5% 時 100%）；漏列名冊靠「仍在等待」回報 90%，稽核看不到。限制：假設稽核員誠實、沒有模擬假戶集中在同一個登記者。
+- **外部驗證**：Foundry 不變量 4 條（資金守恆、不超過上限、監管樹平衡、明細加總正確），256 輪；Slither 48 項 → 44 項，High 3 項為誤報或已知取捨（區塊雜湊當隨機數，正式版改 drand/VRF），已加 `nonReentrant` 與零地址檢查。紀錄在 `docs/security-review.md`。
+- **真實資料時間線**（/replay）：依 48 筆撥款日期畫累計撥款；前 30 天撥出 NT$830M（69%）。核銷只有一個累計數字、沒有日期，所以圖上只能是一個點，這點照實寫。
+- 測試：74 單元＋4 不變量、e2e 17 項。README 的「audited template」改為「template」（從未外部稽核）。
 
 ### 10.10 2026-10-16 第四輪：概念層級的修正
 - **監管鏈**：由 Merkle root 改為公開匿名明細（理由見上方 M2）。代價：每戶「收到多少」以匿名地址公開，但簽收時本來就會上鏈。成本重測後約 49 億 gas、150–1,500 美元。

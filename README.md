@@ -10,7 +10,7 @@ Other systems prove aid was sent. Kept lets the people it was sent to say whethe
 [![Live demo](https://img.shields.io/badge/demo-live-2ea44f?style=flat-square)](https://kept-lilac.vercel.app)
 [![Base Sepolia](https://img.shields.io/badge/chain-Base%20Sepolia-0052FF?style=flat-square)](contracts/deployments/84532.json)
 [![Semaphore v4](https://img.shields.io/badge/ZK-Semaphore%20v4-6f42c1?style=flat-square)](https://semaphore.pse.dev)
-[![Tests](https://img.shields.io/badge/tests-69%20unit%20%C2%B7%2014%20e2e-brightgreen?style=flat-square)](#run-it-locally)
+[![Tests](https://img.shields.io/badge/tests-74%20unit%20%C2%B7%204%20invariants%20%C2%B7%2017%20e2e-brightgreen?style=flat-square)](#run-it-locally)
 [![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](#license)
 
 [Problem](#the-problem) · [Solution](#the-solution) · [How it works](#how-it-works) · [Architecture](#architecture) · [Why Web3](#why-web3) · [Feasibility](#feasibility) · [Run it](#run-it-locally) · [Limitations](#known-limitations)
@@ -47,6 +47,7 @@ Kept starts where the public trail stops: **after the first hand**. Each custodi
 | Visible past the first hand | Aggregate totals | **Every hand, down to pseudonymous payment lines** |
 | Household can confirm or dispute its payment | No channel | **Signed "received" / "not received"** |
 | Custodian can pad the roster or confirm for itself | Undetectable | **Lines that are not registered households are counted publicly; only households can sign** |
+| Households who never answer; ghosts registered by colluding officials | Undetectable | **Random sample drawn on-chain, visited in person by an independent auditor** |
 | Excluded households | Visible through protest | **Public appeals and anonymous "still waiting" counts per village** |
 | Say over how the money is used | Attend if invited; no vote | **Anonymous veto, one vote per household** |
 | Fund purposes and surplus | Can be decided later | **Fixed at fundraising; changes wait in public** |
@@ -58,6 +59,7 @@ Kept starts where the public trail stops: **after the first hand**. Each custodi
 - **Eligibility.** A household is verified only after two signatures: the village chief and the township office. Registration rides on the door-to-door visits the government already makes after a disaster. Getting paid never requires anything from the household; confirming is optional. NGOs check eligibility on the spot with a zero-knowledge proof and never receive the roster. `EligibilityRegistry` `AidPrograms`
 - **Voice.** The same credential gives each household one anonymous vote on changes (Semaphore), a public appeal when it is left out, and a weekly anonymous *"still waiting"* report that does not depend on any custodian recording anything. `VoiceModule`
 - **Commitment.** Purposes, caps and the surplus purpose are fixed when money is raised. Cap changes, extensions and uses of the surplus wait through a public period and go ahead unless households veto them; after a veto the same kind of change is blocked for four waiting periods. Emergencies may only move cap between purposes and are reviewed afterwards. `ReliefFund` `KeptFactory`
+- **Sample audit.** Many households will never answer, and a village chief and township office who collude could register households that do not exist and confirm their lines themselves. So for each payment batch the contract draws a random sample of lines (a fifth, at least 5, at most 59), seeded by a block fixed when the batch was published. An independent auditor visits those households: each signs the visit with its own key, or the auditor records under its own address that nobody lives there. From the visits anyone can compute an upper bound on how much of the batch could be undelivered (95% confidence). `CustodyLedger`
 - **Accountability alerts.** Published rules over the public record flag where to look: unacknowledged tranches, money held for months, unregistered lines, disputes, slow appeals, households waiting while the township reports nothing.
 
 **Never on-chain:** names, ID numbers, bank accounts. Payment rosters appear only as pseudonymous lines; a household's confirmation would reveal the same line anyway. Eligibility is still decided by people; Kept makes their decisions attributable.
@@ -116,10 +118,25 @@ sequenceDiagram
   L->>L: Add up the total, count lines that are not registered households
   H->>L: Find its own line, no one has to send it
   H->>L: Sign "received" or "not received" (relayed, no gas)
-  L-->>P: Totals, confirmations, disputes, unregistered lines, alerts
+  L->>L: Draw the audit sample from a block fixed at publication
+  H->>L: Sampled households sign the auditor's visit in person
+  L-->>P: Totals, confirmations, disputes, unregistered lines, audit bound, alerts
 ```
 
-Every fund is a clone of one audited template, so a custodian cannot deploy a look-alike without the commitments. Households never pay gas: a relayer submits their signatures and proofs. Borrowed, not reinvented: Semaphore v4 (PSE), OpenZeppelin; prior art includes WFP Building Blocks, Spanish Red Cross RedChain and *Not Yet Another Digital ID* (EPFL × ICRC).
+Every fund is a clone of one template, so a custodian cannot deploy a look-alike without the commitments. Households never pay gas: a relayer submits their signatures and proofs. Borrowed, not reinvented: Semaphore v4 (PSE), OpenZeppelin; prior art includes WFP Building Blocks, Spanish Red Cross RedChain and *Not Yet Another Digital ID* (EPFL × ICRC).
+
+## Would anyone notice?
+
+A Monte Carlo simulation at Guangfu's scale (4,039 households, 4,000 runs per case, every assumption stated) compares what each regime would catch. A failure counts as detected only when bad answers rise above what 95% of honest runs produce, since some honest households answer wrongly or cannot be found.
+
+| 1% of households affected (40) | Today: aggregate totals | Kept: households' own answers | Kept + sample audit |
+|---|---|---|---|
+| Payments withheld at random | Not in the public record | 89%, median day 29 | 89%, day 28 |
+| Withheld from households unlikely to answer | Not in the public record | ≈ chance | 28%, day 27 |
+| Ghost households registered by colluding officials | Not in the public record | ≈ chance | 28%, day 27 |
+| Eligible households left off every roster | Not in the public record | 90%, day 29 | 85%, day 31 |
+
+At 2% the audit detects ghosts in 73% of runs, at 5% in 100%; it costs 480 visits (12% of households) and cannot see households who are on no roster. Full results, sensitivity and limits: the [Why Kept](https://kept-lilac.vercel.app/why) page; reproduce with `node web/scripts/fraud-sim.mjs`.
 
 ## Why Web3
 
@@ -145,10 +162,10 @@ Requirements: Node 20+, [Foundry](https://getfoundry.sh).
 
 ```bash
 cd contracts && npm install
-forge test                 # 69 unit tests
+forge test                 # 74 unit tests + 4 invariants (random call sequences)
 anvil                      # in a separate terminal
 npm run deploy:local       # Poseidon, Semaphore and Kept on the local chain
-npm run e2e                # optional: 14 end-to-end checks with real Semaphore proofs
+npm run e2e                # optional: 17 end-to-end checks with real Semaphore proofs
 
 cd ../web && npm install
 npm run dev                # http://localhost:3000, then Setup → Set up scenario
@@ -186,7 +203,9 @@ Current addresses are in [`contracts/deployments/84532.json`](contracts/deployme
 - **Majority veto can work against a minority,** for example the few households that need temporary housing. Emergencies keep a path for urgent moves (reviewed afterwards); tier-weighted voting is a possible next step.
 - **Votes are anonymous but not receipt-free;** [MACI](https://maci.pse.dev) is the planned upgrade. Votes are veto-only and need a turnout quorum.
 - **The registry authority is one key in the demo;** in production it should be a multisig of independent bodies, since the ministry is also a custodian.
-- **An issuer could still register ghost households;** two signatures and public issuer statistics make it attributable, not impossible.
+- **Colluding issuers could still register ghost households;** two signatures and public issuer statistics make it attributable, and the sample audit catches it with a probability that grows with its scale (28% at 1% of households, 100% at 5% in our simulation), not with certainty.
+- **The audit sample is seeded by a block hash,** which a block producer could in principle influence; production should use a public randomness beacon (drand) or a VRF. The auditor is trusted to visit honestly; a false "nobody there" is recorded under its own address.
+- **Not externally audited.** Invariant tests and Slither results are documented in [`docs/security-review.md`](docs/security-review.md); a professional audit is a precondition for holding real funds.
 
 ## License
 

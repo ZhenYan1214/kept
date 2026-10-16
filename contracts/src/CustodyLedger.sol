@@ -54,10 +54,29 @@ contract CustodyLedger is Ownable, EIP712 {
         uint32 unregistered;
         bytes32 docHash;
         uint64 at;
+        uint64 atBlock;
     }
 
     /// @notice Lines per batch; larger rosters are reported in several batches.
     uint256 public constant MAX_LINES = 500;
+
+    /// @notice Sample audits, as in risk-limiting election audits: instead of waiting for every
+    /// household to answer, an independent auditor visits a random sample of each batch in person. The
+    /// sample is a fifth of the lines, at least 5 and at most 59: if all 59 sampled households are found
+    /// and confirm, the share of undelivered lines is below 5% with 95% confidence.
+    uint256 public constant AUDIT_MIN = 5;
+    uint256 public constant AUDIT_MAX = 59;
+    /// @notice The sample is seeded by the hash of a block fixed at publication (AUDIT_DELAY blocks
+    /// later), so neither the custodian nor whoever calls drawAudit can choose it.
+    uint256 public constant AUDIT_DELAY = 2;
+
+    bytes32 public constant AUDIT_VISIT_TYPEHASH = keccak256(
+        "AuditVisit(uint256 hopId,uint256 batchIndex,address receipt,uint256 amount,bool received,address auditor)"
+    );
+    // auditOutcome values
+    uint8 public constant VISIT_RECEIVED = 1;
+    uint8 public constant VISIT_NOT_RECEIVED = 2;
+    uint8 public constant VISIT_NOT_FOUND = 3;
 
     bytes32 public constant RECEIPT_TYPEHASH =
         keccak256("Receipt(uint256 hopId,uint256 batchIndex,address receipt,uint256 amount,bool received)");
@@ -77,6 +96,12 @@ contract CustodyLedger is Ownable, EIP712 {
     mapping(bytes32 => uint8) public lineState; // keccak(hopId, batchIndex, receipt) => see constants above
     mapping(bytes32 => uint256) internal _lineAmount; // keccak(hopId, batchIndex, receipt) => amount (0 = no line)
     mapping(uint256 hopId => mapping(uint256 batchIndex => address[])) internal _lineReceipts;
+    mapping(uint256 hopId => mapping(uint256 batchIndex => address[])) internal _auditPicks;
+    mapping(uint256 hopId => mapping(uint256 batchIndex => uint256)) public auditSeedBlockUsed;
+    mapping(bytes32 => bool) internal _picked; // line key => drawn for the audit
+    mapping(address => bool) public isAuditor;
+    mapping(bytes32 => uint8) public auditOutcome; // line key => VISIT_*
+    mapping(bytes32 => address) public auditedBy;
 
     event HopCreated(
         uint256 indexed hopId,
@@ -101,6 +126,11 @@ contract CustodyLedger is Ownable, EIP712 {
     event LineConfirmed(uint256 indexed hopId, uint256 indexed batchIndex, bool received, bool byProxy);
     event ProxyOverridden(uint256 indexed hopId, uint256 indexed batchIndex, uint8 previous);
     event ProgramDelivery(uint256 indexed hopId, uint256 amount);
+    event AuditDrawn(uint256 indexed hopId, uint256 indexed batchIndex, uint256 sampleSize, uint256 seedBlock, bytes32 seed);
+    event AuditorSet(address indexed auditor, bool active);
+    event AuditVisit(
+        uint256 indexed hopId, uint256 indexed batchIndex, address receipt, uint8 outcome, address indexed auditor
+    );
 
     error OnlyFund();
     error OnlyRecipient();
@@ -116,6 +146,13 @@ contract CustodyLedger is Ownable, EIP712 {
     error NotRegisteredHousehold();
     error BadRoster();
     error DuplicateLine(address receipt);
+    error UnknownBatch();
+    error AuditTooEarly();
+    error AuditAlreadyDrawn();
+    error NotAuditor();
+    error NotSampled();
+    error BadOutcome();
+    error BadParams();
 
     constructor(IKeptFactory _factory, IEligibilityRegistry _registry, address _owner)
         Ownable(_owner)
@@ -126,8 +163,16 @@ contract CustodyLedger is Ownable, EIP712 {
         _hops.push(); // index 0 is the "no parent" sentinel
     }
 
+    /// @notice Auditors visit sampled households. They should be independent of every custodian (in
+    /// production the owner is a multisig of independent bodies).
+    function setAuditor(address auditor, bool active) external onlyOwner {
+        isAuditor[auditor] = active;
+        emit AuditorSet(auditor, active);
+    }
+
     function setAidPrograms(address _aidPrograms) external onlyOwner {
         if (aidPrograms != address(0)) revert AlreadySet();
+        if (_aidPrograms == address(0)) revert BadParams();
         aidPrograms = _aidPrograms;
     }
 
@@ -208,7 +253,8 @@ contract CustodyLedger is Ownable, EIP712 {
                 households: uint32(n),
                 unregistered: unregistered,
                 docHash: docHash,
-                at: uint64(block.timestamp)
+                at: uint64(block.timestamp),
+                atBlock: uint64(block.number)
             })
         );
         emit Reconciled(hopId, batchIndex, total, uint32(n), unregistered, docHash);
@@ -270,6 +316,98 @@ contract CustodyLedger is Ownable, EIP712 {
     // ------------------------------------------------------------------
     // Views
     // ------------------------------------------------------------------
+
+    // ------------------------------------------------------------------
+    // Sample audits
+    // ------------------------------------------------------------------
+
+    function auditSampleSize(uint256 lines) public pure returns (uint256 n) {
+        n = (lines + 4) / 5;
+        if (n < AUDIT_MIN) n = AUDIT_MIN;
+        if (n > AUDIT_MAX) n = AUDIT_MAX;
+        if (n > lines) n = lines;
+    }
+
+    /// @notice The block whose hash seeds a batch's sample: AUDIT_DELAY blocks after publication. Only the
+    /// last 256 block hashes are readable, so a draw made later uses the next block on the same 256-block
+    /// grid; the block used is public (auditSeedBlockUsed), so a late draw is visible.
+    function auditSeedBlock(uint256 hopId, uint256 batchIndex) public view returns (uint256 seedBlock) {
+        if (batchIndex >= _batches[hopId].length) revert UnknownBatch();
+        uint256 first = _batches[hopId][batchIndex].atBlock + AUDIT_DELAY;
+        if (block.number <= first) revert AuditTooEarly();
+        seedBlock = first + ((block.number - first - 1) / 256) * 256;
+    }
+
+    /// @notice Anyone can draw the audit sample of a published batch once its seed block exists.
+    function drawAudit(uint256 hopId, uint256 batchIndex) external returns (address[] memory picks) {
+        _hop(hopId);
+        uint256 seedBlock = auditSeedBlock(hopId, batchIndex);
+        address[] storage out = _auditPicks[hopId][batchIndex];
+        if (out.length != 0) revert AuditAlreadyDrawn();
+
+        address[] storage lines = _lineReceipts[hopId][batchIndex];
+        uint256 n = lines.length;
+        uint256 k = auditSampleSize(n);
+        bytes32 seed = keccak256(abi.encode(blockhash(seedBlock), hopId, batchIndex));
+        uint256[] memory idx = new uint256[](n);
+        for (uint256 i = 0; i < n; i++) {
+            idx[i] = i;
+        }
+        // Partial Fisher-Yates shuffle: the first k positions are a uniform sample without replacement.
+        for (uint256 i = 0; i < k; i++) {
+            uint256 j = i + (uint256(keccak256(abi.encode(seed, i))) % (n - i));
+            (idx[i], idx[j]) = (idx[j], idx[i]);
+            address receipt = lines[idx[i]];
+            out.push(receipt);
+            _picked[keccak256(abi.encode(hopId, batchIndex, receipt))] = true;
+        }
+        auditSeedBlockUsed[hopId][batchIndex] = seedBlock;
+        emit AuditDrawn(hopId, batchIndex, k, seedBlock, seed);
+        picks = out;
+    }
+
+    /// @notice An auditor records the in-person visit to a sampled household. "Received" and "not received"
+    /// need the household's own signature over this visit (made in front of the auditor with its receipt
+    /// key), so an auditor cannot invent them and an earlier remote confirmation cannot be reused. "Not found
+    /// at the registered address" is the auditor's own statement, recorded under its address.
+    function recordAuditVisit(
+        uint256 hopId,
+        uint256 batchIndex,
+        address receipt,
+        uint8 outcome,
+        bytes calldata householdSig
+    ) external {
+        if (!isAuditor[msg.sender]) revert NotAuditor();
+        bytes32 key = keccak256(abi.encode(hopId, batchIndex, receipt));
+        if (!_picked[key]) revert NotSampled();
+        if (auditOutcome[key] != 0) revert AlreadyRecorded();
+        if (outcome == VISIT_RECEIVED || outcome == VISIT_NOT_RECEIVED) {
+            bytes32 digest = _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        AUDIT_VISIT_TYPEHASH,
+                        hopId,
+                        batchIndex,
+                        receipt,
+                        _lineAmount[key],
+                        outcome == VISIT_RECEIVED,
+                        msg.sender
+                    )
+                )
+            );
+            if (ECDSA.recover(digest, householdSig) != receipt) revert BadSignature();
+        } else if (outcome != VISIT_NOT_FOUND) {
+            revert BadOutcome();
+        }
+        auditOutcome[key] = outcome;
+        auditedBy[key] = msg.sender;
+        emit AuditVisit(hopId, batchIndex, receipt, outcome, msg.sender);
+    }
+
+    /// @notice The receipt addresses drawn for a batch's audit (empty until drawn).
+    function auditPicks(uint256 hopId, uint256 batchIndex) external view returns (address[] memory) {
+        return _auditPicks[hopId][batchIndex];
+    }
 
     /// @notice Amount recorded for a receipt address in a batch (0 = not in that batch).
     function lineAmount(uint256 hopId, uint256 batchIndex, address receipt) external view returns (uint256) {

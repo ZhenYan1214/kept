@@ -15,14 +15,14 @@ Disaster-relief promises you can verify: past the first hand, with a voice for t
 
 ## Short description (about 280 characters)
 
-When disaster donations are pre-allocated, the public loses sight of them after the first hand. Kept lets every custodian acknowledge each tranche and publish payments as pseudonymous lines, so verified households can confirm or dispute their own payment, appeal, and veto changes.
+After the first hand, disaster donations vanish into aggregate totals. Kept has every custodian publish payments as pseudonymous lines that verified households confirm or dispute, plus a random sample drawn on-chain that an independent auditor visits in person.
 
 ## Links
 
 - Demo: https://kept-lilac.vercel.app
 - Video: [https://… (YouTube, unlisted is fine)]
 - Code: https://github.com/ZhenYan1214/kept
-- Contracts on Base Sepolia (chain 84532): KeptFactory `0xE1014fd9E4ffaB6FdB283B980B4E0fA8ADE05eE2`, CustodyLedger `0x3d3BCa042Dc8a021A70186be2d5C0aAd90FC696f`, EligibilityRegistry `0x7b1763E6b1EeAC98C2f69524F35aFb9fDA5A48E0`, VoiceModule `0x3493B41b7B734A15e4DbE9520dEFe7B70f67F28F`, AidPrograms `0x4167Aa2358d942F1e0D0C0672C28cE2Ad90cBFb7` (Semaphore v4 `0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`)
+- Contracts on Base Sepolia (chain 84532): KeptFactory `0xD2f8E97EB8cDde0d4446b3464f36Cf01F54A13C0`, CustodyLedger `0x36e9859d90E06A084AF602282985c7b568e18072`, EligibilityRegistry `0xB784Cbe3d5Db9288baa6Ffc5F2cc909A1E2aC016`, VoiceModule `0x6ceFbf6C843A217B077e518f1808f1bb3e97ADBB`, AidPrograms `0xFf7D18bB5E7702DA924Daa07D56Fe15B6A9117be` (Semaphore v4 `0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`)
 
 ## Track
 
@@ -52,10 +52,11 @@ Two more gaps from the same disaster: three villages outside the "red zone" were
 ### What Kept does
 
 1. **Custody chain (where Kept starts).** Each tranche is recorded by the sender and acknowledged by the receiver, hand by hand. When a custodian pays households, it publishes the payment batch as pseudonymous lines (a receipt address and an amount, never a name). Each household finds its own line without asking the custodian and signs "received" or "not received". The contract adds up the lines itself and publicly counts any line that is not a household registered with two signatures, so a padded roster shows up, and only real households can sign. Social workers can sign for elders, but only in the village the township office designated them for, and the household's own answer always replaces theirs.
-2. **Eligibility without sharing the roster.** A household is verified only after two signatures (village chief and township office). An NGO then checks eligibility on the spot with a zero-knowledge proof (Semaphore) and never receives the roster; per-programme nullifiers block double claims and stop claims being linked across programmes.
-3. **Voice.** The same credential gives each household one anonymous vote on changes, a public appeal when it is left out, and a weekly anonymous "I am still waiting" report. Waiting reports do not depend on any custodian recording anything, so unrecorded payments still show up.
-4. **Commitments that cannot be rewritten.** Purposes, caps and the surplus purpose are fixed when money is raised. Cap changes, deadline extensions and uses of the surplus wait through a public period and go ahead unless households veto them. After the deadline, money can only go to the charter's surplus purpose. Emergencies need a stricter committee threshold and may only move cap between purposes; households review them afterwards, and a veto returns the unspent part and revokes the emergency path.
-5. **Accountability alerts.** Published rules over the public record flag where to look: tranches not acknowledged within 14 days, money held over 90 days, disputes, heavy proxy use, appeals waiting over 14 days, and villages where households say they are waiting while the township reports nothing.
+2. **Sample audit, for those who never answer.** Many households will not answer, and a chief and township office who collude could register ghosts and confirm their lines themselves. For each batch the contract draws a random sample (a fifth of the lines, 5 to 59), seeded by a block fixed at publication, so nobody chooses it. An independent auditor visits those households: each signs the visit with its own key, or the auditor records under its own address that nobody lives there. Anyone can compute an upper bound on how much of the batch could be undelivered (95% confidence).
+3. **Eligibility without sharing the roster.** A household is verified only after two signatures (village chief and township office). An NGO then checks eligibility on the spot with a zero-knowledge proof (Semaphore) and never receives the roster; per-programme nullifiers block double claims and stop claims being linked across programmes.
+4. **Voice.** The same credential gives each household one anonymous vote on changes, a public appeal when it is left out, and a weekly anonymous "I am still waiting" report. Waiting reports do not depend on any custodian recording anything, so unrecorded payments still show up.
+5. **Commitments that cannot be rewritten.** Purposes, caps and the surplus purpose are fixed when money is raised. Cap changes, deadline extensions and uses of the surplus wait through a public period and go ahead unless households veto them. After the deadline, money can only go to the charter's surplus purpose. Emergencies need a stricter committee threshold and may only move cap between purposes; households review them afterwards, and a veto returns the unspent part and revokes the emergency path.
+6. **Accountability alerts.** Published rules over the public record flag where to look: tranches not acknowledged within 14 days, money held over 90 days, disputes, audit visits that find "not received" or nobody at the address, heavy proxy use, appeals waiting over 14 days, and villages where households say they are waiting while the township reports nothing.
 
 **Never on-chain:** names, ID numbers, bank accounts. Payment rosters appear only as pseudonymous lines (a receipt address and an amount); a household's confirmation would reveal the same line anyway. Eligibility is still decided by people; Kept makes their decisions attributable.
 
@@ -67,9 +68,22 @@ Two more gaps from the same disaster: three villages outside the "red zone" were
 - **Law acts after the fact; code acts before.** Taiwan's reform of donation law has stalled since 2020; Kept can be the technical implementation of the county ordinance that nearly 300 people petitioned for.
 - **Off-chain on purpose:** personal data and bank payments. In phase 1, while donations stay in banks, the contracts bind the public record, not the bank account: spending outside the charter cannot be recorded as compliant, but it can still happen off the record. We say so plainly.
 
+### Would anyone notice? A simulation at Guangfu's scale
+
+A Monte Carlo model (4,039 households, 4,000 runs per case, every assumption stated on the Why Kept page) asks when each regime would detect a failure affecting 1% of households, counting a detection only when bad answers rise above what 95% of honest runs produce:
+
+| 1% of households (40) | Today | Households' own answers | + sample audit |
+|---|---|---|---|
+| Payments withheld at random | not in the public record | 89%, median day 29 | 89%, day 28 |
+| Withheld from households unlikely to answer | not in the public record | ≈ chance | 28%, day 27 |
+| Ghosts registered by colluding officials | not in the public record | ≈ chance | 28%, day 27 |
+| Left off every roster | not in the public record | 90% (via "still waiting"), day 29 | 85%, day 31 |
+
+At 2% the audit detects ghosts in 73% of runs, at 5% in 100%, for 480 visits (12% of households). Households' own answers are strong where victims speak and blind where nobody does; the audit is what covers that gap, and it cannot see households who are on no roster.
+
 ### Built and tested
 
-- 6 Solidity contracts (Foundry): `ReliefFund`, `KeptFactory`, `CustodyLedger`, `EligibilityRegistry`, `VoiceModule`, `AidPrograms`. 69 unit tests, plus an end-to-end script with real Semaphore v4 proofs (14 checks).
+- 6 Solidity contracts (Foundry): `ReliefFund`, `KeptFactory`, `CustodyLedger`, `EligibilityRegistry`, `VoiceModule`, `AidPrograms`. 74 unit tests, 4 invariants checked over random call sequences (money conserved, caps respected, the custody tree balances, published lines add up), Slither findings triaged in `docs/security-review.md`, and an end-to-end script with real Semaphore v4 proofs (17 checks).
 - Next.js app with a public dashboard and a screen for each role (household, village chief and township office, fund committee, custodians, NGO counter), a "Why Kept" page with sources, and a **real-data page** replaying the foundation's 48 Guangfu transfers.
 - Deployed on Base Sepolia (addresses above). Households never need crypto: a relayer pays gas, and the credential can live on a phone or be printed as a QR code.
 - Borrowed, not reinvented: Semaphore v4 (PSE), OpenZeppelin. Prior art we build on: WFP Building Blocks (cross-agency deduplication), Spanish Red Cross RedChain (ZK eligibility), "Not Yet Another Digital ID" (EPFL × ICRC, IEEE S&P 2023).
@@ -90,7 +104,9 @@ We have not yet interviewed practitioners. Our evidence is nine public statement
 - Phase 1 cannot stop off-record bank payments; it makes them harder to hide.
 - Registrations publish village and damage tier on-chain, so exact counts for small villages are visible to anyone reading the chain (the dashboard hides counts under 5). Moving the village off-chain is planned.
 - Votes are anonymous but not receipt-free; MACI is the planned upgrade.
-- An issuer could still register ghost households; Kept makes this attributable, not impossible.
+- Colluding issuers could still register ghost households; Kept makes this attributable, and the sample audit catches it with a probability that grows with its scale (simulation above), not with certainty.
+- The audit sample is seeded by a block hash; production should use a public randomness beacon (drand) or a VRF. The auditor is trusted to visit honestly; a false "nobody there" is recorded under its address.
+- Not externally audited; a professional audit is a precondition for holding real funds (phase 3).
 - The registry authority is a single key in the demo; in production it should be a multisig of independent bodies, since the ministry is also a custodian.
 - Votes are veto-only and need a turnout quorum; victims cannot yet elect committee representatives.
 

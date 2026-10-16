@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FraudSimulation } from "@/components/fraud-sim";
 
 const Src = ({ href, children }: { href: string; children: React.ReactNode }) => (
   <a href={href} target="_blank" rel="noreferrer" className="text-accent underline decoration-accent/30 underline-offset-2 hover:decoration-accent">
@@ -205,10 +206,13 @@ export default function Why() {
           ))}
         </div>
         <p className="text-sm text-muted">
-          Deliberately off-chain: names, ID numbers, bank accounts and rosters. Eligibility is still decided by the village chief and
-          township office — Kept makes their decisions attributable instead of replacing them.
+          Deliberately off-chain: names, ID numbers and bank accounts; payment rosters appear only as pseudonymous lines. Eligibility
+          is still decided by the village chief and township office — Kept makes their decisions attributable instead of replacing
+          them.
         </p>
       </section>
+
+      <FraudSimulation />
 
       <p className="text-sm">
         <Link href="/" className="text-accent underline">

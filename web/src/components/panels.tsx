@@ -2,7 +2,10 @@
 import type { Hop, Proposal, Snapshot } from "@/lib/snapshot";
 import { villageName, VILLAGES, PURPOSES } from "@/lib/scenario";
 import { computeAlerts, RULES } from "@/lib/alerts";
-import { Addr, Badge, Bar, Card, Empty, Hash, SectionTitle, formatDate, formatDuration, ntd, pct } from "./ui";
+import { CONFIDENCE, summarizeAudit } from "@/lib/audit";
+import { postJSON } from "@/lib/api";
+import { DEMO_MODE } from "@/lib/config";
+import { ActionButton, Addr, Badge, Bar, Card, Empty, Hash, SectionTitle, formatDate, formatDuration, ntd, pct } from "./ui";
 
 export const KIND = ["Allocation", "Cap change", "Deadline extension", "Surplus use"];
 export const STATUS = [
@@ -128,7 +131,7 @@ export function FunnelPanel({ snap }: { snap: Snapshot }) {
     { label: "Raised", value: raised, note: `${snap.fund?.donationCount ?? 0} donations` },
     { label: "Allocated by committee", value: t.allocated, note: "on-chain transfer" },
     { label: "Receipt acknowledged", value: t.acknowledged, note: "by receiving custodian" },
-    { label: "Reported paid to households", value: t.reported, note: `${t.reportedHouseholds} households in committed rosters` },
+    { label: "Reported paid to households", value: t.reported, note: `${t.reportedHouseholds} households in published rosters` },
   ];
   return (
     <Card>
@@ -215,6 +218,83 @@ export function HopTree({ snap }: { snap: Snapshot }) {
         <Row key={h.id} h={h} depth={0} />
       ))}
     </div>
+  );
+}
+
+/**
+ * Sample audits: for each published batch a random sample, seeded by a block fixed at publication, is
+ * visited in person by an independent auditor. Every sampled line not confirmed in person counts as bad.
+ */
+export function AuditPanel({ snap }: { snap: Snapshot }) {
+  const rows = snap.hops.flatMap((h) => h.batches.map((b) => ({ h, b, s: summarizeAudit(b.households, b.audit) })));
+  return (
+    <Card>
+      <SectionTitle kicker="No need to wait for everyone" title="Sample audits">
+        Not every household will answer, and colluding officials could register households that do not exist. So for each
+        published batch the contract draws a random sample of lines, seeded by a block fixed when the batch was published, so
+        nobody can choose which lines get checked. An independent auditor visits those households in person: each signs the
+        visit with its own key, or the auditor records, under its own name, that nobody lives at the registered address. From
+        the visits anyone can compute how many lines of the whole batch could be undelivered ({Math.round(CONFIDENCE * 100)}%
+        confidence; lines not yet visited count as undelivered).
+      </SectionTitle>
+      {rows.length === 0 ? (
+        <Empty>No payment batches published yet.</Empty>
+      ) : (
+        <div className="divide-y divide-line">
+          {rows.map(({ h, b, s }) => (
+            <div key={`${h.id}-${b.index}`} className="grid gap-3 py-3 text-sm md:grid-cols-[1.1fr_1.4fr_1.2fr]">
+              <div>
+                <p className="font-medium">
+                  Tranche #{h.id} · batch {b.index}
+                </p>
+                <p className="text-xs text-muted">
+                  {b.households} lines · {ntd(b.amount)} · sample of {s.sample}
+                </p>
+                {s.drawn && (
+                  <p className="text-xs text-muted">
+                    seeded by block {b.auditSeedBlock}
+                    {b.auditSeedBlock > b.atBlock + 2 ? " (drawn late)" : " (fixed at publication)"}
+                  </p>
+                )}
+              </div>
+              <div>
+                {!s.drawn ? (
+                  <p className="text-muted">Sample not drawn yet.</p>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge tone="ok">{s.received} received, signed in person</Badge>
+                      {s.notReceived > 0 && <Badge tone="bad">{s.notReceived} not received</Badge>}
+                      {s.notFound > 0 && <Badge tone="bad">{s.notFound} nobody at the address</Badge>}
+                      {s.pending > 0 && <Badge tone="warn">{s.pending} not visited yet</Badge>}
+                    </div>
+                    <p className="mt-1.5 text-xs text-muted">
+                      {s.complete ? "Audit complete." : "Audit in progress; the bound tightens as visits are recorded."} At most{" "}
+                      <span className="font-semibold text-ink">
+                        {s.maxBad} of {s.lines} lines ({Math.round(s.maxBadShare * 100)}%)
+                      </span>{" "}
+                      could be undelivered.
+                    </p>
+                  </>
+                )}
+              </div>
+              <div className="flex flex-wrap items-start gap-2">
+                {!s.drawn && DEMO_MODE && (
+                  <ActionButton variant="secondary" onClick={() => postJSON("/api/sim/audit", { hopId: h.id, batchIndex: b.index, action: "draw" })}>
+                    Draw the sample
+                  </ActionButton>
+                )}
+                {s.drawn && !s.complete && DEMO_MODE && (
+                  <ActionButton variant="secondary" onClick={() => postJSON("/api/sim/audit", { hopId: h.id, batchIndex: b.index, action: "visit" })}>
+                    Demo: auditor visits the sampled households
+                  </ActionButton>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 

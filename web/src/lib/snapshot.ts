@@ -9,6 +9,8 @@ import {
   voiceAbi,
   programsAbi,
 } from "@/generated/contracts";
+import { lineKey } from "./scopes";
+import type { AuditPick } from "./audit";
 
 export type Issuer = {
   address: Address;
@@ -130,7 +132,17 @@ export type Fund = {
   proposals: Proposal[];
 };
 
-export type Batch = { index: number; amount: bigint; households: number; unregistered: number; docHash: Hex; at: number };
+export type Batch = {
+  index: number;
+  amount: bigint;
+  households: number; // number of published lines
+  unregistered: number;
+  docHash: Hex;
+  at: number;
+  atBlock: number;
+  auditSeedBlock: number; // block whose hash seeded the sample (0 = not drawn)
+  audit: AuditPick[]; // sampled lines and the auditor's recorded visits (empty until drawn)
+};
 
 export type Hop = {
   id: number;
@@ -358,12 +370,27 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
       ]);
       const batches = await Promise.all(
         Array.from({ length: n(batchCount) }, async (_, b) => {
-          const r = await publicClient.readContract({
-            address: d.ledger,
-            abi: ledgerAbi,
-            functionName: "batch",
-            args: [BigInt(id), BigInt(b)],
-          });
+          const [r, picks, seedBlock] = await Promise.all([
+            publicClient.readContract({ address: d.ledger, abi: ledgerAbi, functionName: "batch", args: [BigInt(id), BigInt(b)] }),
+            publicClient.readContract({ address: d.ledger, abi: ledgerAbi, functionName: "auditPicks", args: [BigInt(id), BigInt(b)] }),
+            publicClient.readContract({
+              address: d.ledger,
+              abi: ledgerAbi,
+              functionName: "auditSeedBlockUsed",
+              args: [BigInt(id), BigInt(b)],
+            }),
+          ]);
+          const audit = await Promise.all(
+            picks.map(async (receipt) => {
+              const outcome = await publicClient.readContract({
+                address: d.ledger,
+                abi: ledgerAbi,
+                functionName: "auditOutcome",
+                args: [lineKey(BigInt(id), BigInt(b), receipt)],
+              });
+              return { receipt, outcome: n(outcome) } satisfies AuditPick;
+            }),
+          );
           return {
             index: b,
             amount: r.amount,
@@ -371,6 +398,9 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
             unregistered: n(r.unregistered),
             docHash: r.docHash,
             at: n(r.at),
+            atBlock: n(r.atBlock),
+            auditSeedBlock: n(seedBlock),
+            audit,
           } satisfies Batch;
         }),
       );

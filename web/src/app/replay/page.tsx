@@ -12,6 +12,7 @@ import {
   type RecipientKind,
 } from "@/lib/replay/guangfu-2025";
 import { COST_LINES, PRICE_ASSUMPTIONS, TOTAL_GAS, usdCost } from "@/lib/replay/cost";
+import { PayoutTimeline } from "@/components/payout-timeline";
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 const PREALLOC = TRANSFERS.filter((t) => t.prealloc);
@@ -61,6 +62,8 @@ export default function ReplayPage() {
         />
         <Stat label="Reconciled" value={ntd(RECONCILED_TOTAL)} sub={`${pct(RECONCILED_TOTAL, SPENT_TOTAL)}% of paid out, a year after the disaster`} tone="bad" />
       </div>
+
+      <PayoutTimeline />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

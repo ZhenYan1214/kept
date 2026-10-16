@@ -12,6 +12,18 @@ export const RECEIPT_TYPES = {
   ],
 } as const;
 
+/** EIP-712 message a sampled household signs in front of the auditor who visits it. */
+export const AUDIT_VISIT_TYPES = {
+  AuditVisit: [
+    { name: "hopId", type: "uint256" },
+    { name: "batchIndex", type: "uint256" },
+    { name: "receipt", type: "address" },
+    { name: "amount", type: "uint256" },
+    { name: "received", type: "bool" },
+    { name: "auditor", type: "address" },
+  ],
+} as const;
+
 export function receiptDomain(ledger: Address) {
   return { name: "Kept CustodyLedger", version: "1", chainId: CHAIN_ID, verifyingContract: ledger } as const;
 }

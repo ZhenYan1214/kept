@@ -59,6 +59,7 @@ export const ROLES = {
   county: { index: 14, label: "County government", short: "County" },
   socialWorker: { index: 15, label: "Registered social worker (proxy)", short: "Social worker" },
   relayer: { index: 16, label: "Relayer (pays gas for households)", short: "Relayer" },
+  auditor: { index: 17, label: "Independent auditor (sample visits)", short: "Auditor" },
 } as const;
 
 export type RoleName = keyof typeof ROLES;

@@ -22,7 +22,7 @@ import { lineKey, programScope, textHash, voteScope, waitingPeriod, waitingScope
 import { getDeployment } from "@/lib/config";
 import { publicClient } from "@/lib/chain";
 import { ledgerAbi, voiceAbi } from "@/generated/contracts";
-import { receiptDomain, RECEIPT_TYPES } from "@/lib/receipt";
+import { receiptDomain, AUDIT_VISIT_TYPES, RECEIPT_TYPES } from "@/lib/receipt";
 import { TIERS, VILLAGES, tierName } from "@/lib/scenario";
 import { toJSONSafe } from "@/lib/serialize";
 
@@ -329,11 +329,18 @@ function StillWaiting({ card }: { card: HouseholdCard }) {
   );
 }
 
-type MyLine = { hopId: number; batchIndex: number; amount: bigint; custodian: Address; state: number };
+type MyLine = {
+  hopId: number;
+  batchIndex: number;
+  amount: bigint;
+  custodian: Address;
+  state: number;
+  audit?: number; // when the line was drawn for the sample audit: the recorded visit (0 = not visited yet)
+};
 
 function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) {
   const d = getDeployment();
-  const { snap, labelOf } = useSnapshot();
+  const { snap, labelOf, roles } = useSnapshot();
   const [lines, setLines] = useState<MyLine[] | null>(null);
   useEffect(() => {
     if (!snap) return;
@@ -355,7 +362,8 @@ function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) 
             functionName: "lineState",
             args: [lineKey(BigInt(h.id), BigInt(b.index), receipt)],
           });
-          found.push({ hopId: h.id, batchIndex: b.index, amount, custodian: h.to, state: Number(state) });
+          const pick = b.audit.find((p) => p.receipt.toLowerCase() === receipt.toLowerCase());
+          found.push({ hopId: h.id, batchIndex: b.index, amount, custodian: h.to, state: Number(state), audit: pick?.outcome });
         }
       }
       setLines(found);
@@ -368,6 +376,19 @@ function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) 
     const message = { hopId: BigInt(l.hopId), batchIndex: BigInt(l.batchIndex), receipt, amount: l.amount, received };
     const signature = await account.signTypedData({ domain: receiptDomain(d.ledger), types: RECEIPT_TYPES, primaryType: "Receipt", message });
     await tx("relayer", "ledger", "confirmLine", [message.hopId, message.batchIndex, receipt, received, signature]);
+  };
+
+  // Signed in front of the auditor who visits; the message names that auditor, so it cannot be reused.
+  const signVisit = async (l: MyLine, received: boolean) => {
+    const auditor = roles.auditor!;
+    const message = { hopId: BigInt(l.hopId), batchIndex: BigInt(l.batchIndex), receipt, amount: l.amount, received, auditor };
+    const signature = await cardReceipt(card).signTypedData({
+      domain: receiptDomain(d.ledger),
+      types: AUDIT_VISIT_TYPES,
+      primaryType: "AuditVisit",
+      message,
+    });
+    await tx("auditor", "ledger", "recordAuditVisit", [message.hopId, message.batchIndex, receipt, received ? 1 : 2, signature]);
   };
 
   return (
@@ -392,6 +413,30 @@ function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) 
                 <p className="text-xs text-muted">
                   Tranche #{l.hopId} · batch {l.batchIndex} · found in the roster published on-chain
                 </p>
+                {l.audit !== undefined && (
+                  <div className="mt-2 rounded-lg bg-accent/5 p-2 text-xs">
+                    <p className="font-medium text-accent">Your line was drawn for the sample audit.</p>
+                    {l.audit === 0 ? (
+                      <>
+                        <p className="mt-0.5 text-muted">
+                          An independent auditor will visit you. When they do, sign the visit here, in front of them.
+                        </p>
+                        <div className="mt-1.5 flex gap-2">
+                          <ActionButton variant="secondary" onClick={() => signVisit(l, true)}>
+                            Sign for the auditor: received
+                          </ActionButton>
+                          <ActionButton variant="secondary" onClick={() => signVisit(l, false)}>
+                            Not received
+                          </ActionButton>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="mt-0.5 text-muted">
+                        Visit recorded: {l.audit === 1 ? "you signed “received”" : l.audit === 2 ? "you signed “not received”" : "nobody found at the address"}.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
               {l.state === 1 ? (
                 <Badge tone="ok">You confirmed receipt</Badge>

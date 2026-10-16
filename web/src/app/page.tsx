@@ -5,6 +5,7 @@ import { Card, Empty, SectionTitle, Stat, ntd, ntdShort, pct } from "@/component
 import { StartHere } from "@/components/guide";
 import {
   AlertsPanel,
+  AuditPanel,
   CharterPanel,
   ExclusionPanel,
   FunnelPanel,
@@ -88,6 +89,8 @@ export default function Dashboard() {
         </SectionTitle>
         <HopTree snap={snap} />
       </Card>
+
+      <AuditPanel snap={snap} />
 
       <Card>
         <SectionTitle kicker="Households have a vote" title="Changes to the fund">

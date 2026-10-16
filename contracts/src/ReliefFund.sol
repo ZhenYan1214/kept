@@ -235,6 +235,7 @@ contract ReliefFund is Initializable, ReentrancyGuard {
     function proposeAllocation(uint8 purposeId, address recipient, uint256 amount, uint32 estHouseholds, bytes32 docHash)
         external
         onlyCommittee
+        nonReentrant
         returns (uint256 id)
     {
         if (purposeId >= _purposes.length) revert PurposeNotInCharter();
@@ -254,6 +255,7 @@ contract ReliefFund is Initializable, ReentrancyGuard {
     function proposeCapChange(uint8 fromId, uint8 toId, uint16 newCapFrom, uint16 newCapTo, bool emergency, bytes32 docHash)
         external
         onlyCommittee
+        nonReentrant
         returns (uint256 id)
     {
         if (fromId >= _purposes.length || toId >= _purposes.length) revert PurposeNotInCharter();
@@ -273,7 +275,7 @@ contract ReliefFund is Initializable, ReentrancyGuard {
         _approve(id);
     }
 
-    function proposeExtension(uint64 newDeadline, bytes32 docHash) external onlyCommittee returns (uint256 id) {
+    function proposeExtension(uint64 newDeadline, bytes32 docHash) external onlyCommittee nonReentrant returns (uint256 id) {
         if (newDeadline <= deadline) revert BadParams();
         _requireNoCooldown(Kind.Extension);
         Proposal storage pr = _newProposal(Kind.Extension, false, docHash);
@@ -288,6 +290,7 @@ contract ReliefFund is Initializable, ReentrancyGuard {
     function proposeSurplus(address recipient, uint256 amount, uint32 estHouseholds, bytes32 docHash)
         external
         onlyCommittee
+        nonReentrant
         returns (uint256 id)
     {
         if (block.timestamp <= deadline) revert FundStillOpen();
@@ -302,14 +305,14 @@ contract ReliefFund is Initializable, ReentrancyGuard {
         _approve(id);
     }
 
-    function approve(uint256 id) external onlyCommittee {
+    function approve(uint256 id) external onlyCommittee nonReentrant {
         _approve(id);
     }
 
     /// @notice Once an emergency change's household review closes, anyone can settle it. If households
     /// vetoed it, the cap it moved goes back as far as it has not been spent, and the committee loses
     /// the emergency path for this fund.
-    function concludeReview(uint256 id) external {
+    function concludeReview(uint256 id) external nonReentrant {
         Proposal storage pr = _proposals[id];
         if (!pr.emergency || pr.status != Status.Executed || pr.reviewConcluded) revert InvalidState();
         if (!voice.isClosed(pr.voteKey)) revert ReviewNotClosed();

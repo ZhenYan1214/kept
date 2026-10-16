@@ -16,8 +16,8 @@ import {
   VILLAGES,
   type RoleName,
 } from "@/lib/scenario";
-import { receiptDomain, RECEIPT_TYPES } from "@/lib/receipt";
-import { waitingPeriod, waitingScope } from "@/lib/scopes";
+import { receiptDomain, AUDIT_VISIT_TYPES, RECEIPT_TYPES } from "@/lib/receipt";
+import { lineKey, waitingPeriod, waitingScope } from "@/lib/scopes";
 import { groupOf } from "./groups";
 
 const SIM_SEED = process.env.SIM_SEED ?? "kept-simulated-households";
@@ -77,6 +77,77 @@ export function plan(): SimPlan {
 
 export type SeedLog = string[];
 
+/**
+ * Simulated households that, in this scenario, did not actually receive their line: #4 disputed it
+ * itself; #11 never answered, and says so only if the audit sample reaches it.
+ */
+const NOT_RECEIVED = new Set([4, 11]);
+
+/**
+ * DEMO: the independent auditor visits each sampled line not visited yet. A simulated household signs
+ * the visit with its own receipt key; a line with no registered household behind it is recorded as
+ * "not found" by the auditor. Lines of live demo users are left for them (Household screen).
+ */
+export async function auditVisits(hopId: bigint, batchIndex: bigint) {
+  const d = getDeployment();
+  const read = (functionName: string, args: unknown[]) =>
+    publicClient.readContract({ address: d.ledger, abi: ABIS.ledger, functionName, args });
+  let picks = (await read("auditPicks", [hopId, batchIndex])) as Address[];
+  // Right after the draw, a load-balanced public RPC may answer from a node that has not seen it yet.
+  for (let attempt = 0; picks.length === 0 && CHAIN_ID !== 31337 && attempt < 6; attempt++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    picks = (await read("auditPicks", [hopId, batchIndex])) as Address[];
+  }
+  const fund = (await read("hop", [hopId])) as { fund: Address };
+  const disasterId = (await publicClient.readContract({ address: fund.fund, abi: ABIS.fund, functionName: "disasterId" })) as bigint;
+  const households = plan().map((_, i) => simHousehold(i).receipt);
+  const auditor = roleAccount("auditor").address;
+  let visited = 0;
+  let live = 0;
+  for (const receipt of picks) {
+    if (Number(await read("auditOutcome", [lineKey(hopId, batchIndex, receipt)])) !== 0) continue;
+    const i = households.findIndex((h) => h.address === receipt);
+    if (i === -1) {
+      const village = Number(
+        await publicClient.readContract({ address: d.registry, abi: ABIS.registry, functionName: "villageOfReceipt", args: [disasterId, receipt] }),
+      );
+      if (village !== 0) {
+        live++; // a live demo household: it signs on its own screen
+        continue;
+      }
+      await send("auditor", "ledger", "recordAuditVisit", [hopId, batchIndex, receipt, 3, "0x"]);
+      visited++;
+      continue;
+    }
+    const amount = (await read("lineAmount", [hopId, batchIndex, receipt])) as bigint;
+    const received = !NOT_RECEIVED.has(i);
+    const signature = await households[i].signTypedData({
+      domain: receiptDomain(d.ledger),
+      types: AUDIT_VISIT_TYPES,
+      primaryType: "AuditVisit",
+      message: { hopId, batchIndex, receipt, amount, received, auditor },
+    });
+    await send("auditor", "ledger", "recordAuditVisit", [hopId, batchIndex, receipt, received ? 1 : 2, signature]);
+    visited++;
+  }
+  return { sampled: picks.length, visited, live };
+}
+
+/** Draw a batch's audit sample. On the local devnet, mine the blocks up to its seed block first. */
+export async function drawAudit(hopId: bigint, batchIndex: bigint) {
+  const d = getDeployment();
+  if (CHAIN_ID === 31337) {
+    const b = (await publicClient.readContract({ address: d.ledger, abi: ABIS.ledger, functionName: "batch", args: [hopId, batchIndex] })) as {
+      atBlock: bigint;
+    };
+    const target = b.atBlock + 3n; // the seed block (published + AUDIT_DELAY) must already exist
+    while ((await publicClient.getBlockNumber()) < target) {
+      await publicClient.request({ method: "evm_mine" as never, params: [] as never });
+    }
+  }
+  await send("relayer", "ledger", "drawAudit", [hopId, batchIndex]);
+}
+
 export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; log: SeedLog }> {
   const d = getDeployment();
   // A fresh scenario (new disaster and fund) may be started again, but not more than once every
@@ -115,6 +186,8 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
   const created = await send("authority", "registry", "createDisaster", [DISASTER_NAME, [...TIERS]]);
   const disasterId = (created.find((l) => l.eventName === "DisasterCreated") as unknown as { args: { disasterId: bigint } })
     .args.disasterId;
+  // The registry authority appoints an auditor independent of every custodian (sample visits).
+  await send("authority", "ledger", "setAuditor", [roleAccount("auditor").address, true]);
   // The township office designates the social worker as proxy for elders in Datong only.
   await send("office", "registry", "setProxy", [disasterId, VILLAGES[0].code, roleAccount("socialWorker").address, true]);
   log.push(`Disaster #${disasterId} created with ${TIERS.length} damage tiers; ${VILLAGES.length} villages and issuers set`);
@@ -228,6 +301,11 @@ export async function seedScenario(log: SeedLog = []): Promise<{ fund: Address; 
     await send("relayer", "ledger", "confirmLine", [livelihoodHop, 0n, receipt.address, received, signature]);
   }
   log.push("Custody chain seeded: 3 allocations, 1 forward, 1 roster batch, 8 confirmations + 1 by proxy, 1 dispute");
+
+  // Sample audit of that batch: drawn in a later block, then the auditor visits the sampled households.
+  await drawAudit(livelihoodHop, 0n);
+  const audit = await auditVisits(livelihoodHop, 0n);
+  log.push(`Audit sample of ${audit.sampled} drawn; the independent auditor visited ${audit.visited}`);
 
   // 7. Four verified households outside the roster say, anonymously, that they are still waiting.
   const [, , disasterCreatedAt] = (await publicClient.readContract({

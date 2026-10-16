@@ -16,6 +16,12 @@ remappings = [
   "poseidon-solidity/=node_modules/poseidon-solidity/",
 ]
 
+[invariant]
+# Random call sequences against the fund and the custody ledger (test/Invariants.t.sol).
+runs = 256
+depth = 50
+fail_on_revert = true
+
 [fmt]
 line_length = 110
 

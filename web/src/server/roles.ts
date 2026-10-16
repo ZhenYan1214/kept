@@ -123,7 +123,9 @@ export const ALLOWED: Record<RoleName, Partial<Record<Target, string[]>>> = {
   ngo: CUSTODIAN_FLOW,
   donor: { token: ["faucet", "approve"], fund: ["donate"] },
   socialWorker: {},
-  relayer: { voice: ["castVote"], ledger: ["confirmLine"], registry: ["fileAppeal", "reportWaiting"], fund: ["execute", "concludeReview"] },
+  relayer: { voice: ["castVote"], ledger: ["confirmLine", "drawAudit"], registry: ["fileAppeal", "reportWaiting"], fund: ["execute", "concludeReview"] },
+  // Through the public API the auditor can only record answers a household signed (see /api/tx).
+  auditor: { ledger: ["recordAuditVisit"] },
 };
 
 export function targetAddress(target: Exclude<Target, "fund">): Address {

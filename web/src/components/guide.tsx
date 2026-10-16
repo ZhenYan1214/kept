@@ -8,8 +8,8 @@ const STEPS: { href: string; page: string; what: string }[] = [
   { href: "/replay", page: "Guangfu, real data", what: "What the public can see today, from the relief foundation's real disclosure." },
   { href: "/household", page: "Household", what: "Create a credential, then press “Simulate: chief scans this code”." },
   { href: "/issuer", page: "Village & township", what: "As the Nanfu chief, propose the registration; switch to the township office and approve it." },
-  { href: "/custody", page: "Custodians", what: "As the ministry, commit a payment roster that includes your household." },
-  { href: "/household", page: "Household", what: "Check your line against the on-chain root; say “I received it” or “I did not”." },
+  { href: "/custody", page: "Custodians", what: "As the ministry, publish payment lines that include your household." },
+  { href: "/household", page: "Household", what: "Your line is found in the published roster; say “I received it” or “I did not”." },
   { href: "/household", page: "Household → NGO counter", what: "“Show code at the counter”, then verify it on the NGO counter. A second try is rejected." },
   { href: "/committee", page: "Fund committee", what: "Try “General public works” (refused). Propose a cap change, approve, vote No, execute: vetoed." },
 ];
