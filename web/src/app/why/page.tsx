@@ -123,8 +123,8 @@ export default function Why() {
           </Fact>
           <Fact figure="~4% reconciled">
             2025 Guangfu barrier lake: of NT$1.21bn paid out (incl. pre-allocations) by the relief foundation, NT$49M had been
-            reconciled as of Sept 2026. Pre-allocation then reconciliation is normal emergency practice — but what happens after the
-            first hand is invisible to the public (<Src href="https://www.tf4dr.org/fundraising_plans/156/credits">foundation disclosure</Src>).
+            reconciled as of Sept 2026. Pre-allocation then reconciliation is normal emergency practice — but after the first hand the public sees only
+            aggregate totals, and no household can confirm its own payment (<Src href="https://www.tf4dr.org/fundraising_plans/156/credits/534">foundation disclosure</Src>).
           </Fact>
           <Fact figure="0 votes">
             Victims sit on no board. Hualien&apos;s rules let up to five victims attend committee meetings and speak only with the
@@ -180,8 +180,8 @@ export default function Why() {
         <h2 className="text-xl font-semibold">Where Kept starts: reconciliation</h2>
         <p className="text-sm text-muted">
           The relief foundation already publishes every transfer it makes. But more than NT$1.1bn of the Guangfu donations was
-          pre-allocated to the ministry, and from there the public sees nothing until reconciliation, which a year later covers
-          about 4%. The foundation needs that evidence too.
+          pre-allocated to the ministry. From there the public sees only aggregate totals, no household can confirm its own
+          payment, and reconciliation a year later covers about 4%. The foundation needs that evidence too.
         </p>
         <p className="text-sm">
           Kept gives every downstream custodian one simple tool: acknowledge what you received, commit each payment roster as a

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Addr, Badge, Card, Empty, Field, Note, SectionTitle, inputCls, ntd } from "@/components/ui";
+import { ActionButton, Addr, Badge, Card, Empty, Field, Note, SectionTitle, inputCls, ntd, NotReady } from "@/components/ui";
 import { HopTree } from "@/components/panels";
 import { tx, eventArg } from "@/lib/api";
 import { textHash } from "@/lib/scopes";
@@ -16,7 +16,7 @@ const CUSTODIANS: RoleName[] = ["ministry", "county", "ngo"];
 export default function CustodyPage() {
   const { snap, roles } = useSnapshot();
   const [me, setMe] = useState<RoleName>("ministry");
-  if (!snap?.fund) return <Empty>Set up the scenario first.</Empty>;
+  if (!snap?.fund) return <NotReady />;
   const addr = roles[me]?.toLowerCase();
   const mine = snap.hops.filter((h) => h.to.toLowerCase() === addr);
 

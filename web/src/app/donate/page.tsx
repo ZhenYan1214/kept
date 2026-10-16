@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Addr, Card, Empty, Field, Note, SectionTitle, formatDate, inputCls, ntd, pct } from "@/components/ui";
+import { ActionButton, Addr, Card, Field, Note, SectionTitle, formatDate, inputCls, ntd, pct, NotReady } from "@/components/ui";
 import { CharterPanel, custodyTotals } from "@/components/panels";
 import { tx, eventArg } from "@/lib/api";
 import { textHash } from "@/lib/scopes";
@@ -10,7 +10,7 @@ export default function DonatePage() {
   const { snap, roles } = useSnapshot();
   const [amount, setAmount] = useState(10_000);
   const [receipt, setReceipt] = useState<{ no: bigint; amount: number } | null>(null);
-  if (!snap?.fund) return <Empty>Set up the scenario first.</Empty>;
+  if (!snap?.fund) return <NotReady />;
   const f = snap.fund;
   const t = custodyTotals(snap.hops);
 

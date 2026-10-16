@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, humanError, inputCls, ntd } from "@/components/ui";
+import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, humanError, inputCls, ntd, NotReady } from "@/components/ui";
 import { tx } from "@/lib/api";
 import { consumeInbox, useInbox } from "@/lib/inbox";
 import { fromJSONSafe } from "@/lib/serialize";
@@ -14,7 +14,7 @@ export default function NgoPage() {
   const { snap, roles } = useSnapshot();
   const scans = useInbox<Claim>("claim");
   const [results, setResults] = useState<Record<string, { ok: boolean; text: string }>>({});
-  if (!snap?.fund) return <Empty>Set up the scenario first.</Empty>;
+  if (!snap?.fund) return <NotReady />;
   const ngo = roles.ngo?.toLowerCase();
   const myPrograms = snap.programs.filter((p) => p.ngo.toLowerCase() === ngo);
   const myHops = snap.hops.filter((h) => h.to.toLowerCase() === ngo && h.ackAt);
@@ -26,7 +26,7 @@ export default function NgoPage() {
         <h1 className="text-2xl font-semibold">Verify eligibility on the spot — without the roster</h1>
         <p className="max-w-2xl text-sm text-muted">
           A household shows a one-time code. The contract checks a zero-knowledge proof that it is a verified household of this
-          disaster that has not received this programme yet. You never learn its name, and no one has to wait weeks for a list.
+          disaster that has not received this programme yet. The code reveals nothing else about the household, and you never need the roster.
         </p>
       </header>
 

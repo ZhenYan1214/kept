@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import type { Address } from "viem";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, formatDate, formatDuration, inputCls } from "@/components/ui";
+import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, formatDate, formatDuration, inputCls, NotReady } from "@/components/ui";
 import { consumeInbox, useInbox } from "@/lib/inbox";
 import { tx, eventArg } from "@/lib/api";
 import { demoUniqueTag, textHash } from "@/lib/scopes";
@@ -20,7 +20,7 @@ export default function IssuerPage() {
   const { snap, roles } = useSnapshot();
   const [actor, setActor] = useState<RoleName>("chief2");
   const inbox = useInbox<Reg>("registration");
-  if (!snap?.disaster) return <Empty>Set up the scenario first.</Empty>;
+  if (!snap?.disaster) return <NotReady />;
   const isOffice = actor === "office";
   const myVillage = isOffice ? null : VILLAGES[Number(actor.slice(5))].code;
   const myAddr = roles[actor]?.toLowerCase();

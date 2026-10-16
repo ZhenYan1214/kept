@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useSnapshot } from "@/components/snapshot";
-import { Card, Empty, SectionTitle, Stat, ntd, pct } from "@/components/ui";
+import { Card, Empty, SectionTitle, Stat, ntd, ntdShort, pct } from "@/components/ui";
+import { StartHere } from "@/components/guide";
 import {
   AlertsPanel,
   CharterPanel,
@@ -57,10 +58,12 @@ export default function Dashboard() {
         </button>
       </div>
 
+      <StartHere />
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Raised" value={ntd(f.totalRaised)} sub={`${f.donationCount} donations`} />
-        <Stat label="Allocated" value={ntd(f.totalAllocated)} sub={`${pct(f.totalAllocated, f.totalRaised)}% of raised`} />
-        <Stat label="Reported paid" value={ntd(t.reported)} sub={`${t.reportedHouseholds} households`} />
+        <Stat label="Raised" value={<span title={ntd(f.totalRaised)}>{ntdShort(f.totalRaised)}</span>} sub={`${f.donationCount} donations`} />
+        <Stat label="Allocated" value={<span title={ntd(f.totalAllocated)}>{ntdShort(f.totalAllocated)}</span>} sub={`${pct(f.totalAllocated, f.totalRaised)}% of raised`} />
+        <Stat label="Reported paid" value={<span title={ntd(t.reported)}>{ntdShort(t.reported)}</span>} sub={`${t.reportedHouseholds} households`} />
         <Stat label="Household-confirmed" value={t.confirmed} sub={`${t.disputed} disputed`} tone={t.disputed ? "warn" : "ok"} />
         <Stat label="Verified households" value={snap.disaster?.verified ?? 0} sub="two signatures each" />
         <Stat

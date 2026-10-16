@@ -9,6 +9,14 @@ export function cx(...c: (string | false | null | undefined)[]) {
 
 export const ntd = (v: bigint | number) => `NT$${Number(v).toLocaleString("en-US")}`;
 
+/** Short form for stat cards: NT$9.6M, NT$600K. The exact figure stays in the tooltip. */
+export const ntdShort = (v: bigint | number) => {
+  const n = Number(v);
+  if (n >= 1e6) return `NT$${(n / 1e6).toFixed(n >= 1e8 ? 0 : 1)}M`;
+  if (n >= 1e4) return `NT$${Math.round(n / 1e3)}K`;
+  return ntd(n);
+};
+
 export const pct = (part: bigint | number, whole: bigint | number) => {
   const w = Number(whole);
   return w === 0 ? 0 : Math.round((Number(part) / w) * 1000) / 10;
@@ -226,6 +234,18 @@ export const inputCls =
 
 export function Empty({ children }: { children: React.ReactNode }) {
   return <p className="rounded-lg border border-dashed border-line p-4 text-center text-sm text-muted">{children}</p>;
+}
+
+/** Shown before on-chain state is available: loading, an RPC error, or no scenario yet. */
+export function NotReady() {
+  const { loading, error } = useSnapshot();
+  if (loading) return <Empty>Loading on-chain state…</Empty>;
+  if (error) return <Empty>Could not read the chain right now ({error.slice(0, 120)}). Retrying…</Empty>;
+  return (
+    <Empty>
+      No scenario on this deployment yet. Open <a className="text-accent underline" href="/setup">Setup</a> to create one.
+    </Empty>
+  );
 }
 
 export function Note({ children, tone = "info" }: { children: React.ReactNode; tone?: Tone }) {

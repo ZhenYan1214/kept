@@ -33,9 +33,10 @@ A disaster fund makes two promises: **to donors**, about how the money will be u
 | Where | What happened | Source |
 |---|---|---|
 | **Haiti, 2010** | US$488M raised; six permanent homes built. | [ProPublica/NPR](https://www.propublica.org/article/how-the-red-cross-raised-half-a-billion-dollars-for-haiti-and-built-6-homes) |
+| **Valencia, 2024** | After the DANA floods, the regional audit office found the way donations were recorded *"inadecuado"*; all €22.1M received in 2024 was still unbudgeted at year-end, and most was allocated in the last quarter of 2025. | [El Español](https://www.elespanol.com/valencia/20260106/sindicatura-cuentas-ve-inadecuado-registro-donaciones-dana-millones-no-gestionaron/1003744078508_0.html) |
 | **Hualien, 2024** | A county donation account of ~NT$790M still held ~NT$420M a year later; its committee met three times, with no affected households on it. | [PTS](https://news.pts.org.tw/article/744652) |
 | **Hualien, 2024** | After disputes over the 2018 donations, the county had received NT$453M through the relief foundation by May, under a fifth of the NT$2.7bn it received in 2018; a councillor said people *"would rather give to the central government"*. | [PTS](https://news.pts.org.tw/article/695533) |
-| **Guangfu, 2025** | Of NT$1.21bn paid out by the relief foundation, 98.8% was pre-allocated, and NT$49M (4%) had been reconciled a year later. Pre-allocating is normal in an emergency; **after the first hand, nothing is visible**. | [Foundation disclosure](https://www.tf4dr.org/fundraising_plans/156/credits/534) |
+| **Guangfu, 2025** | Of NT$1.21bn paid out by the relief foundation, 98.8% was pre-allocated, and NT$49M (4%) had been reconciled a year later. Pre-allocating is normal in an emergency; **after the first hand, the public sees only aggregate totals** (the ministry reported 2,582 households paid by Dec 2025), and **no household can check or confirm its own payment**. | [Foundation disclosure](https://www.tf4dr.org/fundraising_plans/156/credits/534) |
 | **Guangfu, 2025** | Three villages outside the "red zone" were left off the first aid list and had to protest. | [CNA](https://www.cna.com.tw/news/aloc/202510060164.aspx) |
 | **Governance** | Affected households have no vote on how the money is used: the foundation's board has no seat for them, and Hualien's rules let at most five attend committee meetings, speaking only with the chair's permission. | [County rules](https://glrs.hl.gov.tw/glrsout/LawContent.aspx?id=GL001170) |
 
@@ -178,6 +179,7 @@ sequenceDiagram
 
 **Path to adoption**
 
+0. **Phase 0, no permission needed.** Civil-society volunteers can already turn a custodian's published disclosures into open data and alerts, as the [real-data page](https://kept-lilac.vercel.app/replay) does for Guangfu.
 1. **Phase 1, under current law.** Money stays in banks; custodians join voluntarily and get a verifiable record that helps them win back donors.
 2. **Phase 2.** A county ordinance or legal amendment requires the format for government donation accounts.
 3. **Phase 3.** Once regulated NT$ stablecoins exist (Taiwan's Virtual Asset Service Act passed in June 2026), funds sit in the contract and the charter is enforced on the money itself.
@@ -296,6 +298,7 @@ The order follows the story: what the public sees today, then reconciliation, th
 - In phase 1 the contract cannot stop off-record bank payments or unrecorded payments; it raises the cost of hiding them.
 - Registrations publish village, damage tier and time on-chain. The dashboard hides counts under 5, but anyone reading the chain can see exact numbers for small villages. Moving the village off-chain is planned.
 - An issuer could register ghost households; Kept makes this attributable (issuer statistics, two signatures), not impossible.
+- The registry authority, which appoints village chiefs and township offices, is a single key in the demo. In production it should be a multisig of independent bodies (for example the ministry, the county council and an NGO coalition), since the ministry is also a custodian; every appointment is already public on-chain.
 - A household's receipt key is reused across rosters, so its confirmations can be linked to one pseudonym. Per-programme keys are planned.
 - Votes are veto-only and need a turnout quorum; households cannot yet elect committee representatives.
 - Votes are anonymous but not receipt-free; [MACI](https://maci.pse.dev) is the planned upgrade.

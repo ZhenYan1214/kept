@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Card, Empty, Field, Note, SectionTitle, formatDate, formatDuration, inputCls, ntd } from "@/components/ui";
+import { ActionButton, Card, Field, Note, SectionTitle, formatDate, formatDuration, inputCls, ntd, NotReady } from "@/components/ui";
 import { ProposalList, CharterPanel, reviewPending } from "@/components/panels";
 import { tx, postJSON } from "@/lib/api";
 import { CHAIN_ID } from "@/lib/config";
@@ -15,7 +15,7 @@ const NOT_IN_CHARTER = 255;
 export default function CommitteePage() {
   const { snap, roles } = useSnapshot();
   const [member, setMember] = useState<RoleName>("c1");
-  if (!snap?.fund) return <Empty>Set up the scenario first.</Empty>;
+  if (!snap?.fund) return <NotReady />;
   const f = snap.fund;
   const me = roles[member]?.toLowerCase();
 

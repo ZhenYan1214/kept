@@ -72,7 +72,7 @@ export default function ReplayPage() {
             {[
               ["Donors → foundation", "Visible", "Totals and donor lists are published.", "ok"],
               ["Foundation → 48 recipients", "Visible", "Every transfer: date, voucher, item, amount.", "ok"],
-              [`Recipients → households (${PREALLOC.length} pre-allocations, ${ntd(PREALLOC_TOTAL)})`, "Not visible", "No public record of who received what, or when.", "bad"],
+              [`Recipients → households (${PREALLOC.length} pre-allocations, ${ntd(PREALLOC_TOTAL)})`, "Totals only", "Aggregate counts are published (e.g. 2,582 households by Dec 2025); no record a household can check.", "warn"],
               ["Households: “it reached me”", "No channel", "No way for a household to confirm or dispute a payment.", "bad"],
             ].map(([step, state, note, tone]) => (
               <li key={step} className="flex items-start justify-between gap-3 border-t border-line pt-3 first:border-0 first:pt-0">
@@ -80,7 +80,7 @@ export default function ReplayPage() {
                   <p className="font-medium">{step}</p>
                   <p className="text-xs text-muted">{note}</p>
                 </div>
-                <Badge tone={tone as "ok" | "bad"}>{state}</Badge>
+                <Badge tone={tone as "ok" | "warn" | "bad"}>{state}</Badge>
               </li>
             ))}
           </ol>
