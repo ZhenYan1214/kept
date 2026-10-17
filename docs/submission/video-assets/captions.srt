@@ -1,0 +1,204 @@
+1
+00:00:00,000 --> 00:00:01,910
+After the 2010 earthquake,
+
+2
+00:00:01,960 --> 00:00:05,076
+the American Red Cross raised four hundred
+
+3
+00:00:05,126 --> 00:00:08,317
+and eighty-eight million dollars for Haiti,
+
+4
+00:00:08,367 --> 00:00:10,578
+and built six permanent homes.
+
+5
+00:00:10,628 --> 00:00:12,764
+Disaster funds make promises.
+
+6
+00:00:12,814 --> 00:00:14,950
+Almost nobody can check them.
+
+7
+00:00:15,000 --> 00:00:17,224
+Taiwan has lived the same loop.
+
+8
+00:00:17,274 --> 00:00:18,617
+In Hualien in 2024,
+
+9
+00:00:18,667 --> 00:00:23,825
+almost eight hundred million Taiwan dollars were donated to the county.
+
+10
+00:00:23,875 --> 00:00:27,860
+Eleven months later, sixteen percent had been paid out,
+
+11
+00:00:27,910 --> 00:00:31,600
+and its committee had no affected households on it.
+
+12
+00:00:31,650 --> 00:00:33,581
+And after earlier disputes,
+
+13
+00:00:33,631 --> 00:00:37,542
+donations reaching the county that year were less than
+
+14
+00:00:37,592 --> 00:00:40,329
+a fifth of what they had been in 2018.
+
+15
+00:00:40,379 --> 00:00:42,309
+People did not stop giving.
+
+16
+00:00:42,359 --> 00:00:44,950
+They stopped trusting where it goes.
+
+17
+00:00:45,000 --> 00:00:47,454
+In 2025 a barrier lake flooded Guangfu.
+
+18
+00:00:47,504 --> 00:00:52,654
+The national relief foundation publishes every transfer, which is more than most.
+
+19
+00:00:52,704 --> 00:00:55,158
+Of 1.2 billion Taiwan dollars paid out,
+
+20
+00:00:55,208 --> 00:00:59,845
+nearly ninety-nine percent was pre-allocated, most of it to one ministry.
+
+21
+00:00:59,895 --> 00:01:02,670
+In eleven monthly reports, for eight months,
+
+22
+00:01:02,720 --> 00:01:06,586
+not one more pre-allocated dollar was reported as reconciled.
+
+23
+00:01:06,636 --> 00:01:09,218
+Pre-allocating is normal in an emergency.
+
+24
+00:01:09,268 --> 00:01:14,483
+The problem is what comes next: after the first hand, the public sees only totals,
+
+25
+00:01:14,533 --> 00:01:17,950
+and no household can check or confirm its own payment.
+
+26
+00:01:18,000 --> 00:01:21,682
+This is Kept, on a simulated version of the same disaster.
+
+27
+00:01:21,732 --> 00:01:24,319
+Every hand acknowledges what it receives.
+
+28
+00:01:24,369 --> 00:01:26,507
+When the ministry pays households,
+
+29
+00:01:26,557 --> 00:01:30,046
+it publishes each payment as a line with no name on it.
+
+30
+00:01:30,096 --> 00:01:34,678
+A household, verified by both the village chief and the township office,
+
+31
+00:01:34,728 --> 00:01:39,889
+finds its own line without asking anyone, and says 'received', or 'not received'.
+
+32
+00:01:39,939 --> 00:01:45,165
+The custodian cannot fake that answer, and cannot pad the list without it showing.
+
+33
+00:01:45,215 --> 00:01:47,803
+And because many households never answer,
+
+34
+00:01:47,853 --> 00:01:52,950
+the contract draws a random sample that an independent auditor visits in person.
+
+35
+00:01:53,000 --> 00:01:58,553
+An NGO can check eligibility on the spot with a zero-knowledge proof.
+
+36
+00:01:58,603 --> 00:02:03,668
+The proof tells the NGO only that this is an eligible household
+
+37
+00:02:03,718 --> 00:02:08,540
+that has not claimed yet; the NGO never receives the roster,
+
+38
+00:02:08,590 --> 00:02:11,950
+and the same household cannot claim twice.
+
+39
+00:02:12,000 --> 00:02:17,529
+The fund's charter is fixed when the money is raised.
+
+40
+00:02:17,579 --> 00:02:20,792
+Spending outside it is refused.
+
+41
+00:02:20,842 --> 00:02:29,529
+Changes wait in public, and the people the money is for can veto them, anonymously,
+
+42
+00:02:29,579 --> 00:02:31,950
+one vote per household.
+
+43
+00:02:32,000 --> 00:02:33,054
+Why a blockchain?
+
+44
+00:02:33,104 --> 00:02:37,340
+Because the people being overseen should not keep the only ledger,
+
+45
+00:02:37,390 --> 00:02:41,106
+and several independent custodians need one shared record.
+
+46
+00:02:41,156 --> 00:02:44,158
+Names, IDs and bank accounts never go on-chain.
+
+47
+00:02:44,208 --> 00:02:45,911
+It works under today's law,
+
+48
+00:02:45,961 --> 00:02:48,444
+and at Guangfu's scale it costs about a
+
+49
+00:02:48,494 --> 00:02:51,950
+hundred and fifty to fifteen hundred dollars on-chain.
+
+50
+00:02:52,000 --> 00:02:57,602
+Two promises: how the money is used, and that no one is left out.
+
+51
+00:02:57,652 --> 00:02:59,950
+Kept makes both verifiable.
+

@@ -10,7 +10,8 @@
     "sync": "node scripts/sync-contracts.mjs",
     "predev": "node scripts/sync-contracts.mjs",
     "prebuild": "node scripts/sync-contracts.mjs",
-    "dev:testnet": "node scripts/sync-contracts.mjs && node --env-file=../.env node_modules/next/dist/bin/next dev -p 3001"
+    "dev:testnet": "node scripts/sync-contracts.mjs && node --env-file=../.env node_modules/next/dist/bin/next dev -p 3001",
+    "verify:data": "node scripts/verify-data.mts"
   },
   "dependencies": {
     "@openzeppelin/merkle-tree": "^1.0.8",

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kept video slides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Each slide is rendered at 1920×1080: open slides.html#3 to see slide 3. Brand tokens match the app. */
+  :root { --paper:#f7f5f0; --ink:#1c2127; --muted:#66707c; --line:#e3dfd6; --accent:#0f6e64; --warn:#b25e09; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+  body { font-family: Inter, "Segoe UI", system-ui, sans-serif; background: var(--paper); color: var(--ink); }
+  .slide { display: none; width: 1920px; height: 1080px; padding: 120px 160px; position: relative; }
+  .slide.on { display: flex; flex-direction: column; justify-content: center; }
+  .dark { background: var(--ink); color: #fff; }
+  .kicker { font-size: 30px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 36px; }
+  .dark .kicker { color: #6fd3c4; }
+  h1 { font-size: 88px; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; }
+  .huge { font-size: 168px; font-weight: 800; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .arrow { font-size: 96px; color: #9aa4af; margin: 28px 0; }
+  .src { position: absolute; left: 160px; bottom: 80px; font-size: 26px; color: var(--muted); }
+  .dark .src { color: #9aa4af; }
+  .loop { display: grid; grid-template-columns: repeat(5, 1fr); gap: 28px; margin-top: 56px; }
+  .loop div { background: #fff; border: 2px solid var(--line); border-radius: 24px; padding: 36px 32px; font-size: 36px; line-height: 1.25; font-weight: 500; min-height: 300px; }
+  .loop b { display: block; color: var(--accent); font-size: 40px; margin-bottom: 18px; }
+  .loop div:last-child { border-color: var(--warn); }
+  .facts { display: flex; flex-direction: column; gap: 40px; margin-top: 48px; }
+  .fact { display: flex; align-items: baseline; gap: 40px; font-size: 54px; line-height: 1.2; }
+  .fact .n { font-weight: 800; color: var(--accent); min-width: 420px; font-variant-numeric: tabular-nums; }
+  .fact.dim { color: var(--muted); }
+  .lines { display: flex; flex-direction: column; gap: 34px; margin-top: 56px; font-size: 60px; font-weight: 600; }
+  .lines div::before { content: ""; display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); margin-right: 34px; vertical-align: middle; }
+  .strip { margin-top: 72px; }
+  .bar { height: 22px; border-radius: 11px; background: var(--accent); position: relative; }
+  .bar::before, .bar::after { content: ""; position: absolute; top: -14px; width: 10px; height: 50px; border-radius: 5px; }
+  .bar::before { left: 0; background: var(--accent); }
+  .bar::after { right: 0; background: var(--ink); }
+  .ends { display: flex; justify-content: space-between; margin-top: 28px; font-size: 40px; }
+  .ends b { font-weight: 700; }
+  .lead { text-align: center; font-size: 72px; font-weight: 800; margin-top: 56px; color: var(--accent); }
+  .close { align-items: center; text-align: center; }
+  .close img { width: 220px; height: 220px; margin-bottom: 56px; }
+  .links { margin-top: 56px; font-size: 40px; color: #9aa4af; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- 1 · 0:00–0:15 Hook -->
+<section class="slide dark">
+  <div class="huge">US$488,000,000</div>
+  <div class="arrow">↓</div>
+  <div class="huge">6 homes</div>
+  <div class="src">American Red Cross, Haiti 2010 · ProPublica/NPR, 3 June 2015</div>
+</section>
+
+<!-- 2 · 0:15 The loop -->
+<section class="slide">
+  <div class="kicker">The same loop, across countries</div>
+  <h1>Disaster funds make promises.<br>Almost nobody can check them.</h1>
+  <div class="loop">
+    <div><b>1</b>Money is raised before a plan exists</div>
+    <div><b>2</b>The custodian keeps every record</div>
+    <div><b>3</b>The people affected have no say</div>
+    <div><b>4</b>Money sits, or arrives late</div>
+    <div><b>5</b>Trust moves elsewhere</div>
+  </div>
+</section>
+
+<!-- 3 · 0:25 Taiwan, first fact -->
+<section class="slide">
+  <div class="kicker">Hualien, Taiwan · 2024 earthquake</div>
+  <div class="facts">
+    <div class="fact"><span class="n">NT$792M</span><span>donated to the county</span></div>
+    <div class="fact"><span class="n">16%</span><span>actually paid out after 11 months</span></div>
+    <div class="fact"><span class="n">0</span><span>affected households on its committee</span></div>
+  </div>
+  <div class="src">Hualien County committee report, appendix B (27 Feb 2025) · PTS, 31 Mar 2025</div>
+</section>
+
+<!-- 4 · 0:35 Taiwan, second fact -->
+<section class="slide">
+  <div class="kicker">Hualien, Taiwan · 2024 earthquake</div>
+  <div class="facts">
+    <div class="fact dim"><span class="n">16%</span><span>paid out after 11 months</span></div>
+    <div class="fact"><span class="n">&lt; 1/5</span><span>of what the county received after the 2018 quake</span></div>
+  </div>
+  <h1 style="margin-top:80px">People did not stop giving.<br>They stopped trusting where it goes.</h1>
+  <div class="src">PTS, 17 May 2024 (NT$453M by May 2024, against NT$2.7bn after the 2018 earthquake)</div>
+</section>
+
+<!-- 5 · optional card: backtest -->
+<section class="slide">
+  <div class="kicker">Replayed on the county's own records</div>
+  <h1>Kept's “held over 90 days” alert<br>would have fired</h1>
+  <div class="strip">
+    <div class="bar"></div>
+    <div class="ends"><span><b>2 Jul 2024</b> · Kept flags it</span><span><b>17 Jan 2025</b> · first news story</span></div>
+    <div class="lead">199 days earlier</div>
+  </div>
+  <div class="src">Backtest assumes the custodian records under Kept. Sources: county committee reports; CNA, 17 Jan 2025.</div>
+</section>
+
+<!-- 6 · 2:35 Why Web3, feasibility -->
+<section class="slide">
+  <div class="kicker">Why a blockchain, and is it practical?</div>
+  <div class="lines">
+    <div>No single custodian controls the record</div>
+    <div>No personal data on-chain</div>
+    <div>Phase 1 works under today's law</div>
+    <div>≈ US$150–1,500 per disaster, measured</div>
+  </div>
+</section>
+
+<!-- 7 · 2:52 Close -->
+<section class="slide dark close">
+  <img src="../../assets/logo.svg" alt="">
+  <h1>Kept</h1>
+  <div style="font-size:52px;margin-top:20px;color:#d7dde3">Disaster-relief promises you can verify</div>
+  <div class="links">kept-lilac.vercel.app<br>github.com/ZhenYan1214/kept</div>
+</section>
+
+<script>
+  const n = Math.max(1, parseInt(location.hash.slice(1) || "1", 10));
+  document.querySelectorAll(".slide")[n - 1]?.classList.add("on");
+</script>
+</body>
+</html>

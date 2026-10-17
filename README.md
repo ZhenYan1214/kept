@@ -182,6 +182,7 @@ npm run e2e                # optional: 17 end-to-end checks with real Semaphore 
 
 cd ../web && npm install
 npm run dev                # http://localhost:3000, then Setup → Set up scenario
+npm run verify:data        # 67 checks: recomputes every real-data figure we publish and compares it with the docs (Node 22.18+)
 ```
 
 The dashboard has a 7-step guided demo. Institutional keys are held by the demo server and a relayer pays gas for households; in production each institution signs with its own wallet.
