@@ -23,115 +23,115 @@ Disaster funds make promises.
 Almost nobody can check them.
 
 7
-00:00:15,000 --> 00:00:17,224
+00:00:15,000 --> 00:00:17,269
 Taiwan has lived the same loop.
 
 8
-00:00:17,274 --> 00:00:18,617
+00:00:17,319 --> 00:00:18,691
 In Hualien in 2024,
 
 9
-00:00:18,667 --> 00:00:23,825
+00:00:18,741 --> 00:00:24,002
 almost eight hundred million Taiwan dollars were donated to the county.
 
 10
-00:00:23,875 --> 00:00:27,860
+00:00:24,052 --> 00:00:28,117
 Eleven months later, sixteen percent had been paid out,
 
 11
-00:00:27,910 --> 00:00:31,600
+00:00:28,167 --> 00:00:31,933
 and its committee had no affected households on it.
 
 12
-00:00:31,650 --> 00:00:33,581
-And after earlier disputes,
+00:00:31,983 --> 00:00:34,775
+After disputes over earlier donations,
 
 13
-00:00:33,631 --> 00:00:37,542
-donations reaching the county that year were less than
+00:00:34,825 --> 00:00:40,237
+most people gave to the national foundation instead, about twice as much.
 
 14
-00:00:37,592 --> 00:00:40,329
-a fifth of what they had been in 2018.
-
-15
-00:00:40,379 --> 00:00:42,309
+00:00:40,287 --> 00:00:42,257
 People did not stop giving.
 
-16
-00:00:42,359 --> 00:00:44,950
+15
+00:00:42,307 --> 00:00:44,950
 They stopped trusting where it goes.
 
-17
-00:00:45,000 --> 00:00:47,454
+16
+00:00:45,000 --> 00:00:47,360
 In 2025 a barrier lake flooded Guangfu.
 
-18
-00:00:47,504 --> 00:00:52,654
+17
+00:00:47,410 --> 00:00:52,366
 The national relief foundation publishes every transfer, which is more than most.
 
-19
-00:00:52,704 --> 00:00:55,158
+18
+00:00:52,416 --> 00:00:54,776
 Of 1.2 billion Taiwan dollars paid out,
 
-20
-00:00:55,208 --> 00:00:59,845
+19
+00:00:54,826 --> 00:00:59,287
 nearly ninety-nine percent was pre-allocated, most of it to one ministry.
 
-21
-00:00:59,895 --> 00:01:02,670
+20
+00:00:59,337 --> 00:01:02,006
 In eleven monthly reports, for eight months,
 
-22
-00:01:02,720 --> 00:01:06,586
+21
+00:01:02,056 --> 00:01:05,776
 not one more pre-allocated dollar was reported as reconciled.
 
-23
-00:01:06,636 --> 00:01:09,218
+22
+00:01:05,826 --> 00:01:08,310
 Pre-allocating is normal in an emergency.
 
-24
-00:01:09,268 --> 00:01:14,483
+23
+00:01:08,360 --> 00:01:13,377
 The problem is what comes next: after the first hand, the public sees only totals,
 
-25
-00:01:14,533 --> 00:01:17,950
-and no household can check or confirm its own payment.
+24
+00:01:13,427 --> 00:01:17,950
+and households have no public way to confirm or dispute their own payment.
 
-26
-00:01:18,000 --> 00:01:21,682
+25
+00:01:18,000 --> 00:01:21,648
 This is Kept, on a simulated version of the same disaster.
 
-27
-00:01:21,732 --> 00:01:24,319
+26
+00:01:21,698 --> 00:01:24,261
 Every hand acknowledges what it receives.
 
-28
-00:01:24,369 --> 00:01:26,507
+27
+00:01:24,311 --> 00:01:26,429
 When the ministry pays households,
 
-29
-00:01:26,557 --> 00:01:30,046
+28
+00:01:26,479 --> 00:01:29,935
 it publishes each payment as a line with no name on it.
 
-30
-00:01:30,096 --> 00:01:34,678
+29
+00:01:29,985 --> 00:01:34,526
 A household, verified by both the village chief and the township office,
 
-31
-00:01:34,728 --> 00:01:39,889
+30
+00:01:34,576 --> 00:01:39,690
 finds its own line without asking anyone, and says 'received', or 'not received'.
 
+31
+00:01:39,740 --> 00:01:42,495
+The custodian cannot sign for the household,
+
 32
-00:01:39,939 --> 00:01:45,165
-The custodian cannot fake that answer, and cannot pad the list without it showing.
+00:01:42,545 --> 00:01:45,236
+and cannot pad the list without it showing.
 
 33
-00:01:45,215 --> 00:01:47,803
+00:01:45,286 --> 00:01:47,850
 And because many households never answer,
 
 34
-00:01:47,853 --> 00:01:52,950
+00:01:47,900 --> 00:01:52,950
 the contract draws a random sample that an independent auditor visits in person.
 
 35

@@ -52,9 +52,9 @@ const EVIDENCE = [
   },
   {
     who: "Donors and citizens",
-    text: "By May 2024 Hualien County had received NT$453M for that year's earthquake, under a fifth of the NT$2.7bn it received in 2018; a councillor said people “would rather give to the central government”; nearly 300 petitioned for an ordinance.",
-    source: "PTS, 2024-05-17",
-    href: "https://news.pts.org.tw/article/695533",
+    text: "In 2024 most donors gave to the national relief foundation (NT$1.65bn) rather than Hualien County (NT$792M); the press linked this to disputes over the county's 2018 donations. A councillor said people “would rather give to the central government”, and nearly 300 residents called for an ordinance.",
+    source: "LTN, 2025-03-30; PTS, 2024-05-17",
+    href: "https://news.ltn.com.tw/news/Hualien/breakingnews/4996579",
     kept: "a fund custodians can prove they kept",
   },
 ];
@@ -104,7 +104,7 @@ export default function Why() {
             later (El Español, 2026).
           </Fact>
           <Fact figure="2005 → new law">
-            Singapore&apos;s NKF scandal led to the Commissioner of Charities (2006) and a new Code of Governance (2007). Law acts after
+            Singapore&apos;s NKF scandal led to a full-time Commissioner of Charities (2006) and a new Code of Governance (2007). Law acts after
             the fact; code can act before.
           </Fact>
         </div>
@@ -115,30 +115,29 @@ export default function Why() {
         <div className="grid gap-3 sm:grid-cols-2">
           <Fact figure="16% paid after 11 months">
             2024 Hualien earthquake: the county received NT$792M in donations; by February 2025 it had earmarked NT$425M and paid out
-            NT$124M (<Src href="https://sa.hl.gov.tw/Upload/202504020943277687541.pdf">county report</Src>). Its committee met three times and had no victims on it (
+            NT$124M (<Src href="https://sa.hl.gov.tw/Upload/202504020943277687541.pdf">county report</Src>). Its committee met only three or four times (reports differ) and had no victims on it (
             <Src href="https://news.pts.org.tw/article/744652">PTS, 2025</Src>).
           </Fact>
-          <Fact figure="< 1/5">
-            After disputes over 2018 quake donations, Hualien County had received NT$453M for the 2024 earthquake by May, through the
-            relief foundation: under a fifth of the NT$2.7bn it received in 2018. People preferred giving to the central government (
-            <Src href="https://news.pts.org.tw/article/695533">PTS, 2024</Src>).
+          <Fact figure="≈ 2× elsewhere">
+            In 2024 donors gave NT$1.65bn to the national relief foundation and NT$792M to Hualien County, a shift the press attributed
+            to disputes over the county&apos;s 2018 donations (<Src href="https://news.ltn.com.tw/news/Hualien/breakingnews/4996579">LTN, 2025</Src>).
           </Fact>
           <Fact figure="~4% reconciled">
             2025 Guangfu barrier lake: of NT$1.21bn paid out (incl. pre-allocations) by the relief foundation, NT$49M had been
             reconciled as of Sept 2026. Pre-allocation then reconciliation is normal emergency practice — but after the first hand the public sees only
-            aggregate totals, and no household can confirm its own payment (<Src href="https://www.tf4dr.org/fundraising_plans/156/credits/534">foundation disclosure</Src>).
+            aggregate totals, and households have no public, recorded way to confirm or dispute their own payment (<Src href="https://www.tf4dr.org/fundraising_plans/156/credits/534">foundation disclosure</Src>).
           </Fact>
           <Fact figure="0 votes">
-            Victims sit on no board. Hualien&apos;s rules let up to five victims attend committee meetings and speak only with the
+            No board reserves a seat for affected households. Hualien&apos;s rules let up to five victims attend committee meetings and speak only with the
             chair&apos;s permission (<Src href="https://glrs.hl.gov.tw/glrsout/LawContent.aspx?id=GL001170">county rules</Src>).
           </Fact>
           <Fact figure="3 villages">
-            Nanfu, Dajin and Daquan were left out of the county&apos;s first aid list because they lay outside the &quot;red zone&quot;;
-            residents protested (<Src href="https://www.cna.com.tw/news/aloc/202510060164.aspx">CNA, 2025</Src>).
+            Residents of Nanfu, Dajin and Daquan protested at being left off the county&apos;s first consolation list, which followed the
+            &quot;red zone&quot; (<Src href="https://www.cna.com.tw/news/aloc/202510060164.aspx">CNA, 2025</Src>).
           </Fact>
-          <Fact figure="Stalled since 2020">
-            The Public Welfare Fundraising Act&apos;s surplus and reporting rules do not bind government accounts; reform bills have
-            stalled (<Src href="https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=D0050138">law text</Src>).
+          <Fact figure="Last amended 2020">
+            The Public Welfare Fundraising Act&apos;s surplus and reporting rules do not bind government accounts, and later bills that
+            would cover them have not passed (<Src href="https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=D0050138">law text</Src>).
           </Fact>
         </div>
         <p className="text-xs text-muted">
@@ -182,7 +181,7 @@ export default function Why() {
         <h2 className="text-xl font-semibold">Where Kept starts: reconciliation</h2>
         <p className="text-sm text-muted">
           The relief foundation already publishes every transfer it makes. But more than NT$1.1bn of the Guangfu donations was
-          pre-allocated to the ministry. From there the public sees only aggregate totals, no household can confirm its own
+          pre-allocated to the ministry. From there the public sees only aggregate totals, households have no public, recorded way to confirm their own
           payment, and reconciliation a year later covers about 4%. The foundation needs that evidence too.
         </p>
         <p className="text-sm">

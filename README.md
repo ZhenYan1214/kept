@@ -31,12 +31,12 @@ A disaster fund makes two promises: **to donors**, about how the money will be u
 | Where | What happened | Source |
 |---|---|---|
 | **Haiti, 2010** | US$488M raised; six permanent homes built. | [ProPublica/NPR](https://www.propublica.org/article/how-the-red-cross-raised-half-a-billion-dollars-for-haiti-and-built-6-homes) |
-| **Valencia, 2024** | The regional audit office found the recording of DANA flood donations *"inadecuado"*; all €22.1M received in 2024 was still unbudgeted at year-end. | [El Español](https://www.elespanol.com/valencia/20260106/sindicatura-cuentas-ve-inadecuado-registro-donaciones-dana-millones-no-gestionaron/1003744078508_0.html) |
-| **Hualien, 2024** | The county received NT$792M in donations for the earthquake; eleven months later it had earmarked NT$425M and **actually paid out NT$124M (16%)**. Its committee had no affected households on it. Donations reaching the county that year were under a fifth of 2018's. | [County report](https://sa.hl.gov.tw/Upload/202504020943277687541.pdf), [PTS](https://news.pts.org.tw/article/744652), [PTS](https://news.pts.org.tw/article/695533) |
-| **Guangfu, 2025** | Of NT$1.21bn paid out by the relief foundation, **98.8% was pre-allocated** and **4% was reconciled** a year later. Across all 11 monthly disclosures, reconciled minus paid-on-claim stayed at exactly NT$15.2M from Dec 2025 to Aug 2026: **for eight months, no pre-allocated money was newly reported as reconciled**. After the first hand the public sees aggregate totals only, and **no household can confirm its own payment**. | [Foundation disclosures](https://www.tf4dr.org/fundraising_plans/156/credits) |
-| **Guangfu, 2025** | Three villages outside the "red zone" were left off the first aid list and had to protest. | [CNA](https://www.cna.com.tw/news/aloc/202510060164.aspx) |
+| **Valencia, 2024** | The regional audit office found the recording of DANA flood donations *"inadecuado"*; most of the €22.1M received was allocated only in late 2025, a year after the floods. | [El Español](https://www.elespanol.com/valencia/20260106/sindicatura-cuentas-ve-inadecuado-registro-donaciones-dana-millones-no-gestionaron/1003744078508_0.html) |
+| **Hualien, 2024** | The county received NT$792M in donations for the earthquake; eleven months later it had earmarked NT$425M and **actually paid out NT$124M (16%)**. Its committee had no affected households on it. Most donors gave to the national relief foundation instead (NT$1.65bn, about twice the county's), which the press attributed to disputes over the county's 2018 donations. | [County report](https://sa.hl.gov.tw/Upload/202504020943277687541.pdf), [PTS](https://news.pts.org.tw/article/744652), [LTN](https://news.ltn.com.tw/news/Hualien/breakingnews/4996579) |
+| **Guangfu, 2025** | Of NT$1.21bn paid out by the relief foundation, **98.8% was pre-allocated** and **4% was reconciled** a year later. Across the foundation's monthly disclosures, reconciled minus paid-on-claim stayed at exactly NT$15.2M from Dec 2025 to Aug 2026: **for eight months, no pre-allocated money was newly reported as reconciled**. After the first hand the public sees aggregate totals only, and **households have no public, recorded way to confirm or dispute their own payment**. | [Foundation disclosures](https://www.tf4dr.org/fundraising_plans/156/credits) |
+| **Guangfu, 2025** | Residents of three villages outside the "red zone" protested at being left off the county's first consolation list. | [CNA](https://www.cna.com.tw/news/aloc/202510060164.aspx) |
 
-Every group involved has said so in public: an affected household that found out *"only after a year"* that NT$400M was unspent; an NGO whose roster was *"finally confirmed at the end of November"*, ten weeks after the flood; an indigenous representative who got *"no meeting notice or call"* for seven months. The sources are on the app's [Why Kept](https://kept-lilac.vercel.app/why) page.
+Every group involved has said so in public: an affected household that found out *"only after a year"* that nearly NT$400M was still left; an NGO whose roster was *"finally confirmed at the end of November"*, ten weeks after the flood; an indigenous representative who got *"no meeting notice or call"* for seven months. The sources are on the app's [Why Kept](https://kept-lilac.vercel.app/why) page.
 
 ## The solution
 
@@ -45,11 +45,11 @@ Kept starts where the public trail stops: **after the first hand**. Each custodi
 | | Today | With Kept |
 |---|---|---|
 | Visible past the first hand | Aggregate totals | **Every hand, down to pseudonymous payment lines** |
-| Household can confirm or dispute its payment | No channel | **Signed "received" / "not received"** |
-| Custodian can pad the roster or confirm for itself | Undetectable | **Lines that are not registered households are counted publicly; only households can sign** |
-| Households who never answer; ghosts registered by colluding officials | Undetectable | **Random sample drawn on-chain, visited in person by an independent auditor** |
+| Household can confirm or dispute its payment | No public, recorded channel (petitions only) | **Signed "received" / "not received"** |
+| Custodian can pad the roster or confirm for itself | Not visible to the public | **Lines that are not registered households are counted publicly; only the household, or a social worker designated for its village, can sign** |
+| Households who never answer; ghosts registered by colluding officials | Not visible to the public | **Random sample drawn on-chain, visited in person by an independent auditor** |
 | Excluded households | Visible through protest | **Public appeals and anonymous "still waiting" counts per village** |
-| Say over how the money is used | Attend if invited; no vote | **Anonymous veto, one vote per household** |
+| Say over how the money is used | Up to five may attend; no vote | **Anonymous veto, one vote per household** |
 | Fund purposes and surplus | Can be decided later | **Fixed at fundraising; changes wait in public** |
 | NGO needs the roster to check eligibility | Yes | **No: a zero-knowledge proof at the counter** |
 
@@ -123,7 +123,7 @@ sequenceDiagram
   L-->>P: Totals, confirmations, disputes, unregistered lines, audit bound, alerts
 ```
 
-Every fund is a clone of one template, so a custodian cannot deploy a look-alike without the commitments. Households never pay gas: a relayer submits their signatures and proofs. Borrowed, not reinvented: Semaphore v4 (PSE), OpenZeppelin; prior art includes WFP Building Blocks, Spanish Red Cross RedChain and *Not Yet Another Digital ID* (EPFL × ICRC).
+Every fund is a clone of one template, and the ledger, the vote module and the dashboard recognise only funds created from it, so a look-alike without the commitments is not counted. Households never pay gas: a relayer submits their signatures and proofs. Borrowed, not reinvented: Semaphore v4 (PSE), OpenZeppelin; prior art includes WFP Building Blocks, Spanish Red Cross RedChain and *Not Yet Another Digital ID* (EPFL × ICRC).
 
 ## Would anyone notice?
 
@@ -144,10 +144,9 @@ We replayed Kept's published alert rules against Hualien County's own donation-a
 
 | Real case (Hualien County donation account) | Kept's alert would fire | Public found out | Earlier by |
 |---|---|---|---|
-| 2024 earthquake: NT$792M received, 16% paid out after 11 months (rule: held over 90 days) | 2 Jul 2024 | 17 Jan 2025, first news story | 199 days |
-| 2025 flood: NT$30M donated for children, NT$0 paid 339 days later (rule: earmarked money held over 90 days) | 25 Dec 2025 | never in the news | — |
-| 2024 earthquake: NT$97M of approved loans, nothing drawn (rule: approved plan unpaid after 90 days) | 4 Mar 2026 | 31 Jul 2026, with audit findings | 149 days |
-| 2018 earthquake: surplus moved to another disaster (rule: change of purpose) | 20 Sep 2022, the day it was decided | 14 Jun 2023, minutes online | about 9 months |
+| 2024 earthquake: NT$792M received, 16% paid out after 11 months (rule: held over 90 days) | 2 Jul 2024 | 17 Jan 2025, first news story we found on the balance | 199 days |
+| 2025 flood: NT$30M donated for children, NT$0 paid 339 days later (rule: earmarked money held over 90 days) | 25 Dec 2025 | no news report of the delay found | — |
+| 2024 earthquake: NT$97M of approved loans, nothing drawn because no one applied (rule: approved plan unpaid after 90 days) | 4 Mar 2026 | 16 Jun 2026, minutes online | 104 days |
 
 Rules about households (unconfirmed or disputed payments) cannot be replayed: no household-level data is public. Timelines, assumptions and sources: the [real-data page](https://kept-lilac.vercel.app/replay) and [`docs/research_notes/…/警示回測資料.md`](docs/research_notes/台灣災難捐款真實案例/警示回測資料.md).
 
@@ -158,7 +157,7 @@ Rules about households (unconfirmed or disputed payments) cannot be replayed: no
 | The people being overseen should not keep the only ledger | Each custodian keeps its own records and decides what to publish. |
 | Several independent custodians share one record | The foundation, ministries, county and NGOs answer to different authorities; none is a natural operator for the others. |
 | Households need anonymous standing | In small communities a named "no" carries social cost; zero-knowledge proofs give "a verified household, one vote, not saying which". |
-| Rules that act before, not after | Taiwan's donation-law reform has stalled since 2020; Kept can implement the county ordinance nearly 300 people petitioned for. |
+| Rules that act before, not after | Taiwan's donation law was last amended in January 2020, and later bills that would cover government accounts have not passed; Kept can implement the county ordinance a councillor and nearly 300 residents called for in 2024 (we drafted one). |
 
 ## Feasibility
 
@@ -167,7 +166,7 @@ Rules about households (unconfirmed or disputed payments) cannot be replayed: no
 2. **By ordinance or amendment:** government donation accounts are required to use the format. We drafted the ordinance: a [39-article Hualien County draft](docs/policy/花蓮縣災害民間捐款專戶監督自治條例草案.md) ([English summary](docs/policy/ordinance-summary-en.md)), technology-neutral, without fines so the county can adopt it on its own authority, and mapped article by article to Kept. Its main limit, stated in the draft: a county can bind only its own account, not the national relief foundation, which can opt in.
 3. **With regulated NT$ stablecoins** (Taiwan's Virtual Asset Service Act passed in June 2026): funds sit in the contract and the charter is enforced on the money itself.
 
-**Cost, measured** with the real zero-knowledge verifier at Guangfu's scale (4,039 households, 48 transfers, one published line, one confirmation and one NGO claim per household, two votes at 25% turnout): about **4.9 billion gas**, roughly **US$150–1,500** at assumed L2 prices, at most **0.003%** of the money raised. Open source (MIT) as a digital public good, complementary to civic platforms such as [guangfu.tw](https://guangfu.tw).
+**Cost, measured** with the real zero-knowledge verifier at Guangfu's scale (4,039 households, 48 transfers, one published line, one confirmation and one NGO claim per household, two votes at 25% turnout): about **4.9 billion gas**, roughly **US$150–1,500** at assumed L2 prices, about **0.003%** of the money raised. Open source (MIT) as a digital public good, complementary to civic platforms such as [guangfu.tw](https://guangfu.tw).
 
 ## Run it locally
 

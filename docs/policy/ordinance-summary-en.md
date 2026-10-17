@@ -5,11 +5,11 @@
 
 ## Why
 
-When a disaster strikes, Hualien County opens a government donation account. Taiwan's Public Welfare Fundraising Act asks a government account for only three things: issue receipts, publish disclosures (monthly during a major disaster, at the level of spending items), and use the money as designated (Art. 6). Charities, by contrast, need an approved spending plan, must spend any surplus within 3 years, and must post results online (Arts. 19–20). The gap shows in practice:
+When a disaster strikes, Hualien County opens a government donation account. Taiwan's Public Welfare Fundraising Act asks a government account for only three things: issue receipts, publish disclosures (monthly during a major disaster, at the level of spending items), and use the money as designated (Art. 6; monthly under Art. 6 of the Enforcement Rules). Charities, by contrast, need an approved spending plan, must spend any surplus within 3 years, and must post results online (Arts. 19–20). The gap shows in practice:
 
-- **2024 earthquake:** the county received about NT$792M; eleven months later it had earmarked NT$425M and paid out NT$124M (16%). The committee met 3 times and had no affected households on it. Donations for several disasters sit in one shared account, separated only by bookkeeping.
+- **2024 earthquake:** the county received about NT$792M; eleven months later it had earmarked NT$425M and paid out NT$124M (16%). The committee met only three or four times (reports differ) and had no affected households on it. Donations for several disasters sit in one shared account, separated only by bookkeeping.
 - **Current rules:** affected residents may send at most 5 people, who **attend without a vote** and speak only with the chair's permission.
-- **2025 Guangfu flood:** the county's monthly spending statements went online three to eight weeks after each cutoff, and committee reports listed *earmarked* amounts as *spent*. Income was posted as JPG images. At the national relief foundation, about 4% of NT$1.21bn paid out had been reconciled a year later; no household can confirm its own payment.
+- **2025 Guangfu flood:** the county's monthly spending statements went online three to eight weeks after each cutoff, and committee reports listed *earmarked* amounts as *spent*. Income was posted as JPG images. At the national relief foundation, about 4% of NT$1.21bn paid out had been reconciled a year later; households have no public, recorded way to confirm or dispute their own payment.
 - **Reform has stalled:** a 2024 amendment for government donation oversight has sat in committee since March 2024. A councillor and nearly 300 signatories called for a county ordinance; no draft exists. The 2025 reconstruction act requires monthly disclosure for *public* money but says nothing about donations.
 
 ## What the draft requires (39 articles, 9 chapters)

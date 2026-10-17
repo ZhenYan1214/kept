@@ -77,7 +77,7 @@ const lead = (id: string) => {
   return c.publicLearned ? days(c.keptFlags, c.publicLearned) : null;
 };
 check(lead("0403-held") === 199, "2024 earthquake: 199 days earlier", `${lead("0403-held")}`);
-check(lead("0403-loans") === 149, "approved loans: 149 days earlier", `${lead("0403-loans")}`);
+check(lead("0403-loans") === 104, "approved loans: 104 days earlier", `${lead("0403-loans")}`);
 check(lead("0923-children") === null, "children's fund: never in the news (no public date)");
 check(days("2025-09-26", "2026-08-31") === 339, "children's fund: 339 days unpaid");
 check(days("2024-04-03", BACKTEST.find((x) => x.id === "0403-held")!.keptFlags) === 90, "held-over-90-days rule fires 90 days after the quake");
@@ -104,7 +104,7 @@ for (const doc of ["README", "submission"] as const) {
   said(doc, "98.8%");
   said(doc, "NT$15.2M");
   said(doc, "199 days");
-  said(doc, "149 days");
+  said(doc, "104 days");
   said(doc, "16%");
   said(doc, "339 days");
 }
@@ -119,6 +119,11 @@ for (const doc of ["README", "submission", "video"] as const) {
     .filter((l) => !/do not say/i.test(l))
     .some((l) => /NT\$420M (still|left)|four hundred million/.test(l));
   check(!used, `${doc} no longer uses the retracted "NT$420M left" claim`);
+  const fifth = docs[doc]
+    .split("\n")
+    .filter((l) => !/do not say/i.test(l))
+    .some((l) => /under a fifth|less than a fifth|< ?1\/5/.test(l));
+  check(!fifth, `${doc} no longer uses the retracted "under a fifth of 2018" claim`);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);

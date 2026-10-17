@@ -48,7 +48,7 @@ export const BACKTEST: BacktestCase[] = [
       "NT$30M donated on 26 Sep 2025 specifically for children's relief. Still NT$0 paid on 31 Aug 2026, 339 days later.",
     keptFlags: "2025-12-25",
     publicLearned: null,
-    publicHow: "No news story found; visible only to someone reading the committee minutes, which went online months after each meeting.",
+    publicHow: "No news report of the delay found. The county said in Sep 2026 that it is paying out in stages, by need; applications were scheduled for May–June 2026, and the first NT$1.78M was being processed.",
     sources: [{ label: "County committee minutes (item 2)", url: COUNTY_2026_06 }],
   },
   {
@@ -56,26 +56,14 @@ export const BACKTEST: BacktestCase[] = [
     disaster: "2024 earthquake (0403)",
     custodian: "Hualien County donation account",
     rule: "Approved plan with nothing paid after 90 days",
-    facts: "Interest-free loans of NT$97.08M for rebuilding committees approved on 4 Dec 2025; nothing drawn by the spring.",
+    facts: "Interest-free loans of NT$97.08M for rebuilding committees approved on 4 Dec 2025; nothing drawn by the spring because no committee had applied. An alert is a prompt to ask why, not a finding.",
     keptFlags: "2026-03-04",
-    publicLearned: "2026-07-31",
-    publicHow: "Reported with the audit office's findings (local press).",
+    publicLearned: "2026-06-16",
+    publicHow: "County minutes saying no rebuilding committee had applied went online (estimated from the file's upload date); the audit office's findings reached the press on 31 Jul 2026.",
     sources: [
       { label: "County committee minutes", url: COUNTY_2026_06 },
       { label: "KSNews, 2026-07-31 (audit findings, secondary)", url: "https://www.ksnews.com.tw/e/125676", secondary: true },
     ],
-  },
-  {
-    id: "0206-surplus",
-    disaster: "2018 earthquake (0206)",
-    custodian: "Hualien County donation account",
-    rule: "Change of purpose: surplus moved to another disaster",
-    facts:
-      "On 20 Sep 2022 the committee decided to use money carried over from the 2018 earthquake for the 2022 Chishang earthquake. Its minutes went online on 14 Jun 2023, about nine months later.",
-    keptFlags: "2022-09-20",
-    publicLearned: "2023-06-14",
-    publicHow: "The minutes went online (no news story found at the time).",
-    sources: [{ label: "Committee minutes, 2022-09-20 (uploaded 2023-06-14)", url: "https://sa.hl.gov.tw/Upload/202306140902150900931.pdf" }],
   },
 ];
 

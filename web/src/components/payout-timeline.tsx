@@ -136,8 +136,8 @@ export function PayoutTimeline() {
         </p>
       </div>
       <p className="mt-3 text-xs text-muted">
-        Pre-allocating and reconciling later is normal in an emergency. The point is that this line is the only public evidence that
-        money reached households, and it is one unexplained number a month. With Kept, households&apos; own confirmations and audit
+        Pre-allocating and reconciling later is normal in an emergency. The point is that this line is the only figure the foundation itself
+        publishes on whether its pre-allocations were accounted for, and it is one unexplained number a month. With Kept, households&apos; own confirmations and audit
         visits would form a dated, itemised line here from the first payment batch on.
       </p>
       <details className="mt-3 text-sm">

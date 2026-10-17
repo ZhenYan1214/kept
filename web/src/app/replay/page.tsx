@@ -79,7 +79,7 @@ export default function ReplayPage() {
               ["Donors → foundation", "Visible", "Totals and donor lists are published.", "ok"],
               ["Foundation → 48 recipients", "Visible", "Every transfer: date, voucher, item, amount.", "ok"],
               [`Recipients → households (${PREALLOC.length} pre-allocations, ${ntd(PREALLOC_TOTAL)})`, "Totals only", "Aggregate counts are published (e.g. 2,582 households by Dec 2025); no record a household can check.", "warn"],
-              ["Households: “it reached me”", "No channel", "No way for a household to confirm or dispute a payment.", "bad"],
+              ["Households: “it reached me”", "No public record", "A household can petition the township or the county, but there is no public, recorded way to confirm or dispute a payment.", "bad"],
             ].map(([step, state, note, tone]) => (
               <li key={step} className="flex items-start justify-between gap-3 border-t border-line pt-3 first:border-0 first:pt-0">
                 <div>

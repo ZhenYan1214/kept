@@ -30,7 +30,7 @@ function Strip({ c }: { c: BacktestCase }) {
             </>
           ) : (
             <>
-              <span className="font-semibold text-warn">Never in the news</span> (as of {fmt(TODAY)})
+              <span className="font-semibold text-warn">No news of the delay found</span> (as of {fmt(TODAY)})
             </>
           )}
         </span>
