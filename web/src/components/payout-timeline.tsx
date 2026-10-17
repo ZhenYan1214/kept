@@ -1,5 +1,6 @@
 "use client";
-import { RECONCILED_TOTAL, SOURCE, TRANSFERS } from "@/lib/replay/guangfu-2025";
+import { SOURCE, TRANSFERS } from "@/lib/replay/guangfu-2025";
+import { DISCLOSURES, DISCLOSURE_SOURCE } from "@/lib/replay/disclosures-0923";
 import { Card, SectionTitle } from "./ui";
 
 const DISASTER = "2025-09-23"; // the barrier lake overflowed
@@ -24,6 +25,25 @@ export function PayoutTimeline() {
   const firstMonth = sorted.filter((t) => day(t.date) <= 30).reduce((a, t) => a + t.amount, 0);
   const dayReaching = (share: number) => points.find((p) => p.pre + p.claim >= share * total)!.d;
 
+  // Reconciled, as reported in each monthly disclosure (dated by its "as of" date, else its publication date).
+  const rec = DISCLOSURES.filter((x) => x.reconciled !== null).map((x) => ({
+    n: x.n,
+    d: day(x.asOf ?? x.published),
+    v: x.reconciled!,
+    spent: x.spent!,
+    claims: x.claims!,
+    url: x.url,
+    date: x.asOf ?? x.published,
+  }));
+  const last = rec[rec.length - 1];
+  // Reconciled minus paid-on-claim, from the foundation's own figures: how long it stayed unchanged.
+  const base = rec[0].v - rec[0].claims;
+  let k = 0;
+  while (k + 1 < rec.length && rec[k + 1].v - rec[k + 1].claims === base) k++;
+  const flatFrom = rec[0];
+  const flatTo = rec[k];
+  const flatMonths = Math.round((flatTo.d - flatFrom.d) / 30.4);
+
   // SVG step chart
   const W = 720;
   const H = 240;
@@ -37,6 +57,11 @@ export function PayoutTimeline() {
   const line = (val: (p: P) => number) => corners(val).map(([a, b], i) => `${i ? "L" : "M"}${a},${b}`).join("");
   const area = (top: (p: P) => number, base: (p: P) => number) =>
     [...corners(top), ...corners(base).reverse()].map(([a, b], i) => `${i ? "L" : "M"}${a},${b}`).join("") + "Z";
+  const recLine = rec
+    .flatMap((r, i) => (i === 0 ? [[x(r.d), y(r.v)]] : [[x(r.d), y(rec[i - 1].v)], [x(r.d), y(r.v)]]))
+    .concat([[x(end), y(last.v)]])
+    .map(([a, b], i) => `${i ? "L" : "M"}${a},${b}`)
+    .join("");
   const months = Array.from({ length: 13 }, (_, i) => {
     const date = new Date(Date.UTC(2025, 9 + i, 1));
     return { d: Math.round((date.getTime() - Date.parse(DISASTER)) / DAY), label: date.toLocaleString("en-US", { month: "short", timeZone: "UTC" }) };
@@ -44,9 +69,9 @@ export function PayoutTimeline() {
 
   return (
     <Card>
-      <SectionTitle kicker="Over time" title="Money moved fast; checking whether it arrived did not">
-        Cumulative payouts by the date of each transfer in the disclosure. Pre-allocations went out within days; reconciliation is
-        reported only as one cumulative figure, with no dates, so its progress cannot be drawn.
+      <SectionTitle kicker="Over time · all 11 monthly disclosures" title="Money moved fast; confirming it arrived did not">
+        Cumulative payouts by the date of each transfer, and the reconciled total as reported in each of the foundation&apos;s
+        eleven monthly disclosures (one cumulative number per month, not itemised).
       </SectionTitle>
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[560px]" role="img" aria-label="Cumulative payouts over time">
@@ -66,9 +91,17 @@ export function PayoutTimeline() {
           <path d={area((p) => p.pre, () => 0)} className="fill-warn/30" />
           <path d={area((p) => p.pre + p.claim, (p) => p.pre)} className="fill-ok/30" />
           <path d={line((p) => p.pre + p.claim)} className="fill-none stroke-ink" strokeWidth={1.5} />
-          <circle cx={x(end)} cy={y(RECONCILED_TOTAL)} r={4} className="fill-bad" />
-          <text x={x(end) - 8} y={y(RECONCILED_TOTAL) - 8} textAnchor="end" className="fill-bad text-[11px] font-medium">
-            reconciled by {SOURCE.asOf}: {m(RECONCILED_TOTAL)}
+          <path d={recLine} className="fill-none stroke-accent" strokeWidth={2} />
+          {rec.map((r) => (
+            <a key={r.n} href={r.url} target="_blank" rel="noreferrer">
+              <circle cx={x(r.d)} cy={y(r.v)} r={9} className="fill-transparent" />
+              <circle cx={x(r.d)} cy={y(r.v)} r={4} className="fill-accent stroke-card" strokeWidth={2}>
+                <title>{`Disclosure #${r.n} (${r.date}): reconciled ${m(r.v)} of ${m(r.spent)} spent (${((r.v / r.spent) * 100).toFixed(1)}%)`}</title>
+              </circle>
+            </a>
+          ))}
+          <text x={x(end) - 8} y={y(last.v) - 12} textAnchor="end" className="fill-ink text-[11px] font-medium">
+            reconciled by {last.date}: {m(last.v)}
           </text>
         </svg>
       </div>
@@ -81,7 +114,7 @@ export function PayoutTimeline() {
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-ok/40" /> paid on a claim ({((claim / total) * 100).toFixed(1)}%)
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-bad" /> reconciled (one cumulative figure)
+          <span className="inline-block h-0.5 w-4 bg-accent" /> reconciled, as reported each month (hover a point; click for the source)
         </span>
       </div>
       <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
@@ -94,13 +127,61 @@ export function PayoutTimeline() {
           <span className="text-muted"> half of it had gone out; day {dayReaching(0.9)}, 90%.</span>
         </p>
         <p>
-          <span className="font-semibold">Day {end}</span>
+          <span className="font-semibold">{flatMonths} months unchanged</span>
           <span className="text-muted">
-            : {Math.round((RECONCILED_TOTAL / total) * 100)}% reconciled. With Kept, households&apos; own confirmations and audit
-            visits would form a second line on this chart, dated, from the first payment batch on.
+            : from disclosure #{flatFrom.n} to #{flatTo.n}, reconciled minus paid-on-claim stayed at exactly {ntdExact(base)}. Every
+            rise in that period matched a small paid-on-claim item; by the foundation&apos;s own figures, no pre-allocated money was
+            newly reported as reconciled until disclosure #{last.n} ({Math.round((last.v / total) * 100)}% on day {end}).
           </span>
         </p>
       </div>
+      <p className="mt-3 text-xs text-muted">
+        Pre-allocating and reconciling later is normal in an emergency. The point is that this line is the only public evidence that
+        money reached households, and it is one unexplained number a month. With Kept, households&apos; own confirmations and audit
+        visits would form a dated, itemised line here from the first payment batch on.
+      </p>
+      <details className="mt-3 text-sm">
+        <summary className="cursor-pointer text-muted">Table view: all {DISCLOSURES.length} disclosures</summary>
+        <div className="mt-2 overflow-x-auto">
+          <table className="w-full min-w-[560px] text-xs tabular-nums">
+            <thead>
+              <tr className="text-left text-muted">
+                <th className="py-1 font-medium">#</th>
+                <th className="font-medium">Published</th>
+                <th className="font-medium">Spent (incl. pre-allocations)</th>
+                <th className="font-medium">Reconciled</th>
+                <th className="font-medium">Reconciled ÷ spent</th>
+                <th className="font-medium">Transfers</th>
+              </tr>
+            </thead>
+            <tbody>
+              {DISCLOSURES.map((x) => (
+                <tr key={x.n} className="border-t border-line" title={x.note}>
+                  <td className="py-1">
+                    <a className="text-accent underline" href={x.url} target="_blank" rel="noreferrer">
+                      {x.n}
+                    </a>
+                  </td>
+                  <td>{x.published}</td>
+                  <td>{x.spent === null ? "—" : ntdExact(x.spent)}</td>
+                  <td>{x.reconciled === null ? "not stated" : ntdExact(x.reconciled)}</td>
+                  <td>{x.reconciled === null || !x.spent ? "—" : `${((x.reconciled / x.spent) * 100).toFixed(2)}%`}</td>
+                  <td>{x.transfers ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-1 text-[11px] text-muted">
+            Transcribed by hand from the published pages and table images, retrieved {DISCLOSURE_SOURCE.retrieved} (
+            <a className="underline" href={DISCLOSURE_SOURCE.index} target="_blank" rel="noreferrer">
+              index
+            </a>
+            ). Hover a row for transcription notes; for example disclosure #7 repeats #6 word for word.
+          </p>
+        </div>
+      </details>
     </Card>
   );
 }
+
+const ntdExact = (n: number) => `NT${n.toLocaleString("en-US")}`;

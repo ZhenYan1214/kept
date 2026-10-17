@@ -113,9 +113,10 @@ export default function Why() {
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Taiwan: the same loop, for 25 years</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Fact figure="NT$420M left after a year">
-            2024 Hualien earthquake: a county donation account of ~NT$790M still held ~NT$420M a year later; its committee met three
-            times and had no victims on it (<Src href="https://news.pts.org.tw/article/744652">PTS, 2025</Src>).
+          <Fact figure="16% paid after 11 months">
+            2024 Hualien earthquake: the county received NT$792M in donations; by February 2025 it had earmarked NT$425M and paid out
+            NT$124M (<Src href="https://sa.hl.gov.tw/Upload/202504020943277687541.pdf">county report</Src>). Its committee met three times and had no victims on it (
+            <Src href="https://news.pts.org.tw/article/744652">PTS, 2025</Src>).
           </Fact>
           <Fact figure="< 1/5">
             After disputes over 2018 quake donations, Hualien County had received NT$453M for the 2024 earthquake by May, through the

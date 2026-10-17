@@ -32,8 +32,8 @@ A disaster fund makes two promises: **to donors**, about how the money will be u
 |---|---|---|
 | **Haiti, 2010** | US$488M raised; six permanent homes built. | [ProPublica/NPR](https://www.propublica.org/article/how-the-red-cross-raised-half-a-billion-dollars-for-haiti-and-built-6-homes) |
 | **Valencia, 2024** | The regional audit office found the recording of DANA flood donations *"inadecuado"*; all €22.1M received in 2024 was still unbudgeted at year-end. | [El Español](https://www.elespanol.com/valencia/20260106/sindicatura-cuentas-ve-inadecuado-registro-donaciones-dana-millones-no-gestionaron/1003744078508_0.html) |
-| **Hualien, 2024** | A county donation account of ~NT$790M still held ~NT$420M a year later; its committee had no affected households on it. Donations reaching the county that year were under a fifth of 2018's. | [PTS](https://news.pts.org.tw/article/744652), [PTS](https://news.pts.org.tw/article/695533) |
-| **Guangfu, 2025** | Of NT$1.21bn paid out by the relief foundation, **98.8% was pre-allocated** and **4% was reconciled** a year later. After the first hand the public sees aggregate totals only, and **no household can confirm its own payment**. | [Foundation disclosure](https://www.tf4dr.org/fundraising_plans/156/credits/534) |
+| **Hualien, 2024** | The county received NT$792M in donations for the earthquake; eleven months later it had earmarked NT$425M and **actually paid out NT$124M (16%)**. Its committee had no affected households on it. Donations reaching the county that year were under a fifth of 2018's. | [County report](https://sa.hl.gov.tw/Upload/202504020943277687541.pdf), [PTS](https://news.pts.org.tw/article/744652), [PTS](https://news.pts.org.tw/article/695533) |
+| **Guangfu, 2025** | Of NT$1.21bn paid out by the relief foundation, **98.8% was pre-allocated** and **4% was reconciled** a year later. Across all 11 monthly disclosures, reconciled minus paid-on-claim stayed at exactly NT$15.2M from Dec 2025 to Aug 2026: **for eight months, no pre-allocated money was newly reported as reconciled**. After the first hand the public sees aggregate totals only, and **no household can confirm its own payment**. | [Foundation disclosures](https://www.tf4dr.org/fundraising_plans/156/credits) |
 | **Guangfu, 2025** | Three villages outside the "red zone" were left off the first aid list and had to protest. | [CNA](https://www.cna.com.tw/news/aloc/202510060164.aspx) |
 
 Every group involved has said so in public: an affected household that found out *"only after a year"* that NT$400M was unspent; an NGO whose roster was *"finally confirmed at the end of November"*, ten weeks after the flood; an indigenous representative who got *"no meeting notice or call"* for seven months. The sources are on the app's [Why Kept](https://kept-lilac.vercel.app/why) page.
@@ -138,6 +138,19 @@ A Monte Carlo simulation at Guangfu's scale (4,039 households, 4,000 runs per ca
 
 At 2% the audit detects ghosts in 73% of runs, at 5% in 100%; it costs 480 visits (12% of households) and cannot see households who are on no roster. Full results, sensitivity and limits: the [Why Kept](https://kept-lilac.vercel.app/why) page; reproduce with `node web/scripts/fraud-sim.mjs`.
 
+### On real records: a backtest
+
+We replayed Kept's published alert rules against Hualien County's own donation-account records (committee minutes, monthly statements, news), assuming the custodian records under Kept as it goes. An alert is a reason to look, not a finding of wrongdoing.
+
+| Real case (Hualien County donation account) | Kept's alert would fire | Public found out | Earlier by |
+|---|---|---|---|
+| 2024 earthquake: NT$792M received, 16% paid out after 11 months (rule: held over 90 days) | 2 Jul 2024 | 17 Jan 2025, first news story | 199 days |
+| 2025 flood: NT$30M donated for children, NT$0 paid 339 days later (rule: earmarked money held over 90 days) | 25 Dec 2025 | never in the news | — |
+| 2024 earthquake: NT$97M of approved loans, nothing drawn (rule: approved plan unpaid after 90 days) | 4 Mar 2026 | 31 Jul 2026, with audit findings | 149 days |
+| 2018 earthquake: surplus moved to another disaster (rule: change of purpose) | 20 Sep 2022, the day it was decided | 14 Jun 2023, minutes online | about 9 months |
+
+Rules about households (unconfirmed or disputed payments) cannot be replayed: no household-level data is public. Timelines, assumptions and sources: the [real-data page](https://kept-lilac.vercel.app/replay) and [`docs/research_notes/…/警示回測資料.md`](docs/research_notes/台灣災難捐款真實案例/警示回測資料.md).
+
 ## Why Web3
 
 | Requirement | Why a database is not enough |
@@ -151,7 +164,7 @@ At 2% the audit detects ghosts in 73% of runs, at 5% in 100%; it costs 480 visit
 
 0. **No permission needed:** civil-society volunteers can already turn a custodian's published disclosure into open data and alerts, as the [real-data page](https://kept-lilac.vercel.app/replay) does for Guangfu.
 1. **Under current law:** money stays in banks; custodians join voluntarily and get a verifiable record that helps them win back donors.
-2. **By ordinance or amendment:** government donation accounts are required to use the format.
+2. **By ordinance or amendment:** government donation accounts are required to use the format. We drafted the ordinance: a [39-article Hualien County draft](docs/policy/花蓮縣災害民間捐款專戶監督自治條例草案.md) ([English summary](docs/policy/ordinance-summary-en.md)), technology-neutral, without fines so the county can adopt it on its own authority, and mapped article by article to Kept. Its main limit, stated in the draft: a county can bind only its own account, not the national relief foundation, which can opt in.
 3. **With regulated NT$ stablecoins** (Taiwan's Virtual Asset Service Act passed in June 2026): funds sit in the contract and the charter is enforced on the money itself.
 
 **Cost, measured** with the real zero-knowledge verifier at Guangfu's scale (4,039 households, 48 transfers, one published line, one confirmation and one NGO claim per household, two votes at 25% turnout): about **4.9 billion gas**, roughly **US$150–1,500** at assumed L2 prices, at most **0.003%** of the money raised. Open source (MIT) as a digital public good, complementary to civic platforms such as [guangfu.tw](https://guangfu.tw).
