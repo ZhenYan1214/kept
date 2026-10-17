@@ -21,6 +21,17 @@ Other systems prove aid was sent. Kept lets the people it was sent to say whethe
 
 ---
 
+### What the public record shows
+
+- **Guangfu flood, Taiwan, 2025.** The national relief foundation paid out NT$1.21bn; **98.8% went out as pre-allocations**, to be accounted for later. In its own monthly reports, **for eight months (Dec 2025 – Aug 2026) no pre-allocated money was newly reported as reconciled**. After the first hand the public sees only totals, and households have no public, recorded way to say whether their payment arrived.
+- **Hualien earthquake, 2024.** The county received NT$792M in donations; eleven months later it had paid out 16%. Replayed on the county's own records, Kept's *"held over 90 days"* alert would have fired **199 days before the first news story we found**.
+
+**What Kept does.** Each custodian acknowledges what it receives; households confirm or dispute their own pseudonymous payment line; a random sample drawn on-chain is visited in person by an independent auditor. Getting paid needs nothing from a household, and no names, IDs or bank accounts go on-chain.
+
+**Why on-chain:** the custodians being checked should not keep the only ledger. **Who runs it:** custodians record as they pay; phase 0 needs no one's permission, since volunteers can already turn published disclosures into open data, as the real-data page does.
+
+**→ [Real data](https://kept-lilac.vercel.app/replay) · [Live demo](https://kept-lilac.vercel.app) · [Why Kept](https://kept-lilac.vercel.app/why) · [Draft county ordinance](docs/policy/ordinance-summary-en.md)**
+
 > [!NOTE]
 > The demo fund, households and decisions are **simulated**. The [Guangfu, real data](https://kept-lilac.vercel.app/replay) page is not: it replays the relief foundation's published disclosure. Place names follow Guangfu Township, Hualien (Taiwan), where a barrier lake overflowed on 2025-09-23.
 

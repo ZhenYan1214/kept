@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useSnapshot } from "@/components/snapshot";
 import { Card, Empty, SectionTitle, Stat, ntd, ntdShort, pct } from "@/components/ui";
 import { StartHere } from "@/components/guide";
+import { Lede } from "@/components/lede";
 import {
   AlertsPanel,
   AuditPanel,
@@ -18,7 +19,13 @@ import { toJSONSafe } from "@/lib/serialize";
 
 export default function Dashboard() {
   const { snap, loading } = useSnapshot();
-  if (loading && !snap) return <Empty>Loading on-chain state…</Empty>;
+  if (loading && !snap)
+    return (
+      <div className="space-y-6">
+        <Lede />
+        <Empty>Loading the simulated demo from the chain…</Empty>
+      </div>
+    );
   if (!snap?.fund) {
     return (
       <Card>
@@ -48,9 +55,14 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+      <Lede />
+
+      <div id="demo" className="scroll-mt-28 flex flex-col gap-2 border-t border-line pt-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-accent">Public dashboard · anyone can verify</p>
+          <p className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-accent">
+            <span className="rounded-full bg-warn/10 px-2 py-0.5 text-warn ring-1 ring-inset ring-warn/30">Simulated demo</span>
+            Public dashboard · anyone can verify · Base Sepolia testnet
+          </p>
           <h1 className="text-2xl font-semibold">{f.name}</h1>
           <p className="text-sm text-muted">{snap.disaster?.name}</p>
         </div>

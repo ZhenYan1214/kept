@@ -42,6 +42,7 @@ function Strip({ c }: { c: BacktestCase }) {
 /** "If Kept had been there": Kept's alert rules replayed against real Hualien records. */
 export function Backtest() {
   return (
+    <div id="backtest" className="scroll-mt-28">
     <Card>
       <SectionTitle kicker="Backtest on real records" title="If Kept had been there, when would someone have looked?">
         Kept&apos;s published alert rules, replayed against Hualien County&apos;s own donation-account records. Each line runs from the
@@ -83,5 +84,6 @@ export function Backtest() {
         .
       </p>
     </Card>
+    </div>
   );
 }

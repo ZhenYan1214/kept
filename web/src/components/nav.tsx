@@ -56,8 +56,8 @@ export function Nav() {
       </div>
       <div className="border-t border-line bg-warn/10">
         <p className="mx-auto max-w-6xl px-4 py-1 text-[11px] text-warn">
-          Simulated scenario — no real household data.
-          {DEMO_MODE && " Demo mode: institutional signing keys are held by this demo server; in production each institution signs with its own wallet."}
+          Demo: simulated fund and households{DEMO_MODE && ", institution keys held by this server"}. Figures marked Real data come from
+          public records.
           {" "}Chain {CHAIN_ID === 31337 ? "local devnet" : CHAIN_ID === 84532 ? "Base Sepolia testnet" : CHAIN_ID}
           {snap && ` · block ${snap.block}`}
           {error && <span className="text-bad"> · {error}</span>}
