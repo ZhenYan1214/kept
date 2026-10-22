@@ -1,11 +1,14 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import Link from "next/link";
+import { Newsreader, Public_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { SnapshotProvider } from "@/components/snapshot";
 import { Nav } from "@/components/nav";
+import { KeptMark } from "@/components/icons";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const serif = Newsreader({ variable: "--font-newsreader", subsets: ["latin"], style: ["normal", "italic"], display: "swap" });
+const sans = Public_Sans({ variable: "--font-public-sans", subsets: ["latin"], display: "swap" });
+const mono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Kept — disaster-relief promises you can verify",
@@ -13,16 +16,64 @@ export const metadata: Metadata = {
     "Kept makes a disaster fund's two promises verifiable: to donors on how the money is used, and to affected households that no one is left out.",
 };
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3efe6" },
+    { media: "(prefers-color-scheme: dark)", color: "#12161b" },
+  ],
+};
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${serif.variable} ${sans.variable} ${mono.variable} min-h-dvh antialiased`}>
         <SnapshotProvider>
           <Nav />
-          <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-          <footer className="mx-auto max-w-6xl px-4 pb-10 pt-4 text-xs text-muted">
-            Kept · open source (MIT) · built for the Web3 for Social Good Hackathon 2026. Personal data never goes on-chain:
-            only commitments, hashes and pseudonymous receipt addresses.
+          <main className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 md:pt-12">{children}</main>
+          <footer className="border-t border-line">
+            <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-ink">
+                  <KeptMark className="h-7 w-7" />
+                  <span className="font-serif text-xl font-semibold">Kept</span>
+                </div>
+                <p className="max-w-sm text-muted">
+                  Disaster-relief promises you can verify, past the first hand. Personal data never goes on-chain: only commitments,
+                  hashes and pseudonymous receipt addresses.
+                </p>
+              </div>
+              <div>
+                <p className="eyebrow mb-3">Evidence</p>
+                <ul className="space-y-2">
+                  <li>
+                    <Link className="text-ink hover:text-accent" href="/replay">
+                      Guangfu 2025, real data
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="text-ink hover:text-accent" href="/why">
+                      Why Kept, and what it would catch
+                    </Link>
+                  </li>
+                  <li>
+                    <a className="text-ink hover:text-accent" href="https://github.com/ZhenYan1214/kept/blob/main/docs/security-review.md">
+                      Security review
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <p className="eyebrow mb-3">Project</p>
+                <ul className="space-y-2">
+                  <li>
+                    <a className="text-ink hover:text-accent" href="https://github.com/ZhenYan1214/kept">
+                      Source code (MIT)
+                    </a>
+                  </li>
+                  <li className="text-muted">Web3 for Social Good Hackathon 2026</li>
+                </ul>
+              </div>
+            </div>
           </footer>
         </SnapshotProvider>
       </body>

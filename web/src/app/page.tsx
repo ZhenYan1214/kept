@@ -1,7 +1,9 @@
 "use client";
 import Link from "next/link";
 import { useSnapshot } from "@/components/snapshot";
-import { Card, Empty, SectionTitle, Stat, ntd, ntdShort, pct } from "@/components/ui";
+import { Card, Empty, SectionTitle, Stat, Tag, ntd, ntdShort, pct } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { Reveal } from "@/components/motion";
 import { StartHere } from "@/components/guide";
 import { Lede } from "@/components/lede";
 import {
@@ -21,7 +23,7 @@ export default function Dashboard() {
   const { snap, loading } = useSnapshot();
   if (loading && !snap)
     return (
-      <div className="space-y-6">
+      <div className="space-y-16">
         <Lede />
         <Empty>Loading the simulated demo from the chain…</Empty>
       </div>
@@ -54,66 +56,76 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-16 md:space-y-24">
       <Lede />
 
-      <div id="demo" className="scroll-mt-28 flex flex-col gap-2 border-t border-line pt-6 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-accent">
-            <span className="rounded-full bg-warn/10 px-2 py-0.5 text-warn ring-1 ring-inset ring-warn/30">Simulated demo</span>
-            Public dashboard · anyone can verify · Base Sepolia testnet
-          </p>
-          <h1 className="text-2xl font-semibold">{f.name}</h1>
-          <p className="text-sm text-muted">{snap.disaster?.name}</p>
+      <div className="space-y-8">
+        <div id="demo" className="scroll-mt-28 border-t-2 border-ink pt-6">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="eyebrow flex flex-wrap items-center gap-2">
+                <Tag kind="sim" />
+                The live demo ledger · anyone can verify it on-chain
+              </p>
+              <h2 className="mt-3 font-serif text-[30px] font-medium leading-tight md:text-[38px]">{f.name}</h2>
+              <p className="mt-1 text-muted">{snap.disaster?.name}</p>
+            </div>
+            <button
+              onClick={download}
+              className="inline-flex items-center gap-2 self-start rounded-md border border-line px-4 py-2 text-sm font-medium text-ink transition hover:border-ink/40 md:self-auto"
+            >
+              <Icon.Download className="h-4 w-4" />
+              Download open data
+            </button>
+          </div>
         </div>
-        <button onClick={download} className="self-start rounded-lg px-3 py-2 text-sm text-accent ring-1 ring-inset ring-accent/30 hover:bg-accent/5 md:self-auto">
-          Download open data (JSON)
-        </button>
+
+        <StartHere />
+
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-3 lg:grid-cols-6">
+          <Stat label="Raised" value={<span title={ntd(f.totalRaised)}>{ntdShort(f.totalRaised)}</span>} sub={`${f.donationCount} donations`} />
+          <Stat label="Allocated" value={<span title={ntd(f.totalAllocated)}>{ntdShort(f.totalAllocated)}</span>} sub={`${pct(f.totalAllocated, f.totalRaised)}% of raised`} />
+          <Stat label="Reported paid" value={<span title={ntd(t.reported)}>{ntdShort(t.reported)}</span>} sub={`${t.reportedHouseholds} households`} />
+          <Stat label="Confirmed" value={t.confirmed} sub={`by households · ${t.disputed} disputed`} tone={t.disputed ? "warn" : "ok"} />
+          <Stat label="Verified" value={snap.disaster?.verified ?? 0} sub="households, two signatures each" />
+          <Stat
+            label="Appeals · votes"
+            value={`${pendingAppeals} · ${openVotes}`}
+            tone={pendingAppeals ? "warn" : undefined}
+            sub="open now"
+          />
+        </div>
+
+        <div className="space-y-6">
+          <AlertsPanel snap={snap} />
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <FunnelPanel snap={snap} />
+            <CharterPanel snap={snap} />
+          </div>
+
+          <Card>
+            <SectionTitle kicker="Every hand" title="Custody tree">
+              Each transfer is recorded by the sender and acknowledged by the receiver. Payment rosters are published as pseudonymous lines (receipt
+              address and amount, never a name): each household finds its own line and confirms or disputes it.
+            </SectionTitle>
+            <HopTree snap={snap} />
+          </Card>
+
+          <AuditPanel snap={snap} />
+
+          <Card>
+            <SectionTitle kicker="Households have a vote" title="Changes to the fund">
+              Allocations need committee signatures. Changing caps or extending the deadline waits through a public period in which
+              verified households can veto — anonymously, one vote each.
+            </SectionTitle>
+            <ProposalList snap={snap} />
+          </Card>
+
+          <ExclusionPanel snap={snap} />
+          <IssuerPanel snap={snap} />
+        </div>
       </div>
-
-      <StartHere />
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Raised" value={<span title={ntd(f.totalRaised)}>{ntdShort(f.totalRaised)}</span>} sub={`${f.donationCount} donations`} />
-        <Stat label="Allocated" value={<span title={ntd(f.totalAllocated)}>{ntdShort(f.totalAllocated)}</span>} sub={`${pct(f.totalAllocated, f.totalRaised)}% of raised`} />
-        <Stat label="Reported paid" value={<span title={ntd(t.reported)}>{ntdShort(t.reported)}</span>} sub={`${t.reportedHouseholds} households`} />
-        <Stat label="Household-confirmed" value={t.confirmed} sub={`${t.disputed} disputed`} tone={t.disputed ? "warn" : "ok"} />
-        <Stat label="Verified households" value={snap.disaster?.verified ?? 0} sub="two signatures each" />
-        <Stat
-          label="Open appeals · votes"
-          value={`${pendingAppeals} · ${openVotes}`}
-          tone={pendingAppeals ? "warn" : undefined}
-          sub="exclusion & changes"
-        />
-      </div>
-
-      <AlertsPanel snap={snap} />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <FunnelPanel snap={snap} />
-        <CharterPanel snap={snap} />
-      </div>
-
-      <Card>
-        <SectionTitle kicker="Every hand" title="Custody tree">
-          Each transfer is recorded by the sender and acknowledged by the receiver. Payment rosters are published as pseudonymous lines (receipt
-          address and amount, never a name): each household finds its own line and confirms or disputes it.
-        </SectionTitle>
-        <HopTree snap={snap} />
-      </Card>
-
-      <AuditPanel snap={snap} />
-
-      <Card>
-        <SectionTitle kicker="Households have a vote" title="Changes to the fund">
-          Allocations need committee signatures. Changing caps or extending the deadline waits through a public period in which
-          verified households can veto — anonymously, one vote each.
-        </SectionTitle>
-        <ProposalList snap={snap} />
-      </Card>
-
-      <ExclusionPanel snap={snap} />
-      <IssuerPanel snap={snap} />
     </div>
   );
 }

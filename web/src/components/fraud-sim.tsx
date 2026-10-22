@@ -28,11 +28,16 @@ export function FraudSimulation() {
   const sens = (key: string, r: number) => SIM.sensitivity.find((x) => x.scenario === key && x.responseRate === r)!;
 
   return (
-    <section className="space-y-4">
-      <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wider text-accent">Simulated · every assumption listed below</p>
-        <h2 className="text-xl font-semibold">Would anyone notice? A simulation at Guangfu&apos;s scale</h2>
-        <p className="text-sm text-muted">
+    <section className="space-y-6">
+      <div className="space-y-3">
+        <p className="eyebrow flex flex-wrap items-center gap-2">
+          <span className="rounded-[3px] bg-warn/15 px-1.5 py-px font-semibold tracking-wider text-warn">SIMULATED</span>§ 7 · every
+          assumption listed below
+        </p>
+        <h2 className="font-serif text-[28px] font-medium leading-tight md:text-[32px]">
+          Would anyone notice? A simulation at Guangfu&apos;s scale
+        </h2>
+        <p className="text-[15px] leading-relaxed text-muted">
           {A.households.toLocaleString("en-US")} households paid in {A.batches} published batches; {A.trials.toLocaleString("en-US")}{" "}
           runs per cell. Even when nothing is wrong, some honest households answer “not received” by mistake and some cannot be found
           at home, so a single alert is where to look, not proof. A failure counts as <em>detected</em> only when the count of bad
@@ -41,14 +46,14 @@ export function FraudSimulation() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted">Share of households affected:</span>
+        <span className="eyebrow mr-1">Households affected</span>
         {rates.map((r) => (
           <button
             key={r}
             onClick={() => setRate(r)}
             className={cx(
-              "rounded-lg px-2.5 py-1 ring-1 ring-inset",
-              r === rate ? "bg-accent text-white ring-accent" : "text-ink ring-line hover:bg-ink/5",
+              "rounded-md border px-3 py-1.5 font-mono text-xs tabular-nums transition-colors",
+              r === rate ? "border-ink bg-ink text-on-ink" : "border-line text-ink hover:border-ink/40",
             )}
           >
             {r * 100}% ({Math.round(r * A.households)})
@@ -56,10 +61,10 @@ export function FraudSimulation() {
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-card">
+      <div className="overflow-x-auto rounded-lg border border-line bg-card">
         <table className="w-full min-w-[680px] text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-muted">
+            <tr className="eyebrow border-b border-ink/60 text-left">
               <th className="p-3 font-medium">Failure</th>
               <th className="p-3 font-medium">Today: aggregate totals</th>
               <th className="p-3 font-medium">Kept: households&apos; own answers</th>
@@ -92,14 +97,14 @@ export function FraudSimulation() {
       </p>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-line bg-card p-4 text-sm">
+        <div className="rounded-lg border border-line bg-card p-4 text-sm">
           <p className="font-semibold">Households&apos; own answers are strong where victims speak</p>
           <p className="mt-1 text-muted">
             At 1%, payments withheld at random are detected in {pct(at("withheld", 0.01).self.detected)} of runs, and households left
             off every roster, through their anonymous “still waiting” reports, in {pct(at("excluded", 0.01).self.detected)}.
           </p>
         </div>
-        <div className="rounded-xl border border-line bg-card p-4 text-sm">
+        <div className="rounded-lg border border-line bg-card p-4 text-sm">
           <p className="font-semibold">They are blind where nobody answers</p>
           <p className="mt-1 text-muted">
             Money withheld from households that never answer, or paid to ghosts whose keys the colluders hold, produces no dispute at
@@ -107,7 +112,7 @@ export function FraudSimulation() {
             2% in {pct(at("ghost", 0.02).withAudit.detected)}, at 5% in {pct(at("ghost", 0.05).withAudit.detected)}.
           </p>
         </div>
-        <div className="rounded-xl border border-line bg-card p-4 text-sm">
+        <div className="rounded-lg border border-line bg-card p-4 text-sm">
           <p className="font-semibold">The audit is small and bounded</p>
           <p className="mt-1 text-muted">
             {A.auditVisits} visits ({pct(A.auditVisits / A.households)} of households). It cannot see households who are on no roster,
@@ -116,7 +121,7 @@ export function FraudSimulation() {
         </div>
       </div>
 
-      <details className="rounded-xl border border-line bg-card p-4 text-sm">
+      <details className="rounded-lg border border-line bg-card p-4 text-sm">
         <summary className="cursor-pointer font-medium">Assumptions, sensitivity and limits</summary>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-muted">
           <li>

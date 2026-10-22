@@ -5,7 +5,8 @@ import { computeAlerts, RULES } from "@/lib/alerts";
 import { CONFIDENCE, summarizeAudit } from "@/lib/audit";
 import { postJSON } from "@/lib/api";
 import { DEMO_MODE } from "@/lib/config";
-import { ActionButton, Addr, Badge, Bar, Card, Empty, Hash, SectionTitle, formatDate, formatDuration, ntd, pct } from "./ui";
+import { ActionButton, Addr, Badge, Bar, Card, Empty, Hash, SectionTitle, cx, formatDate, formatDuration, ntd, pct } from "./ui";
+import { Icon } from "./icons";
 
 export const KIND = ["Allocation", "Cap change", "Deadline extension", "Surplus use"];
 export const STATUS = [
@@ -58,16 +59,18 @@ export function CharterPanel({ snap }: { snap: Snapshot }) {
         })}
       </div>
       <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-        <div className="rounded-lg bg-ink/5 p-3 sm:col-span-2">
-          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Surplus rule</dt>
-          <dd className="mt-1">{f.surplusRule}</dd>
+        <div className="rounded-md border border-line bg-sunk/50 p-4 sm:col-span-2">
+          <dt className="eyebrow flex items-center gap-2">
+            <Icon.Seal className="h-3.5 w-3.5 text-seal" /> Surplus rule, fixed at fundraising
+          </dt>
+          <dd className="mt-2 font-serif text-[17px] leading-snug">{f.surplusRule}</dd>
           <dd className="mt-1 text-xs text-muted">
             Enforced by the contract: after the deadline, money can only go to “{f.purposes[f.surplusPurposeId]?.name}”, and only
             after a public waiting period in which households can veto it.
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">Deadline</dt>
+          <dt className="eyebrow">Deadline</dt>
           <dd>
             {formatDate(f.deadline)}{" "}
             <span className="text-xs text-muted">
@@ -76,7 +79,7 @@ export function CharterPanel({ snap }: { snap: Snapshot }) {
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">Committee</dt>
+          <dt className="eyebrow">Committee</dt>
           <dd>
             {f.threshold} of {f.committee.length} to allocate ·{" "}
             {f.emergencyRevoked ? (
@@ -89,20 +92,20 @@ export function CharterPanel({ snap }: { snap: Snapshot }) {
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">Changes to caps, deadline or surplus</dt>
+          <dt className="eyebrow">Changes to caps, deadline or surplus</dt>
           <dd>
             Public waiting period of {formatDuration(f.timelock)}; households can veto (quorum {f.quorumBps / 100}%)
           </dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="text-xs text-muted">Emergencies</dt>
+          <dt className="eyebrow">Emergencies</dt>
           <dd>
             May only move cap between charter purposes and apply at once. Households review them afterwards: a veto returns the
             unspent part and revokes the emergency path for this fund.
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">Custodian</dt>
+          <dt className="eyebrow">Custodian</dt>
           <dd>
             <Addr address={f.custodian} />
           </dd>
@@ -152,19 +155,17 @@ export function FunnelPanel({ snap }: { snap: Snapshot }) {
           </div>
         ))}
       </div>
-      <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-lg bg-ink/5 p-2">
-          <p className="text-lg font-semibold tabular-nums">{t.reportedHouseholds}</p>
-          <p className="text-[11px] text-muted">households reported paid</p>
-        </div>
-        <div className="rounded-lg bg-ok/10 p-2">
-          <p className="text-lg font-semibold tabular-nums text-ok">{t.confirmed}</p>
-          <p className="text-[11px] text-muted">confirmed by the household (or its proxy)</p>
-        </div>
-        <div className="rounded-lg bg-bad/10 p-2">
-          <p className="text-lg font-semibold tabular-nums text-bad">{t.disputed}</p>
-          <p className="text-[11px] text-muted">disputed: “recorded as paid, not received”</p>
-        </div>
+      <div className="mt-6 grid grid-cols-3 border-t border-line pt-4">
+        {[
+          [t.reportedHouseholds, "households reported paid", "text-ink"],
+          [t.confirmed, "confirmed by the household (or its proxy)", "text-ok"],
+          [t.disputed, "disputed: “recorded as paid, not received”", "text-bad"],
+        ].map(([n, label, color], i) => (
+          <div key={i} className={cx("pr-3", i > 0 && "border-l border-line pl-4")}>
+            <p className={cx("font-serif text-3xl leading-none tabular-nums", color as string)}>{n}</p>
+            <p className="mt-1.5 text-xs leading-snug text-muted">{label}</p>
+          </div>
+        ))}
       </div>
     </Card>
   );
@@ -178,17 +179,21 @@ export function HopTree({ snap }: { snap: Snapshot }) {
     const remaining = h.amount - h.forwarded - h.reconciled;
     return (
       <>
-        <div className="grid gap-2 border-t border-line py-3 text-sm md:grid-cols-[1.4fr_1fr_1.2fr]" style={{ paddingLeft: depth * 20 }}>
-          <div>
-            <p className="font-medium">
-              <span className="text-muted">#{h.id}</span> <Addr address={h.from} /> → <Addr address={h.to} />
+        <div className="grid gap-2 border-t border-line py-4 text-sm md:grid-cols-[1.4fr_1fr_1.2fr]" style={{ paddingLeft: depth * 28 }}>
+          <div className="relative">
+            {depth > 0 && (
+              <span aria-hidden className="absolute -left-5 -top-4 h-7 w-3.5 rounded-bl-md border-b border-l border-ink/30" />
+            )}
+            <p className="flex flex-wrap items-center gap-1.5 font-medium">
+              <span className="font-mono text-xs text-muted">#{h.id}</span> <Addr address={h.from} />
+              <Icon.Arrow className="h-3.5 w-3.5 text-muted" /> <Addr address={h.to} />
             </p>
             <p className="text-xs text-muted">
               {PURPOSES[h.purposeId] ?? `Purpose ${h.purposeId}`} · est. {h.estHouseholds} households · evidence <Hash value={h.evidenceHash} />
             </p>
           </div>
           <div className="tabular-nums">
-            <p>{ntd(h.amount)}</p>
+            <p className="font-mono text-[15px]">{ntd(h.amount)}</p>
             <p className="text-xs text-muted">
               forwarded {ntd(h.forwarded)} · paid {ntd(h.reconciled)} · held {ntd(remaining)}
             </p>
@@ -262,6 +267,22 @@ export function AuditPanel({ snap }: { snap: Snapshot }) {
                   <p className="text-muted">Sample not drawn yet.</p>
                 ) : (
                   <>
+                    <div className="mb-2 flex flex-wrap gap-1" aria-label="Sampled lines">
+                      {b.audit.map((p) => (
+                        <span
+                          key={p.receipt}
+                          title={["not visited yet", "received, signed in person", "not received", "nobody at the address"][p.outcome]}
+                          className={cx(
+                            "grid h-6 w-6 place-items-center rounded-[4px] border",
+                            p.outcome === 1 && "border-ok/40 bg-ok/10 text-ok",
+                            (p.outcome === 2 || p.outcome === 3) && "border-bad/40 bg-bad/10 text-bad",
+                            p.outcome === 0 && "border-dashed border-line text-muted",
+                          )}
+                        >
+                          {p.outcome === 1 ? <Icon.Check className="h-3.5 w-3.5" /> : p.outcome ? <Icon.Cross className="h-3 w-3" /> : null}
+                        </span>
+                      ))}
+                    </div>
                     <div className="flex flex-wrap gap-1.5">
                       <Badge tone="ok">{s.received} received, signed in person</Badge>
                       {s.notReceived > 0 && <Badge tone="bad">{s.notReceived} not received</Badge>}
@@ -313,7 +334,7 @@ export function ExclusionPanel({ snap }: { snap: Snapshot }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-muted">
+            <tr className="eyebrow border-b border-ink/60 text-left">
               <th className="py-2 font-medium">Village</th>
               <th className="font-medium">Verified</th>
               <th className="font-medium">Appeals</th>
@@ -365,7 +386,7 @@ export function IssuerPanel({ snap }: { snap: Snapshot }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-muted">
+            <tr className="eyebrow border-b border-ink/60 text-left">
               <th className="py-2 font-medium">Issuer</th>
               <th className="font-medium">Proposed</th>
               <th className="font-medium">Approved</th>
@@ -446,7 +467,7 @@ export function AlertsPanel({ snap }: { snap: Snapshot }) {
   const alerts = computeAlerts(snap);
   return (
     <Card>
-      <SectionTitle kicker="Where to look" title={`Accountability alerts (${alerts.length})`}>
+      <SectionTitle kicker={`Where to look · ${alerts.length} alert${alerts.length === 1 ? "" : "s"}`} title="Accountability alerts">
         Simple published rules over the public record: acknowledgement within {RULES.ackDays} days, money not held for more than{" "}
         {RULES.heldDays} days, appeals answered within {RULES.appealDays} days, households&apos; own reports. They show where to
         look, not who is to blame.
@@ -454,11 +475,21 @@ export function AlertsPanel({ snap }: { snap: Snapshot }) {
       {alerts.length === 0 ? (
         <Empty>No alerts.</Empty>
       ) : (
-        <ul className="divide-y divide-line">
+        <ul className="divide-y divide-line border-y border-line">
           {alerts.map((a, i) => (
-            <li key={i} className="flex flex-col gap-1 py-2 text-sm sm:flex-row sm:items-start sm:gap-3">
-              <Badge tone={a.tone}>{a.rule}</Badge>
-              <span className="text-muted">{a.detail}</span>
+            <li key={i} className="flex gap-3 py-3 text-sm">
+              <span
+                className={cx(
+                  "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full",
+                  a.tone === "bad" ? "bg-bad/10 text-bad" : a.tone === "warn" ? "bg-warn/12 text-warn" : "bg-accent/10 text-accent",
+                )}
+              >
+                {a.tone === "info" ? <Icon.Info className="h-3.5 w-3.5" /> : <Icon.Alert className="h-3.5 w-3.5" />}
+              </span>
+              <span>
+                <span className="block font-medium text-ink">{a.rule}</span>
+                <span className="block text-muted">{a.detail}</span>
+              </span>
             </li>
           ))}
         </ul>

@@ -13,7 +13,7 @@ function Strip({ c }: { c: BacktestCase }) {
   const lead = days(c.keptFlags, end);
   return (
     <div className="mt-3">
-      <div className="relative h-2 rounded-full bg-ink/8">
+      <div className="relative h-2 rounded-full bg-sunk">
         <div className={c.publicLearned ? "h-full rounded-full bg-accent/60" : "h-full rounded-full bg-warn/60"} style={{ width: "100%" }} />
         <span className="absolute -top-1 left-0 h-4 w-1 rounded bg-accent" />
         <span className={`absolute -top-1 right-0 h-4 w-1 rounded ${c.publicLearned ? "bg-ink" : "bg-warn"}`} />

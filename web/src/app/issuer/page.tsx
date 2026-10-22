@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import type { Address } from "viem";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, formatDate, formatDuration, inputCls, NotReady } from "@/components/ui";
+import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, formatDate, formatDuration, inputCls, NotReady, PageHeader } from "@/components/ui";
 import { consumeInbox, useInbox } from "@/lib/inbox";
 import { tx, eventArg } from "@/lib/api";
 import { demoUniqueTag, textHash } from "@/lib/scopes";
@@ -32,25 +32,25 @@ export default function IssuerPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-accent">Issuers</p>
-          <h1 className="text-2xl font-semibold">Village chief & township office</h1>
-          <p className="max-w-2xl text-sm text-muted">
-            A household becomes verified only when both the village chief and the township office sign. Every decision is
-            attributed to the person who made it.
-          </p>
-        </div>
-        <Field label="Acting as">
-          <select className={inputCls} value={actor} onChange={(e) => setActor(e.target.value as RoleName)}>
-            {ACTORS.map((a) => (
-              <option key={a} value={a}>
-                {ROLES[a].label}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </header>
+      <PageHeader
+        eyebrow="Role · Village chief & township office"
+        kind="sim"
+        title="Village chief & township office"
+        aside={
+          <Field label="Acting as">
+            <select className={inputCls} value={actor} onChange={(e) => setActor(e.target.value as RoleName)}>
+              {ACTORS.map((a) => (
+                <option key={a} value={a}>
+                  {ROLES[a].label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        }
+      >
+        A household becomes verified only when both the village chief and the township office sign. Every decision is
+        attributed to the person who made it.
+      </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

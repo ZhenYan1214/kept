@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Card, Field, Note, SectionTitle, formatDate, formatDuration, inputCls, ntd, NotReady } from "@/components/ui";
+import { ActionButton, Card, Field, Note, SectionTitle, formatDate, formatDuration, inputCls, ntd, NotReady, PageHeader } from "@/components/ui";
 import { ProposalList, CharterPanel, reviewPending } from "@/components/panels";
 import { tx, postJSON } from "@/lib/api";
 import { CHAIN_ID } from "@/lib/config";
@@ -21,25 +21,25 @@ export default function CommitteePage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-accent">Fund committee</p>
-          <h1 className="text-2xl font-semibold">Decisions, under the charter</h1>
-          <p className="max-w-2xl text-sm text-muted">
-            The committee can only act inside the promises made when the money was raised. Balance available:{" "}
-            <strong>{ntd(f.balance)}</strong>.
-          </p>
-        </div>
-        <Field label="Acting as">
-          <select className={inputCls} value={member} onChange={(e) => setMember(e.target.value as RoleName)}>
-            {MEMBERS.map((m) => (
-              <option key={m} value={m}>
-                {ROLES[m].label}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </header>
+      <PageHeader
+        eyebrow="Role · Fund committee"
+        kind="sim"
+        title="Decisions, under the charter"
+        aside={
+          <Field label="Acting as">
+            <select className={inputCls} value={member} onChange={(e) => setMember(e.target.value as RoleName)}>
+              {MEMBERS.map((m) => (
+                <option key={m} value={m}>
+                  {ROLES[m].label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        }
+      >
+        The committee can only act inside the promises made when the money was raised. Balance available:{" "}
+        <strong>{ntd(f.balance)}</strong>.
+      </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Allocate member={member} />

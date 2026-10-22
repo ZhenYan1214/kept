@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import type { Address, Hex } from "viem";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, inputCls, ntd } from "@/components/ui";
+import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, Stamp, inputCls, ntd, PageHeader } from "@/components/ui";
+import { KeptMark } from "@/components/icons";
 import { proposalTitle } from "@/components/panels";
 import {
   cardIdentity,
@@ -36,14 +37,14 @@ export default function HouseholdPage() {
   if (!ready) return null;
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-wider text-accent">Household device</p>
-        <h1 className="text-2xl font-semibold">My relief credential</h1>
-        <p className="max-w-2xl text-sm text-muted">
-          Your credential stays on this phone (or a printed card). It proves you are a verified household without saying which
-          one. Nothing personal ever goes on-chain, and you never need crypto or gas.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Role · Household device"
+        kind="sim"
+        title="My relief credential"
+      >
+        Your credential stays on this phone (or a printed card). It proves you are a verified household without saying which
+        one. Nothing personal ever goes on-chain, and you never need crypto or gas.
+      </PageHeader>
       {card ? <WithCard card={card} onReset={() => (clearCard(), setCard(null))} /> : <CreateCard onCreate={(c) => (saveCard(c), setCard(c))} />}
       <AppealCard />
     </div>
@@ -103,7 +104,30 @@ function WithCard({ card, onReset }: { card: HouseholdCard; onReset: () => void 
     <>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.3fr]">
         <Card>
-          <SectionTitle kicker={card.label} title="Status" />
+          <div className="relative mb-6 aspect-[1.586] max-w-sm overflow-hidden rounded-xl border border-ink/15 bg-[linear-gradient(135deg,var(--card),var(--sunk))] p-5 shadow-[0_14px_30px_-18px_rgb(0_0_0/0.45)]">
+            <div className="ledger-rules absolute inset-0 opacity-40" />
+            <div className="relative flex h-full flex-col justify-between">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2 text-ink">
+                  <KeptMark className="h-7 w-7" seal={false} />
+                  <span className="font-serif text-lg font-semibold">Kept</span>
+                </div>
+                <span className="eyebrow text-right">Relief credential</span>
+              </div>
+              <div>
+                <p className="font-serif text-[22px] leading-tight text-ink">{card.label}</p>
+                <p className="mt-1 font-mono text-[11px] text-muted">
+                  receipt {receipt.address.slice(0, 8)}…{receipt.address.slice(-6)}
+                </p>
+              </div>
+            </div>
+            {tier !== null && tier !== undefined && (
+              <span className="absolute bottom-5 right-5">
+                <Stamp>Verified · 2 signatures</Stamp>
+              </span>
+            )}
+          </div>
+          <SectionTitle kicker="This device" title="Status" />
           {tier === undefined ? (
             <p className="text-sm text-muted">Checking verified groups…</p>
           ) : tier === null ? (
@@ -405,16 +429,21 @@ function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) 
       ) : (
         <div className="space-y-3">
           {lines.map((l) => (
-            <div key={`${l.hopId}-${l.batchIndex}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line p-3">
+            <div
+              key={`${l.hopId}-${l.batchIndex}`}
+              className="relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-md border border-line bg-card px-5 pb-4 pt-5"
+            >
+              <span aria-hidden className="perforated absolute inset-x-0 top-0 h-2" />
               <div>
-                <p className="font-medium">
-                  {ntd(l.amount)} recorded as paid by {labelOf(l.custodian) ?? "a custodian"}
+                <p className="eyebrow">Payment line · receipt {receipt.slice(0, 6)}…{receipt.slice(-4)}</p>
+                <p className="mt-1.5 font-medium">
+                  <span className="font-mono text-lg">{ntd(l.amount)}</span> recorded as paid by {labelOf(l.custodian) ?? "a custodian"}
                 </p>
                 <p className="text-xs text-muted">
                   Tranche #{l.hopId} · batch {l.batchIndex} · found in the roster published on-chain
                 </p>
                 {l.audit !== undefined && (
-                  <div className="mt-2 rounded-lg bg-accent/5 p-2 text-xs">
+                  <div className="mt-3 rounded-r-md border-l-2 border-accent bg-accent/5 px-3 py-2 text-xs">
                     <p className="font-medium text-accent">Your line was drawn for the sample audit.</p>
                     {l.audit === 0 ? (
                       <>
@@ -439,9 +468,15 @@ function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) 
                 )}
               </div>
               {l.state === 1 ? (
-                <Badge tone="ok">You confirmed receipt</Badge>
+                <div className="flex flex-col items-end gap-2">
+                  <Stamp tone="ok">Received</Stamp>
+                  <Badge tone="ok">You confirmed receipt</Badge>
+                </div>
               ) : l.state === 2 ? (
-                <Badge tone="bad">You disputed this payment</Badge>
+                <div className="flex flex-col items-end gap-2">
+                  <Stamp tone="bad">Not received</Stamp>
+                  <Badge tone="bad">You disputed this payment</Badge>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {(l.state === 3 || l.state === 4) && (

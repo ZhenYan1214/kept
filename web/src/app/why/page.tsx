@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { FraudSimulation } from "@/components/fraud-sim";
+import { Icon } from "@/components/icons";
+import { Reveal } from "@/components/motion";
 
 const Src = ({ href, children }: { href: string; children: React.ReactNode }) => (
   <a href={href} target="_blank" rel="noreferrer" className="text-accent underline decoration-accent/30 underline-offset-2 hover:decoration-accent">
@@ -8,9 +10,18 @@ const Src = ({ href, children }: { href: string; children: React.ReactNode }) =>
 );
 
 const Fact = ({ figure, children }: { figure: string; children: React.ReactNode }) => (
-  <div className="rounded-xl border border-line bg-card p-4">
-    <p className="text-2xl font-semibold tabular-nums text-ink">{figure}</p>
-    <p className="mt-1 text-sm text-muted">{children}</p>
+  <div className="border-t border-ink/70 pt-4">
+    <p className="font-serif text-[30px] leading-none tabular-nums text-seal">{figure}</p>
+    <p className="mt-2.5 text-[15px] leading-relaxed text-ink/80">{children}</p>
+  </div>
+);
+
+const H2 = ({ n, children }: { n: string; children: React.ReactNode }) => (
+  <div>
+    <p className="eyebrow flex items-center gap-2">
+      <span className="h-px w-5 bg-seal" />§ {n}
+    </p>
+    <h2 className="mt-2 font-serif text-[28px] font-medium leading-tight md:text-[32px]">{children}</h2>
   </div>
 );
 
@@ -61,33 +72,36 @@ const EVIDENCE = [
 
 export default function Why() {
   return (
-    <article className="mx-auto max-w-3xl space-y-10 pb-8">
-      <header className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-accent">Why Kept</p>
-        <h1 className="text-3xl font-semibold leading-tight">
+    <article className="mx-auto max-w-3xl space-y-16 pb-8">
+      <header className="space-y-5 border-b border-line pb-10">
+        <p className="eyebrow">Why Kept · the argument, with its sources</p>
+        <h1 className="font-serif text-[38px] font-medium leading-[1.06] md:text-[52px]">
           People in Hualien did not stop giving.
           <br />
           They stopped trusting where it goes.
         </h1>
-        <p className="text-muted">
+        <p className="text-lg leading-relaxed text-muted">
           A disaster donation passes through a foundation, a ministry, a county and a township before it reaches a household. With
           every hand, the public sees less — and the people it is meant for have no say in how it is used.
         </p>
       </header>
 
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">A loop that repeats across countries</h2>
-        <ol className="grid gap-2 text-sm sm:grid-cols-5">
+      <section className="space-y-6">
+        <H2 n="1">A loop that repeats across countries</H2>
+        <ol className="grid gap-px overflow-hidden rounded-lg border border-line bg-line text-sm sm:grid-cols-5">
           {["Money is raised before a plan exists", "The custodian keeps every record", "Victims have no voice", "Surpluses and delays", "Trust collapses; donations go elsewhere"].map(
             (s, i) => (
-              <li key={s} className="rounded-lg bg-ink/5 p-3">
-                <span className="block text-xs font-semibold text-accent">{i + 1}</span>
-                {s}
+              <li key={s} className="relative bg-card p-4">
+                <span className="flex items-center justify-between font-mono text-xs text-muted">
+                  0{i + 1}
+                  {i < 4 ? <Icon.Arrow className="h-3.5 w-3.5 text-seal/70" /> : <span className="text-seal">↺ 01</span>}
+                </span>
+                <span className="mt-3 block font-serif text-[17px] leading-snug">{s}</span>
               </li>
             ),
           )}
         </ol>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-8 gap-y-8 sm:grid-cols-2">
           <Fact figure="$488M → 6 homes">
             American Red Cross, Haiti 2010: six permanent homes built across the country (
             <Src href="https://www.propublica.org/article/how-the-red-cross-raised-half-a-billion-dollars-for-haiti-and-built-6-homes">
@@ -110,9 +124,9 @@ export default function Why() {
         </div>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Taiwan: the same loop, for 25 years</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+      <section className="space-y-6">
+        <H2 n="2">Taiwan: the same loop, for 25 years</H2>
+        <div className="grid gap-x-8 gap-y-8 sm:grid-cols-2">
           <Fact figure="16% paid after 11 months">
             2024 Hualien earthquake: the county received NT$792M in donations; by February 2025 it had earmarked NT$425M and paid out
             NT$124M (<Src href="https://sa.hl.gov.tw/Upload/202504020943277687541.pdf">county report</Src>). Its committee met only three or four times (reports differ) and had no victims on it (
@@ -145,67 +159,68 @@ export default function Why() {
         </p>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold">What already exists — and what is still missing</h2>
-        <p className="text-sm text-muted">
+      <section className="space-y-5">
+        <H2 n="3">What already exists, and what is still missing</H2>
+        <p className="text-base leading-relaxed text-muted">
           The relief foundation publishes monthly transfer-level disclosures; the government paid households proactively in 2025;
           civic platforms such as <Src href="https://guangfu.tw">guangfu.tw</Src> coordinate recovery. Abroad, WFP&apos;s Building Blocks
           deduplicates aid across agencies and the Spanish Red Cross runs zero-knowledge eligibility credentials.
         </p>
-        <p className="text-sm">
+        <p className="text-base leading-relaxed">
           What we did not find in any deployment we reviewed: <strong>a custody trail that follows money past the first hand</strong> until
           households confirm it, <strong>promises the custodian cannot rewrite</strong>, and{" "}
           <strong>a voice for the people the money is for</strong>.
         </p>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Evidence of need, in stakeholders&apos; own words</h2>
-        <p className="text-sm text-muted">
+      <section className="space-y-6">
+        <H2 n="4">Evidence of need, in stakeholders&apos; own words</H2>
+        <p className="text-base leading-relaxed text-muted">
           We have not yet interviewed practitioners. Every group Kept serves has, however, already described the problem in public.
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-8 gap-y-8 sm:grid-cols-2">
           {EVIDENCE.map((e) => (
-            <div key={e.text} className="rounded-xl border border-line bg-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-accent">{e.who}</p>
-              <p className="mt-1 text-sm">{e.text}</p>
-              <p className="mt-2 text-xs text-muted">
-                <Src href={e.href}>{e.source}</Src> · Kept: {e.kept}
+            <Reveal key={e.text} className="self-start border-l-2 border-seal/70 pl-5">
+              <p className="eyebrow">{e.who}</p>
+              <p className="mt-2 font-serif text-[18px] leading-snug text-ink">{e.text}</p>
+              <p className="mt-3 text-xs text-muted">
+                <Src href={e.href}>{e.source}</Src> · <span className="text-ink/70">Kept: {e.kept}</span>
               </p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Where Kept starts: reconciliation</h2>
-        <p className="text-sm text-muted">
+      <section className="space-y-5">
+        <H2 n="5">Where Kept starts: reconciliation</H2>
+        <p className="text-base leading-relaxed text-muted">
           The relief foundation already publishes every transfer it makes. But more than NT$1.1bn of the Guangfu donations was
           pre-allocated to the ministry. From there the public sees only aggregate totals, households have no public, recorded way to confirm their own
           payment, and reconciliation a year later covers about 4%. The foundation needs that evidence too.
         </p>
-        <p className="text-sm">
+        <p className="text-base leading-relaxed">
           Kept gives every downstream custodian one simple tool: acknowledge what you received, publish each payment batch as
           pseudonymous lines, and let each household confirm or dispute its own line. The custodian gets reconciliation evidence it now
           assembles by hand; the public sees past the first hand; households can say &quot;this never reached me&quot;.
         </p>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Kept: two promises, made verifiable</h2>
+      <section className="space-y-6">
+        <H2 n="6">Kept: two promises, made verifiable</H2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             ["Custody", "Every hand records and acknowledges each tranche. Payment rosters are published as pseudonymous lines, so each registered household finds its own line without asking the custodian, and confirms or disputes it."],
             ["Commitment", "Purposes, caps and the surplus purpose are fixed when money is raised and cannot be rewritten. Changes wait through a public period in which households can veto them. While donations stay in banks, this binds the public record, not the bank account."],
             ["Voice", "The same credential that lets a household receive aid gives it one anonymous vote on changes, and a public appeal when it is left out."],
           ].map(([t, d]) => (
-            <div key={t} className="rounded-xl border border-line bg-card p-4">
-              <p className="font-semibold">{t}</p>
-              <p className="mt-1 text-sm text-muted">{d}</p>
+            <div key={t} className="rounded-lg border border-line bg-card p-5">
+              {t === "Custody" ? <Icon.Handoff className="h-5 w-5 text-seal" /> : t === "Commitment" ? <Icon.Seal className="h-5 w-5 text-seal" /> : <Icon.Ballot className="h-5 w-5 text-seal" />}
+              <p className="mt-3 font-serif text-xl">{t}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{d}</p>
             </div>
           ))}
         </div>
-        <p className="text-sm text-muted">
+        <p className="text-base leading-relaxed text-muted">
           Deliberately off-chain: names, ID numbers and bank accounts; payment rosters appear only as pseudonymous lines. Eligibility
           is still decided by the village chief and township office — Kept makes their decisions attributable instead of replacing
           them.
@@ -214,7 +229,7 @@ export default function Why() {
 
       <FraudSimulation />
 
-      <p className="text-sm">
+      <p className="text-base leading-relaxed">
         <Link href="/" className="text-accent underline">
           See the public dashboard →
         </Link>

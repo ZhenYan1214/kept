@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, humanError, inputCls, ntd, NotReady } from "@/components/ui";
+import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, humanError, inputCls, ntd, NotReady, PageHeader } from "@/components/ui";
 import { tx } from "@/lib/api";
 import { consumeInbox, useInbox } from "@/lib/inbox";
 import { fromJSONSafe } from "@/lib/serialize";
@@ -21,14 +21,14 @@ export default function NgoPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-wider text-accent">NGO counter</p>
-        <h1 className="text-2xl font-semibold">Verify eligibility on the spot — without the roster</h1>
-        <p className="max-w-2xl text-sm text-muted">
-          A household shows a one-time code. The contract checks a zero-knowledge proof that it is a verified household of this
-          disaster that has not received this programme yet. The code reveals nothing else about the household, and you never need the roster.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Role · NGO counter"
+        kind="sim"
+        title="Verify eligibility on the spot — without the roster"
+      >
+        A household shows a one-time code. The contract checks a zero-knowledge proof that it is a verified household of this
+        disaster that has not received this programme yet. The code reveals nothing else about the household, and you never need the roster.
+      </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
         <Card>

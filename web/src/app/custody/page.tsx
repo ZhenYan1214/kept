@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Addr, Badge, Card, Empty, Field, Note, SectionTitle, inputCls, ntd, NotReady } from "@/components/ui";
+import { ActionButton, Addr, Badge, Card, Empty, Field, Note, SectionTitle, inputCls, ntd, NotReady, PageHeader } from "@/components/ui";
 import { HopTree } from "@/components/panels";
 import { tx } from "@/lib/api";
 import { textHash } from "@/lib/scopes";
@@ -20,25 +20,25 @@ export default function CustodyPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-accent">Custodians</p>
-          <h1 className="text-2xl font-semibold">Every hand signs for what it holds</h1>
-          <p className="max-w-2xl text-sm text-muted">
-            Acknowledge what you received, record what you pass on, and publish each payment batch as pseudonymous lines (a
-            receipt address and an amount, never a name). Every household can then find its own line without asking you.
-          </p>
-        </div>
-        <Field label="Acting as">
-          <select className={inputCls} value={me} onChange={(e) => setMe(e.target.value as RoleName)}>
-            {CUSTODIANS.map((c) => (
-              <option key={c} value={c}>
-                {ROLES[c].label}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </header>
+      <PageHeader
+        eyebrow="Role · Custodians"
+        kind="sim"
+        title="Every hand signs for what it holds"
+        aside={
+          <Field label="Acting as">
+            <select className={inputCls} value={me} onChange={(e) => setMe(e.target.value as RoleName)}>
+              {CUSTODIANS.map((c) => (
+                <option key={c} value={c}>
+                  {ROLES[c].label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        }
+      >
+        Acknowledge what you received, record what you pass on, and publish each payment batch as pseudonymous lines (a
+        receipt address and an amount, never a name). Every household can then find its own line without asking you.
+      </PageHeader>
 
       {mine.length === 0 ? (
         <Empty>No tranches held by {ROLES[me].short} yet.</Empty>
@@ -64,7 +64,7 @@ function HopCard({ h, me }: { h: Hop; me: RoleName }) {
     <Card>
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="font-semibold">
+          <p className="font-serif text-xl font-medium">
             Tranche #{h.id}: {ntd(h.amount)} · {PURPOSES[h.purposeId]}
           </p>
           <p className="text-sm text-muted">

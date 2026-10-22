@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Card, Note, SectionTitle } from "@/components/ui";
+import { ActionButton, Card, Note, PageHeader, SectionTitle } from "@/components/ui";
 import { postJSON } from "@/lib/api";
 import { CHAIN_ID, getDeployment } from "@/lib/config";
 import { clearCard } from "@/lib/household";
@@ -11,6 +11,11 @@ export default function Setup() {
   const [log, setLog] = useState<string[]>([]);
   const d = getDeployment();
   return (
+    <>
+      <PageHeader eyebrow="Demo setup" kind="sim" title="Run the demo">
+        Everything in the demo is simulated: the disaster, the fund, the households and their decisions. The contracts and every
+        transaction are real, on a public testnet.
+      </PageHeader>
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
         <SectionTitle kicker="Demo" title="Set up the simulated scenario">
@@ -91,5 +96,6 @@ export default function Setup() {
         </dl>
       </Card>
     </div>
+    </>
   );
 }

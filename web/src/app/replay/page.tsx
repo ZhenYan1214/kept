@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Badge, Bar, Card, SectionTitle, Stat, ntd, pct } from "@/components/ui";
+import { Badge, Bar, Card, PageHeader, SectionTitle, Stat, ntd, ntdShort, pct } from "@/components/ui";
 import {
   AREAS,
   INCOME_TOTAL,
@@ -39,29 +39,25 @@ export default function ReplayPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-accent">Real public data · nothing on this page is simulated</p>
-        <h1 className="text-2xl font-semibold">Guangfu 2025, as the public can see it today</h1>
-        <p className="max-w-3xl text-sm text-muted">
-          Every number below comes from the Disaster Relief Foundation&apos;s 11th public disclosure for the 0923 barrier-lake
-          appeal (as of {SOURCE.asOf}), published as images and transcribed by hand. The 48 transfers add up exactly to the total
-          the foundation states. It is institution-level data only; no household appears anywhere.{" "}
-          <a href={SOURCE.url} target="_blank" rel="noreferrer" className="text-accent underline">
-            Source
-          </a>
-        </p>
-      </header>
+      <PageHeader eyebrow="Nothing on this page is simulated" kind="real" title="Guangfu 2025, as the public can see it today">
+        Every number below comes from the Disaster Relief Foundation&apos;s 11th public disclosure for the 0923 barrier-lake
+        appeal (as of {SOURCE.asOf}), published as images and transcribed by hand. The 48 transfers add up exactly to the total
+        the foundation states. It is institution-level data only; no household appears anywhere.{" "}
+        <a href={SOURCE.url} target="_blank" rel="noreferrer" className="text-accent underline">
+          Source
+        </a>
+      </PageHeader>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Raised" value={ntd(INCOME_TOTAL)} sub="donations, interest, earmarked transfers" />
-        <Stat label="Paid out" value={ntd(SPENT_TOTAL)} sub={`48 transfers · ${pct(SPENT_TOTAL, INCOME_TOTAL)}% of raised`} />
+      <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Raised" value={<span title={ntd(INCOME_TOTAL)}>{ntdShort(INCOME_TOTAL)}</span>} sub={`${ntd(INCOME_TOTAL)} · donations, interest, earmarked transfers`} />
+        <Stat label="Paid out" value={<span title={ntd(SPENT_TOTAL)}>{ntdShort(SPENT_TOTAL)}</span>} sub={`${ntd(SPENT_TOTAL)} · 48 transfers · ${pct(SPENT_TOTAL, INCOME_TOTAL)}% of raised`} />
         <Stat
           label="Of which pre-allocated"
-          value={ntd(PREALLOC_TOTAL)}
-          sub={`${PREALLOC.length} transfers · ${pct(PREALLOC_TOTAL, SPENT_TOTAL)}% of paid out, to be reconciled later`}
+          value={<span title={ntd(PREALLOC_TOTAL)}>{ntdShort(PREALLOC_TOTAL)}</span>}
+          sub={`${ntd(PREALLOC_TOTAL)} · ${PREALLOC.length} transfers · ${pct(PREALLOC_TOTAL, SPENT_TOTAL)}% of paid out, to be reconciled later`}
           tone="warn"
         />
-        <Stat label="Reconciled" value={ntd(RECONCILED_TOTAL)} sub={`${pct(RECONCILED_TOTAL, SPENT_TOTAL)}% of paid out, a year after the disaster`} tone="bad" />
+        <Stat label="Reconciled" value={<span title={ntd(RECONCILED_TOTAL)}>{ntdShort(RECONCILED_TOTAL)}</span>} sub={`${ntd(RECONCILED_TOTAL)} · ${pct(RECONCILED_TOTAL, SPENT_TOTAL)}% of paid out, a year after the disaster`} tone="bad" />
       </div>
 
       <PayoutTimeline />
@@ -169,7 +165,7 @@ export default function ReplayPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-muted">
+              <tr className="eyebrow border-b border-ink/60 text-left">
                 <th className="py-2 font-medium">#</th>
                 <th className="font-medium">Date</th>
                 <th className="font-medium">Recipient</th>
@@ -212,7 +208,7 @@ export default function ReplayPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-muted">
+              <tr className="eyebrow border-b border-ink/60 text-left">
                 <th className="py-2 font-medium">Operation</th>
                 <th className="text-right font-medium">Gas each</th>
                 <th className="text-right font-medium">Count</th>

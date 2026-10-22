@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Addr, Card, Field, Note, SectionTitle, formatDate, inputCls, ntd, pct, NotReady } from "@/components/ui";
+import { ActionButton, Addr, Card, Field, Note, SectionTitle, formatDate, inputCls, ntd, pct, NotReady, PageHeader } from "@/components/ui";
 import { CharterPanel, custodyTotals } from "@/components/panels";
 import { tx, eventArg } from "@/lib/api";
 import { textHash } from "@/lib/scopes";
@@ -16,13 +16,13 @@ export default function DonatePage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-wider text-accent">Donate</p>
-        <h1 className="text-2xl font-semibold">Give to a fund that cannot change its promises</h1>
-        <p className="max-w-2xl text-sm text-muted">
-          Read the charter below before you give. It was fixed when this fund was created and cannot be rewritten; the contract enforces it on the money it holds.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Donate"
+        kind="sim"
+        title="Give to a fund that cannot change its promises"
+      >
+        Read the charter below before you give. It was fixed when this fund was created and cannot be rewritten; the contract enforces it on the money it holds.
+      </PageHeader>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.3fr]">
         <Card>
           <SectionTitle title="Donate (testnet NT$)" />
