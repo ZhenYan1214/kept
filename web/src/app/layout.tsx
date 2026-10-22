@@ -1,14 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Newsreader, Public_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Public_Sans } from "next/font/google";
 import "./globals.css";
 import { SnapshotProvider } from "@/components/snapshot";
 import { Nav } from "@/components/nav";
 import { KeptMark } from "@/components/icons";
 
-const serif = Newsreader({ variable: "--font-newsreader", subsets: ["latin"], style: ["normal", "italic"], display: "swap" });
 const sans = Public_Sans({ variable: "--font-public-sans", subsets: ["latin"], display: "swap" });
-const mono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Kept — disaster-relief promises you can verify",
@@ -18,15 +16,15 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3efe6" },
-    { media: "(prefers-color-scheme: dark)", color: "#12161b" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f5f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#111418" },
   ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${serif.variable} ${sans.variable} ${mono.variable} min-h-dvh antialiased`}>
+      <body className={`${sans.variable} min-h-dvh antialiased`}>
         <SnapshotProvider>
           <Nav />
           <main className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 md:pt-12">{children}</main>
@@ -35,7 +33,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-ink">
                   <KeptMark className="h-7 w-7" />
-                  <span className="font-serif text-xl font-semibold">Kept</span>
+                  <span className="text-xl font-semibold">Kept</span>
                 </div>
                 <p className="max-w-sm text-muted">
                   Disaster-relief promises you can verify, past the first hand. Personal data never goes on-chain: only commitments,

@@ -61,9 +61,9 @@ export function CharterPanel({ snap }: { snap: Snapshot }) {
       <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
         <div className="rounded-md border border-line bg-sunk/50 p-4 sm:col-span-2">
           <dt className="eyebrow flex items-center gap-2">
-            <Icon.Seal className="h-3.5 w-3.5 text-seal" /> Surplus rule, fixed at fundraising
+            <Icon.Seal className="h-3.5 w-3.5 text-ink" /> Surplus rule, fixed at fundraising
           </dt>
-          <dd className="mt-2 font-serif text-[17px] leading-snug">{f.surplusRule}</dd>
+          <dd className="mt-2 text-[17px] leading-snug">{f.surplusRule}</dd>
           <dd className="mt-1 text-xs text-muted">
             Enforced by the contract: after the deadline, money can only go to “{f.purposes[f.surplusPurposeId]?.name}”, and only
             after a public waiting period in which households can veto it.
@@ -162,7 +162,7 @@ export function FunnelPanel({ snap }: { snap: Snapshot }) {
           [t.disputed, "disputed: “recorded as paid, not received”", "text-bad"],
         ].map(([n, label, color], i) => (
           <div key={i} className={cx("pr-3", i > 0 && "border-l border-line pl-4")}>
-            <p className={cx("font-serif text-3xl leading-none tabular-nums", color as string)}>{n}</p>
+            <p className={cx("text-3xl leading-none tabular-nums", color as string)}>{n}</p>
             <p className="mt-1.5 text-xs leading-snug text-muted">{label}</p>
           </div>
         ))}
@@ -334,7 +334,7 @@ export function ExclusionPanel({ snap }: { snap: Snapshot }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
           <thead>
-            <tr className="eyebrow border-b border-ink/60 text-left">
+            <tr className="border-b border-line text-left text-xs text-muted">
               <th className="py-2 font-medium">Village</th>
               <th className="font-medium">Verified</th>
               <th className="font-medium">Appeals</th>
@@ -386,7 +386,7 @@ export function IssuerPanel({ snap }: { snap: Snapshot }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-sm">
           <thead>
-            <tr className="eyebrow border-b border-ink/60 text-left">
+            <tr className="border-b border-line text-left text-xs text-muted">
               <th className="py-2 font-medium">Issuer</th>
               <th className="font-medium">Proposed</th>
               <th className="font-medium">Approved</th>

@@ -4,7 +4,6 @@ import { DISCLOSURES } from "@/lib/replay/disclosures-0923";
 import { BACKTEST } from "@/lib/replay/backtest";
 import { Tag } from "./ui";
 import { Icon } from "./icons";
-import { CountUp, Reveal } from "./motion";
 import { VisibilityChain } from "./visibility-chain";
 
 /**
@@ -69,107 +68,85 @@ const STEPS = [
 
 export function Lede() {
   return (
-    <div className="space-y-16 md:space-y-24">
-      <section className="grid items-start gap-10 lg:grid-cols-[1.12fr_0.88fr] lg:gap-14">
+    <div className="space-y-14 md:space-y-20">
+      <section className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
         <div>
-          <p className="eyebrow flex flex-wrap items-center gap-2">
+          <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
             <Tag kind="real" />
-            The public record · Guangfu, Hualien · 2025 flood
+            Guangfu, Hualien · 2025 flood
           </p>
-          <h1 className="mt-5 font-serif text-[38px] font-medium leading-[1.04] text-ink sm:text-[48px] lg:text-[56px]">
-            A year after the flood, the public could see NT${billions}bn leave the relief foundation,{" "}
-            <em className="text-seal">but not whether it reached anyone.</em>
+          <h1 className="mt-4 text-[34px] font-semibold leading-[1.12] text-ink sm:text-[42px] lg:text-[46px]">
+            A year after the flood, the public could see NT${billions}bn leave the relief foundation, but not whether it reached
+            anyone.
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
-            <span className="font-medium text-ink">Kept</span> follows donated money hand by hand, until the household it was meant
-            for can say whether it arrived. Getting paid needs nothing from a household; confirming is optional, and elders can use a
-            printed card or a social worker.
+          <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-muted">
+            Kept follows donated money hand by hand, until the household it was meant for can say whether it arrived. Getting paid
+            needs nothing from a household; confirming is optional, and elders can use a printed card or a social worker.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link
               href="/replay"
-              className="group inline-flex items-center gap-2 rounded-md bg-ink px-5 py-3 text-sm font-medium text-on-ink transition hover:bg-ink/85"
+              className="group inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-on-accent transition-colors hover:bg-accent/90"
             >
               See the real records
               <Icon.Arrow className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a
               href="#demo"
-              className="inline-flex items-center gap-2 rounded-md border border-line px-5 py-3 text-sm font-medium text-ink transition hover:border-ink/40"
+              className="inline-flex items-center gap-2 rounded-lg border border-line bg-card px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-sunk"
             >
-              Try the 5-minute demo
-              <Icon.ArrowDown className="h-4 w-4" />
+              Try the demo
             </a>
           </div>
         </div>
-        <Reveal delay={120}>
-          <VisibilityChain />
-        </Reveal>
+        <VisibilityChain />
       </section>
 
       <section aria-labelledby="findings">
-        <div className="flex items-end justify-between gap-4 border-b border-ink pb-3">
-          <h2 id="findings" className="font-serif text-2xl font-medium">
-            What the records show
-          </h2>
-          <span className="eyebrow hidden sm:block">Computed from 11 monthly disclosures and county reports</span>
-        </div>
-        <div className="grid md:grid-cols-3">
+        <h2 id="findings" className="text-xl font-semibold">
+          What the records show
+        </h2>
+        <p className="mt-1 text-sm text-muted">From the foundation&apos;s 11 monthly disclosures and Hualien County&apos;s committee reports.</p>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
           {FINDINGS.map((f, i) => (
-            <Reveal key={f.href + i} delay={i * 110}>
-              <Link
-                href={f.href}
-                className="group flex h-full flex-col border-b border-line py-6 md:border-b-0 md:border-r md:px-6 md:first:pl-0 md:last:border-r-0 md:last:pr-0"
-              >
-                <p className="eyebrow flex items-center gap-2">
-                  <span className="tabular-nums">0{i + 1}</span>
-                  {f.tag && <span className="rounded-[3px] bg-accent/10 px-1.5 py-px text-accent">{f.tag}</span>}
-                </p>
-                <p className="mt-3 font-serif text-[44px] leading-none text-seal">
-                  <CountUp value={f.value} format={f.format} />
-                </p>
-                <p className="mt-3 flex-1 text-[15px] leading-relaxed text-ink/85">{f.text}</p>
-                <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
-                  See the records
-                  <Icon.Arrow className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                </p>
-              </Link>
-            </Reveal>
+            <Link
+              key={f.href + i}
+              href={f.href}
+              className="group flex flex-col rounded-xl border border-line bg-card p-5 transition-colors hover:border-accent/40"
+            >
+              <p className="text-[34px] font-semibold leading-none tracking-tight text-ink tabular-nums">{f.format(f.value)}</p>
+              {f.tag && <p className="mt-2 text-xs font-medium text-accent">{f.tag} on real records</p>}
+              <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">{f.text}</p>
+              <p className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent">
+                See the records
+                <Icon.Arrow className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </p>
+            </Link>
           ))}
         </div>
-        <p className="mt-2 text-xs text-muted">
+        <p className="mt-3 text-xs text-muted">
           The backtest assumes the custodian records under Kept. An alert is a reason to look, not a finding of wrongdoing.
         </p>
       </section>
 
-      <section aria-labelledby="how" className="grid gap-10 lg:grid-cols-[0.8fr_2fr]">
-        <div>
-          <p className="eyebrow flex items-center gap-2">
-            <span className="h-px w-5 bg-seal" />
-            How Kept works
-          </p>
-          <h2 id="how" className="mt-2 font-serif text-[28px] font-medium leading-tight">
-            Two promises, made checkable.
-          </h2>
-          <p className="mt-3 text-[15px] leading-relaxed text-muted">
-            To donors, about how the money is used. To the people it is for, that no one is left out. The custodians being checked
-            should not keep the only ledger.
-          </p>
-          <Link href="/why" className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline">
-            Why on-chain, and what it would catch <Icon.Arrow className="h-3.5 w-3.5" />
+      <section aria-labelledby="how">
+        <h2 id="how" className="text-xl font-semibold">
+          How Kept works
+        </h2>
+        <p className="mt-1 max-w-2xl text-sm text-muted">
+          Two promises made checkable: to donors, about how the money is used; to the people it is for, that no one is left out.{" "}
+          <Link href="/why" className="font-medium text-accent hover:underline">
+            Why on-chain
           </Link>
-        </div>
-        <ol className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <li key={s.title} className="bg-card p-6">
-              <div className="flex items-center justify-between">
-                <span className="grid h-10 w-10 place-items-center rounded-full border border-ink/15 text-ink">
-                  <s.icon className="h-5 w-5" />
-                </span>
-                <span className="font-mono text-xs text-muted">0{i + 1}</span>
-              </div>
-              <h3 className="mt-5 font-serif text-xl font-medium">{s.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{s.text}</p>
+        </p>
+        <ol className="mt-5 grid gap-4 sm:grid-cols-3">
+          {STEPS.map((s) => (
+            <li key={s.title} className="rounded-xl border border-line bg-card p-5">
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent/10 text-accent">
+                <s.icon className="h-[18px] w-[18px]" />
+              </span>
+              <h3 className="mt-4 font-semibold">{s.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{s.text}</p>
             </li>
           ))}
         </ol>

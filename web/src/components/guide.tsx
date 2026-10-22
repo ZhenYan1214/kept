@@ -33,46 +33,42 @@ export function StartHere() {
   };
   if (hidden) {
     return (
-      <button onClick={() => toggle(false)} className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline">
-        <Icon.Ledger className="h-4 w-4" /> Show the 7-step guided demo
+      <button onClick={() => toggle(false)} className="text-sm font-medium text-accent hover:underline">
+        Show the step-by-step guide
       </button>
     );
   }
   return (
-    <div className="rounded-lg border border-line bg-card">
-      <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4 md:px-7">
+    <div className="rounded-xl border border-line bg-card p-5 md:p-6">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="eyebrow">New here? A 5-minute route through the demo</p>
-          <p className="mt-1.5 max-w-3xl text-sm text-muted">
-            Play each role in turn, in this order. Every step writes to the chain; someone else may have used the demo before you, and{" "}
+          <h3 className="font-semibold">New here? Try it in this order</h3>
+          <p className="mt-1 max-w-3xl text-sm text-muted">
+            Play each role in turn; every step writes to the testnet. Someone may have used the demo before you, and{" "}
             <Link href="/setup" className="text-accent hover:underline">
               Setup
             </Link>{" "}
             can start a fresh scenario.
           </p>
         </div>
-        <button onClick={() => toggle(true)} className="shrink-0 rounded-md p-1 text-muted hover:text-ink" aria-label="Hide the guide">
+        <button onClick={() => toggle(true)} className="shrink-0 rounded-md p-1 text-muted hover:bg-sunk hover:text-ink" aria-label="Hide the guide">
           <Icon.Cross className="h-4 w-4" />
         </button>
       </div>
-      <ol className="grid sm:grid-cols-2 lg:grid-cols-4">
+      <ol className="mt-4 grid gap-x-6 gap-y-1 md:grid-cols-2">
         {STEPS.map((s, i) => (
-          <li key={i} className="border-b border-line last:border-b-0 sm:border-r sm:[&:nth-child(2n)]:border-r-0 lg:[&:nth-child(2n)]:border-r lg:[&:nth-child(4n)]:border-r-0">
-            <Link href={s.href} className="group flex h-full gap-3 p-4 transition-colors hover:bg-sunk/60 md:p-5">
-              <span className="font-serif text-2xl leading-none text-seal tabular-nums">{i + 1}</span>
+          <li key={i}>
+            <Link href={s.href} className="group flex gap-3 rounded-lg p-2.5 transition-colors hover:bg-sunk">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent/10 text-xs font-semibold text-accent tabular-nums">
+                {i + 1}
+              </span>
               <span>
-                <span className="flex items-center gap-1 text-sm font-medium text-ink group-hover:text-accent">
-                  {s.page}
-                  <Icon.Arrow className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
-                </span>
-                <span className="mt-0.5 block text-[13px] leading-snug text-muted">{s.what}</span>
+                <span className="text-sm font-medium text-ink group-hover:text-accent">{s.page}</span>
+                <span className="block text-[13px] leading-snug text-muted">{s.what}</span>
               </span>
             </Link>
           </li>
         ))}
-        <li className="hidden items-center justify-center p-5 lg:flex">
-          <span className="text-center font-serif text-sm italic text-muted">Every step leaves a public trace.</span>
-        </li>
       </ol>
     </div>
   );

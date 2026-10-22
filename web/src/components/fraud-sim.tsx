@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import SIM from "@/lib/replay/fraud-sim.json";
-import { cx } from "./ui";
+import { Tag, cx } from "./ui";
 
 type Outcome = { detected: number; medianDay: number | null };
 
@@ -30,11 +30,11 @@ export function FraudSimulation() {
   return (
     <section className="space-y-6">
       <div className="space-y-3">
-        <p className="eyebrow flex flex-wrap items-center gap-2">
-          <span className="rounded-[3px] bg-warn/15 px-1.5 py-px font-semibold tracking-wider text-warn">SIMULATED</span>§ 7 · every
-          assumption listed below
+        <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+          <Tag kind="sim" />
+          Every assumption is listed below
         </p>
-        <h2 className="font-serif text-[28px] font-medium leading-tight md:text-[32px]">
+        <h2 className="text-2xl font-semibold leading-tight">
           Would anyone notice? A simulation at Guangfu&apos;s scale
         </h2>
         <p className="text-[15px] leading-relaxed text-muted">
@@ -64,7 +64,7 @@ export function FraudSimulation() {
       <div className="overflow-x-auto rounded-lg border border-line bg-card">
         <table className="w-full min-w-[680px] text-sm">
           <thead>
-            <tr className="eyebrow border-b border-ink/60 text-left">
+            <tr className="border-b border-line text-left text-xs text-muted">
               <th className="p-3 font-medium">Failure</th>
               <th className="p-3 font-medium">Today: aggregate totals</th>
               <th className="p-3 font-medium">Kept: households&apos; own answers</th>

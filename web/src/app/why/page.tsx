@@ -10,19 +10,14 @@ const Src = ({ href, children }: { href: string; children: React.ReactNode }) =>
 );
 
 const Fact = ({ figure, children }: { figure: string; children: React.ReactNode }) => (
-  <div className="border-t border-ink/70 pt-4">
-    <p className="font-serif text-[30px] leading-none tabular-nums text-seal">{figure}</p>
-    <p className="mt-2.5 text-[15px] leading-relaxed text-ink/80">{children}</p>
+  <div className="border-t border-line pt-4">
+    <p className="text-2xl font-semibold tracking-tight tabular-nums text-ink">{figure}</p>
+    <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{children}</p>
   </div>
 );
 
-const H2 = ({ n, children }: { n: string; children: React.ReactNode }) => (
-  <div>
-    <p className="eyebrow flex items-center gap-2">
-      <span className="h-px w-5 bg-seal" />§ {n}
-    </p>
-    <h2 className="mt-2 font-serif text-[28px] font-medium leading-tight md:text-[32px]">{children}</h2>
-  </div>
+const H2 = ({ children }: { children: React.ReactNode }) => (
+  <h2 className="text-2xl font-semibold leading-tight">{children}</h2>
 );
 
 const EVIDENCE = [
@@ -74,8 +69,8 @@ export default function Why() {
   return (
     <article className="mx-auto max-w-3xl space-y-16 pb-8">
       <header className="space-y-5 border-b border-line pb-10">
-        <p className="eyebrow">Why Kept · the argument, with its sources</p>
-        <h1 className="font-serif text-[38px] font-medium leading-[1.06] md:text-[52px]">
+        <p className="text-sm text-muted">Why Kept</p>
+        <h1 className="text-[32px] font-semibold leading-[1.12] md:text-[40px]">
           People in Hualien did not stop giving.
           <br />
           They stopped trusting where it goes.
@@ -87,16 +82,16 @@ export default function Why() {
       </header>
 
       <section className="space-y-6">
-        <H2 n="1">A loop that repeats across countries</H2>
+        <H2>A loop that repeats across countries</H2>
         <ol className="grid gap-px overflow-hidden rounded-lg border border-line bg-line text-sm sm:grid-cols-5">
           {["Money is raised before a plan exists", "The custodian keeps every record", "Victims have no voice", "Surpluses and delays", "Trust collapses; donations go elsewhere"].map(
             (s, i) => (
               <li key={s} className="relative bg-card p-4">
-                <span className="flex items-center justify-between font-mono text-xs text-muted">
-                  0{i + 1}
-                  {i < 4 ? <Icon.Arrow className="h-3.5 w-3.5 text-seal/70" /> : <span className="text-seal">↺ 01</span>}
+                <span className="flex items-center justify-between text-xs text-muted">
+                  Step {i + 1}
+                  {i < 4 ? <Icon.Arrow className="h-3.5 w-3.5" /> : <span>back to 1</span>}
                 </span>
-                <span className="mt-3 block font-serif text-[17px] leading-snug">{s}</span>
+                <span className="mt-2 block text-[15px] font-medium leading-snug">{s}</span>
               </li>
             ),
           )}
@@ -125,7 +120,7 @@ export default function Why() {
       </section>
 
       <section className="space-y-6">
-        <H2 n="2">Taiwan: the same loop, for 25 years</H2>
+        <H2>Taiwan: the same loop, for 25 years</H2>
         <div className="grid gap-x-8 gap-y-8 sm:grid-cols-2">
           <Fact figure="16% paid after 11 months">
             2024 Hualien earthquake: the county received NT$792M in donations; by February 2025 it had earmarked NT$425M and paid out
@@ -160,7 +155,7 @@ export default function Why() {
       </section>
 
       <section className="space-y-5">
-        <H2 n="3">What already exists, and what is still missing</H2>
+        <H2>What already exists, and what is still missing</H2>
         <p className="text-base leading-relaxed text-muted">
           The relief foundation publishes monthly transfer-level disclosures; the government paid households proactively in 2025;
           civic platforms such as <Src href="https://guangfu.tw">guangfu.tw</Src> coordinate recovery. Abroad, WFP&apos;s Building Blocks
@@ -174,15 +169,15 @@ export default function Why() {
       </section>
 
       <section className="space-y-6">
-        <H2 n="4">Evidence of need, in stakeholders&apos; own words</H2>
+        <H2>Evidence of need, in stakeholders&apos; own words</H2>
         <p className="text-base leading-relaxed text-muted">
           We have not yet interviewed practitioners. Every group Kept serves has, however, already described the problem in public.
         </p>
         <div className="grid gap-x-8 gap-y-8 sm:grid-cols-2">
           {EVIDENCE.map((e) => (
-            <Reveal key={e.text} className="self-start border-l-2 border-seal/70 pl-5">
-              <p className="eyebrow">{e.who}</p>
-              <p className="mt-2 font-serif text-[18px] leading-snug text-ink">{e.text}</p>
+            <Reveal key={e.text} className="self-start border-l-2 border-line pl-5">
+              <p className="text-xs font-medium text-muted">{e.who}</p>
+              <p className="mt-1.5 text-[15px] leading-relaxed text-ink">{e.text}</p>
               <p className="mt-3 text-xs text-muted">
                 <Src href={e.href}>{e.source}</Src> · <span className="text-ink/70">Kept: {e.kept}</span>
               </p>
@@ -192,7 +187,7 @@ export default function Why() {
       </section>
 
       <section className="space-y-5">
-        <H2 n="5">Where Kept starts: reconciliation</H2>
+        <H2>Where Kept starts: reconciliation</H2>
         <p className="text-base leading-relaxed text-muted">
           The relief foundation already publishes every transfer it makes. But more than NT$1.1bn of the Guangfu donations was
           pre-allocated to the ministry. From there the public sees only aggregate totals, households have no public, recorded way to confirm their own
@@ -206,7 +201,7 @@ export default function Why() {
       </section>
 
       <section className="space-y-6">
-        <H2 n="6">Kept: two promises, made verifiable</H2>
+        <H2>Kept: two promises, made verifiable</H2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             ["Custody", "Every hand records and acknowledges each tranche. Payment rosters are published as pseudonymous lines, so each registered household finds its own line without asking the custodian, and confirms or disputes it."],
@@ -214,8 +209,8 @@ export default function Why() {
             ["Voice", "The same credential that lets a household receive aid gives it one anonymous vote on changes, and a public appeal when it is left out."],
           ].map(([t, d]) => (
             <div key={t} className="rounded-lg border border-line bg-card p-5">
-              {t === "Custody" ? <Icon.Handoff className="h-5 w-5 text-seal" /> : t === "Commitment" ? <Icon.Seal className="h-5 w-5 text-seal" /> : <Icon.Ballot className="h-5 w-5 text-seal" />}
-              <p className="mt-3 font-serif text-xl">{t}</p>
+              {t === "Custody" ? <Icon.Handoff className="h-5 w-5 text-accent" /> : t === "Commitment" ? <Icon.Seal className="h-5 w-5 text-accent" /> : <Icon.Ballot className="h-5 w-5 text-accent" />}
+              <p className="mt-3 text-xl">{t}</p>
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{d}</p>
             </div>
           ))}

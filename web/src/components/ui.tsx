@@ -24,32 +24,37 @@ export const pct = (part: bigint | number, whole: bigint | number) => {
   return w === 0 ? 0 : Math.round((Number(part) / w) * 1000) / 10;
 };
 
-export function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <section className={cx("min-w-0 rounded-lg border border-line bg-card p-5 md:p-7", className)}>{children}</section>;
+export function Card({ children, className, id }: { children: React.ReactNode; className?: string; id?: string }) {
+  return (
+    <section id={id} className={cx("min-w-0 rounded-xl border border-line bg-card p-5 shadow-[0_1px_2px_rgb(0_0_0/0.04)] md:p-6", className)}>
+      {children}
+    </section>
+  );
 }
 
-/** A section heading: a small mono label, a serif title, an optional plain-language explanation. */
+/** A section heading with an optional short label above it and a plain-language explanation below. */
 export function SectionTitle({ kicker, title, children }: { kicker?: string; title: string; children?: React.ReactNode }) {
   return (
-    <div className="mb-6">
-      {kicker && (
-        <p className="eyebrow flex items-center gap-2">
-          <span className="h-px w-5 bg-seal" />
-          {kicker}
-        </p>
-      )}
-      <h2 className="mt-2 font-serif text-[22px] font-medium leading-snug text-ink md:text-[26px]">{title}</h2>
-      {children && <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-muted">{children}</p>}
+    <div className="mb-5">
+      {kicker && <p className="eyebrow mb-1">{kicker}</p>}
+      <h2 className="text-lg font-semibold leading-snug text-ink md:text-xl">{title}</h2>
+      {children && <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-muted">{children}</p>}
     </div>
   );
 }
 
-/** Marks where a figure comes from: real public records, or the simulated demo. */
+/** Where a figure comes from: real public records, or the simulated demo. */
 export function Tag({ kind }: { kind: "real" | "sim" }) {
   return kind === "real" ? (
-    <span className="rounded-[3px] bg-ok/15 px-1.5 py-px font-mono text-[10.5px] font-semibold tracking-wider text-ok">REAL DATA</span>
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-ok/10 px-2 py-0.5 text-xs font-medium text-ok">
+      <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+      Real data
+    </span>
   ) : (
-    <span className="rounded-[3px] bg-warn/15 px-1.5 py-px font-mono text-[10.5px] font-semibold tracking-wider text-warn">SIMULATED</span>
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-warn/10 px-2 py-0.5 text-xs font-medium text-warn">
+      <span className="h-1.5 w-1.5 rounded-full bg-warn" />
+      Simulated
+    </span>
   );
 }
 
@@ -68,45 +73,40 @@ export function PageHeader({
   aside?: React.ReactNode;
 }) {
   return (
-    <header className="mb-10 grid gap-6 border-b border-line pb-8 md:grid-cols-[1fr_auto] md:items-end">
+    <header className="mb-8 grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
       <div className="max-w-3xl">
-        <p className="eyebrow flex flex-wrap items-center gap-2">
+        <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
           {kind && <Tag kind={kind} />}
           {eyebrow}
         </p>
-        <h1 className="mt-3 font-serif text-[32px] font-medium leading-[1.08] text-ink md:text-[44px]">{title}</h1>
-        {children && <div className="mt-4 text-base leading-relaxed text-muted">{children}</div>}
+        <h1 className="mt-2 text-[28px] font-semibold leading-tight text-ink md:text-[34px]">{title}</h1>
+        {children && <div className="mt-3 text-[15px] leading-relaxed text-muted">{children}</div>}
       </div>
-      {aside && <div className="md:pb-1">{aside}</div>}
+      {aside && <div>{aside}</div>}
     </header>
   );
 }
 
-/** An ink stamp, pressed when something is signed: "RECEIVED", "DISPUTED", "VERIFIED". */
-export function Stamp({ children, tone = "seal", className }: { children: React.ReactNode; tone?: "seal" | "ok" | "bad"; className?: string }) {
-  const color = { seal: "border-seal text-seal", ok: "border-ok text-ok", bad: "border-bad text-bad" }[tone];
+/** A status pill for something a person signed: "Received", "Not received", "Verified". */
+export function Stamp({ children, tone = "ok", className }: { children: React.ReactNode; tone?: "seal" | "ok" | "bad"; className?: string }) {
+  const color = { seal: "bg-ok/10 text-ok", ok: "bg-ok/10 text-ok", bad: "bg-bad/10 text-bad" }[tone];
   return (
-    <span
-      className={cx(
-        "stamp-in inline-flex -rotate-[7deg] items-center gap-1 rounded-[4px] border-2 px-2 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] opacity-90 outline outline-1 outline-offset-2",
-        color,
-        className,
-      )}
-    >
+    <span className={cx("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold", color, className)}>
+      {tone === "bad" ? <Icon.Cross className="h-3 w-3" /> : <Icon.Check className="h-3.5 w-3.5" />}
       {children}
     </span>
   );
 }
 
-/** A figure under a ruled line, like a line in an annual report. */
+/** A figure with its label: a quiet tile. */
 export function Stat({ label, value, sub, tone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; tone?: Tone }) {
   return (
-    <div className="min-w-0 border-t border-ink/70 pt-3">
-      <p className="eyebrow">{label}</p>
-      <p className={cx("mt-1.5 break-words font-serif text-[26px] leading-none tabular-nums sm:text-[32px]", tone ? toneText[tone] : "text-ink")}>
+    <div className="min-w-0 rounded-xl border border-line bg-card px-4 py-3.5">
+      <p className="text-[13px] text-muted">{label}</p>
+      <p className={cx("mt-1 break-words text-2xl font-semibold tabular-nums tracking-tight", tone ? toneText[tone] : "text-ink")}>
         {value}
       </p>
-      {sub && <p className="mt-1.5 text-xs leading-snug text-muted">{sub}</p>}
+      {sub && <p className="mt-0.5 text-xs leading-snug text-muted">{sub}</p>}
     </div>
   );
 }
@@ -130,7 +130,7 @@ const toneDot: Record<Tone, string> = { ok: "bg-ok", warn: "bg-warn", bad: "bg-b
 
 export function Badge({ tone = "muted", children }: { tone?: Tone; children: React.ReactNode }) {
   return (
-    <span className={cx("inline-flex items-center gap-1.5 rounded-[4px] px-1.5 py-0.5 text-xs font-medium", toneBadge[tone])}>
+    <span className={cx("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", toneBadge[tone])}>
       <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", toneDot[tone])} />
       {children}
     </span>
@@ -227,12 +227,12 @@ export function ActionButton({
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const styles = {
-    primary: "bg-ink text-on-ink hover:bg-ink/85",
-    secondary: "border border-line bg-card text-ink hover:border-ink/40",
+    primary: "bg-accent text-on-accent hover:bg-accent/90",
+    secondary: "border border-line bg-card text-ink hover:bg-sunk",
     danger: "bg-bad text-on-ink hover:bg-bad/85",
   }[variant];
   return (
-    <span className={cx("relative inline-flex flex-col gap-1.5", className)}>
+    <span className={cx("inline-flex flex-col gap-1.5", className)}>
       <button
         type="button"
         disabled={disabled || busy}
@@ -252,7 +252,7 @@ export function ActionButton({
           }
         }}
         className={cx(
-          "inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-[background,border-color,transform] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45",
+          "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-45",
           styles,
         )}
       >
@@ -260,8 +260,8 @@ export function ActionButton({
         {children}
       </button>
       {done && (
-        <span className="stamp-in pointer-events-none absolute -right-3 -top-3 rounded-[3px] border-2 border-seal px-1.5 py-px font-mono text-[10px] font-semibold tracking-widest text-seal">
-          RECORDED
+        <span className="flex items-center gap-1 text-xs font-medium text-ok" role="status">
+          <Icon.Check className="h-3.5 w-3.5" /> Saved on-chain
         </span>
       )}
       {err && (
@@ -315,14 +315,11 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 }
 
 export const inputCls =
-  "rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-muted/70 hover:border-ink/30 focus:border-accent focus:ring-2 focus:ring-accent/20";
+  "rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-muted/70 hover:border-ink/30 focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 export function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-center gap-2 rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
-      <Icon.Ledger className="h-4 w-4 shrink-0" />
-      <span>{children}</span>
-    </div>
+    <div className="rounded-lg bg-sunk/70 px-4 py-6 text-center text-sm text-muted">{children}</div>
   );
 }
 
@@ -339,7 +336,7 @@ export function NotReady() {
 }
 
 export function Note({ children, tone = "info" }: { children: React.ReactNode; tone?: Tone }) {
-  const border = { ok: "border-ok", warn: "border-warn", bad: "border-bad", info: "border-accent", muted: "border-line" }[tone];
+  const border = { ok: "border-ok/20", warn: "border-warn/25", bad: "border-bad/20", info: "border-accent/20", muted: "border-line" }[tone];
   const bg = { ok: "bg-ok/5", warn: "bg-warn/5", bad: "bg-bad/5", info: "bg-accent/5", muted: "bg-sunk/60" }[tone];
-  return <div className={cx("rounded-r-md border-l-2 px-4 py-3 text-sm text-ink", border, bg)}>{children}</div>;
+  return <div className={cx("rounded-lg border px-4 py-3 text-sm text-ink", border, bg)}>{children}</div>;
 }

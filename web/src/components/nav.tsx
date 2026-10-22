@@ -69,15 +69,21 @@ export function Nav() {
   );
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur-md supports-[backdrop-filter]:bg-paper/75">
-      <div ref={box} className="relative mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur-md">
+      <div ref={box} className="relative mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2.5 text-ink" aria-label="Kept, home">
           <KeptMark className="h-8 w-8" />
           <span className="leading-none">
-            <span className="block font-serif text-[22px] font-semibold">Kept</span>
-            <span className="mt-0.5 hidden text-[11px] text-muted sm:block">promises you can verify</span>
+            <span className="block text-xl font-semibold tracking-tight">Kept</span>
           </span>
         </Link>
+        <span
+          className="hidden items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 text-xs text-muted sm:inline-flex"
+          title={`Simulated demo on ${chainName}${snap ? ` · block ${snap.block.toLocaleString("en-US")}` : ""}${DEMO_MODE ? " · institution keys held by this server" : ""}`}
+        >
+          <span className={cx("h-1.5 w-1.5 rounded-full", error ? "bg-bad" : "bg-ok")} />
+          Testnet demo
+        </span>
 
         <nav className="ml-auto hidden items-center gap-1 lg:flex" aria-label="Main">
           {PUBLIC.map((l) => (
@@ -86,12 +92,11 @@ export function Nav() {
               href={l.href}
               aria-current={path === l.href ? "page" : undefined}
               className={cx(
-                "relative rounded-md px-3 py-2 text-sm transition-colors",
-                path === l.href ? "text-ink" : "text-muted hover:text-ink",
+                "rounded-lg px-3 py-1.5 text-sm transition-colors",
+                path === l.href ? "bg-sunk font-medium text-ink" : "text-muted hover:text-ink",
               )}
             >
               {l.label}
-              {path === l.href && <span className="absolute inset-x-3 -bottom-[13px] h-[2px] bg-seal" />}
             </Link>
           ))}
           <span className="mx-2 h-5 w-px bg-line" />
@@ -100,8 +105,8 @@ export function Nav() {
             onClick={() => setMenu(menu === "roles" ? null : "roles")}
             aria-expanded={menu === "roles"}
             className={cx(
-              "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors",
-              inRole || menu === "roles" ? "border-ink bg-ink text-on-ink" : "border-line text-ink hover:border-ink/40",
+              "flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors",
+              inRole || menu === "roles" ? "border-accent/30 bg-accent/10 font-medium text-accent" : "border-line bg-card text-ink hover:bg-sunk",
             )}
           >
             <Icon.People className="h-4 w-4" />
@@ -124,7 +129,7 @@ export function Nav() {
 
         {menu === "roles" && (
           <div className="absolute right-4 top-[calc(100%+6px)] z-40 w-[340px] rounded-lg border border-line bg-card p-2 shadow-[0_18px_40px_-20px_rgb(0_0_0/0.35)] sm:right-6">
-            <p className="eyebrow px-3 pb-1 pt-2">Simulated roles · each step writes to the chain</p>
+            <p className="px-3 pb-1 pt-2 text-xs text-muted">Simulated roles. Each step writes to the testnet.</p>
             {roleList}
           </div>
         )}
@@ -135,33 +140,24 @@ export function Nav() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className={cx("block rounded-md px-3 py-2.5 font-serif text-lg", path === l.href ? "text-ink" : "text-muted")}
+                    className={cx("block rounded-lg px-3 py-2.5 text-base", path === l.href ? "bg-sunk font-medium text-ink" : "text-ink")}
                   >
                     {l.label}
                   </Link>
                 </li>
               ))}
             </ul>
-            <p className="eyebrow px-3 pb-1 pt-4">Simulated roles</p>
+            <p className="px-3 pb-1 pt-4 text-xs text-muted">Simulated roles</p>
             {roleList}
           </div>
         )}
       </div>
 
-      <div className="border-t border-line/70">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-1.5 font-mono text-[11px] text-muted sm:px-6">
-          <span className="flex items-center gap-1.5">
-            <span className={cx("live-dot h-1.5 w-1.5 rounded-full", error ? "bg-bad" : "bg-ok")} />
-            Simulated demo on {chainName}
-            {snap && <span className="hidden tabular-nums sm:inline">· block {snap.block.toLocaleString("en-US")}</span>}
-          </span>
-          {DEMO_MODE && <span className="hidden sm:inline">· institution keys held by this server</span>}
-          <span className="ml-auto hidden items-center gap-1.5 md:flex">
-            <span className="rounded-[3px] bg-ok/15 px-1.5 py-px font-semibold text-ok">REAL</span> marks figures from public records
-          </span>
-          {error && <span className="w-full text-bad">Chain read failed: {error.slice(0, 120)}</span>}
+      {error && (
+        <div className="border-t border-bad/20 bg-bad/5">
+          <p className="mx-auto max-w-6xl px-4 py-1.5 text-xs text-bad sm:px-6">Could not read the chain: {error.slice(0, 120)}</p>
         </div>
-      </div>
+      )}
     </header>
   );
 }

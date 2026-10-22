@@ -64,7 +64,7 @@ function HopCard({ h, me }: { h: Hop; me: RoleName }) {
     <Card>
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="font-serif text-xl font-medium">
+          <p className="text-xl font-semibold">
             Tranche #{h.id}: {ntd(h.amount)} · {PURPOSES[h.purposeId]}
           </p>
           <p className="text-sm text-muted">

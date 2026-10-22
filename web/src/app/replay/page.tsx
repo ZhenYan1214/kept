@@ -165,7 +165,7 @@ export default function ReplayPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
-              <tr className="eyebrow border-b border-ink/60 text-left">
+              <tr className="border-b border-line text-left text-xs text-muted">
                 <th className="py-2 font-medium">#</th>
                 <th className="font-medium">Date</th>
                 <th className="font-medium">Recipient</th>
@@ -208,7 +208,7 @@ export default function ReplayPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="eyebrow border-b border-ink/60 text-left">
+              <tr className="border-b border-line text-left text-xs text-muted">
                 <th className="py-2 font-medium">Operation</th>
                 <th className="text-right font-medium">Gas each</th>
                 <th className="text-right font-medium">Count</th>

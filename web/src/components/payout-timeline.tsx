@@ -88,8 +88,8 @@ export function PayoutTimeline() {
               {mo.label}
             </text>
           ))}
-          <path d={area((p) => p.pre, () => 0)} className="fill-warn/30" />
-          <path d={area((p) => p.pre + p.claim, (p) => p.pre)} className="fill-ok/30" />
+          <path d={area((p) => p.pre, () => 0)} className="fill-warn/15" />
+          <path d={area((p) => p.pre + p.claim, (p) => p.pre)} className="fill-ok/20" />
           <path d={line((p) => p.pre + p.claim)} className="fill-none stroke-ink" strokeWidth={1.5} />
           <path d={recLine} className="fill-none stroke-accent" strokeWidth={2} />
           {rec.map((r) => (

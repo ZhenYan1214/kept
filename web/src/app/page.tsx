@@ -3,7 +3,6 @@ import Link from "next/link";
 import { useSnapshot } from "@/components/snapshot";
 import { Card, Empty, SectionTitle, Stat, Tag, ntd, ntdShort, pct } from "@/components/ui";
 import { Icon } from "@/components/icons";
-import { Reveal } from "@/components/motion";
 import { StartHere } from "@/components/guide";
 import { Lede } from "@/components/lede";
 import {
@@ -56,33 +55,31 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-16 md:space-y-24">
+    <div className="space-y-14 md:space-y-20">
       <Lede />
 
-      <div className="space-y-8">
-        <div id="demo" className="scroll-mt-28 border-t-2 border-ink pt-6">
-          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="eyebrow flex flex-wrap items-center gap-2">
-                <Tag kind="sim" />
-                The live demo ledger · anyone can verify it on-chain
-              </p>
-              <h2 className="mt-3 font-serif text-[30px] font-medium leading-tight md:text-[38px]">{f.name}</h2>
-              <p className="mt-1 text-muted">{snap.disaster?.name}</p>
-            </div>
-            <button
-              onClick={download}
-              className="inline-flex items-center gap-2 self-start rounded-md border border-line px-4 py-2 text-sm font-medium text-ink transition hover:border-ink/40 md:self-auto"
-            >
-              <Icon.Download className="h-4 w-4" />
-              Download open data
-            </button>
+      <div className="space-y-6">
+        <div id="demo" className="scroll-mt-24 flex flex-col gap-4 border-t border-line pt-10 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+              <Tag kind="sim" />
+              Live demo on the testnet. Anyone can check it on-chain.
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold md:text-[28px]">{f.name}</h2>
+            <p className="mt-0.5 text-sm text-muted">{snap.disaster?.name}</p>
           </div>
+          <button
+            onClick={download}
+            className="inline-flex items-center gap-2 self-start rounded-lg border border-line bg-card px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-sunk md:self-auto"
+          >
+            <Icon.Download className="h-4 w-4" />
+            Download open data
+          </button>
         </div>
 
         <StartHere />
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           <Stat label="Raised" value={<span title={ntd(f.totalRaised)}>{ntdShort(f.totalRaised)}</span>} sub={`${f.donationCount} donations`} />
           <Stat label="Allocated" value={<span title={ntd(f.totalAllocated)}>{ntdShort(f.totalAllocated)}</span>} sub={`${pct(f.totalAllocated, f.totalRaised)}% of raised`} />
           <Stat label="Reported paid" value={<span title={ntd(t.reported)}>{ntdShort(t.reported)}</span>} sub={`${t.reportedHouseholds} households`} />
@@ -97,14 +94,32 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-6">
-          <AlertsPanel snap={snap} />
+          <nav aria-label="Dashboard sections" className="-mx-1 flex gap-1 overflow-x-auto px-1 text-sm">
+            {[
+              ["#alerts", "Alerts"],
+              ["#money", "Money and charter"],
+              ["#custody", "Custody tree"],
+              ["#audits", "Sample audits"],
+              ["#changes", "Changes and votes"],
+              ["#excluded", "Who may be left out"],
+              ["#issuers", "Who certified whom"],
+            ].map(([href, label]) => (
+              <a key={href} href={href} className="whitespace-nowrap rounded-lg px-3 py-1.5 text-muted transition-colors hover:bg-sunk hover:text-ink">
+                {label}
+              </a>
+            ))}
+          </nav>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div id="alerts" className="scroll-mt-20">
+            <AlertsPanel snap={snap} />
+          </div>
+
+          <div id="money" className="grid scroll-mt-20 gap-6 lg:grid-cols-2">
             <FunnelPanel snap={snap} />
             <CharterPanel snap={snap} />
           </div>
 
-          <Card>
+          <Card className="scroll-mt-20" id="custody">
             <SectionTitle kicker="Every hand" title="Custody tree">
               Each transfer is recorded by the sender and acknowledged by the receiver. Payment rosters are published as pseudonymous lines (receipt
               address and amount, never a name): each household finds its own line and confirms or disputes it.
@@ -112,9 +127,11 @@ export default function Dashboard() {
             <HopTree snap={snap} />
           </Card>
 
-          <AuditPanel snap={snap} />
+          <div id="audits" className="scroll-mt-20">
+            <AuditPanel snap={snap} />
+          </div>
 
-          <Card>
+          <Card className="scroll-mt-20" id="changes">
             <SectionTitle kicker="Households have a vote" title="Changes to the fund">
               Allocations need committee signatures. Changing caps or extending the deadline waits through a public period in which
               verified households can veto — anonymously, one vote each.
@@ -122,8 +139,12 @@ export default function Dashboard() {
             <ProposalList snap={snap} />
           </Card>
 
-          <ExclusionPanel snap={snap} />
-          <IssuerPanel snap={snap} />
+          <div id="excluded" className="scroll-mt-20">
+            <ExclusionPanel snap={snap} />
+          </div>
+          <div id="issuers" className="scroll-mt-20">
+            <IssuerPanel snap={snap} />
+          </div>
         </div>
       </div>
     </div>

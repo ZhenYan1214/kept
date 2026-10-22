@@ -37,12 +37,12 @@ const toneText = { ok: "text-ok", warn: "text-warn", bad: "text-bad" };
 export function VisibilityChain() {
   const [kept, setKept] = useState(false);
   return (
-    <figure className="rounded-lg border border-line bg-card">
+    <figure className="rounded-xl border border-line bg-card shadow-[0_1px_2px_rgb(0_0_0/0.04)]">
       <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
-        <figcaption className="eyebrow">
+        <figcaption className="text-sm font-medium text-ink">
           Who can see the money<span className="hidden sm:inline"> · Guangfu 2025</span>
         </figcaption>
-        <div role="tablist" className="flex rounded-md bg-sunk p-0.5 text-xs font-medium">
+        <div role="tablist" className="flex rounded-lg bg-sunk p-0.5 text-xs font-medium">
           {[
             ["Today", false],
             ["With Kept", true],
@@ -53,7 +53,7 @@ export function VisibilityChain() {
               aria-selected={kept === v}
               onClick={() => setKept(v as boolean)}
               className={cx(
-                "whitespace-nowrap rounded-[5px] px-2.5 py-1 transition-colors",
+                "whitespace-nowrap rounded-md px-2.5 py-1 transition-colors",
                 kept === v ? "bg-card text-ink shadow-[0_1px_2px_rgb(0_0_0/0.12)]" : "text-muted hover:text-ink",
               )}
             >
@@ -94,7 +94,7 @@ export function VisibilityChain() {
               <div className="min-w-0 pt-1">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                   <p className={cx("text-sm font-medium transition-colors", dark ? "text-muted" : "text-ink")}>{r.who}</p>
-                  <p className={cx("font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors", toneText[s.tone])}>
+                  <p className={cx("text-xs font-medium transition-colors", toneText[s.tone])}>
                     {s.label}
                   </p>
                 </div>

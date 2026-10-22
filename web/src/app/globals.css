@@ -1,22 +1,21 @@
 @import "tailwindcss";
 
 /*
- * Kept's look: a public ledger. Warm paper and ink, hairline rules instead of floating cards, a serif for
- * what is said, a monospace for what is counted, and one vermilion, the colour of a seal, kept for the
- * moments when someone signs. Colours are tokens so the dark theme is one block below.
+ * Calm and plain: one sans-serif, a soft neutral background with white surfaces, one blue for links and
+ * focus, and status colours only where they carry meaning. Colours are tokens; the dark theme is below.
  */
 :root {
-  --paper: #f3efe6;
-  --card: #fbf9f4;
-  --sunk: #ebe5d8;
-  --ink: #17202a;
-  --muted: #5f6772;
-  --line: #d9d1c1;
-  --accent: #23507a; /* river blue: links, primary actions */
-  --seal: #c03a22; /* vermilion: the brand mark, signatures, key figures */
-  --ok: #2d6a4b;
-  --warn: #9c5d0f;
-  --bad: #a3271c;
+  --paper: #f6f5f2;
+  --card: #ffffff;
+  --sunk: #f0eeea;
+  --ink: #1b1f24;
+  --muted: #646a73;
+  --line: #e4e1db;
+  --accent: #245b8a; /* links, focus, the few primary accents */
+  --seal: #b9442f; /* the brand mark only */
+  --ok: #2c7350;
+  --warn: #9a5b0c;
+  --bad: #b03a2e;
   --on-ink: #f6f3ec;
   --on-accent: #ffffff;
   color-scheme: light;
@@ -24,14 +23,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #12161b;
-    --card: #181d23;
-    --sunk: #1f252d;
-    --ink: #e9e5dc;
-    --muted: #9ba3ad;
-    --line: #2d343d;
-    --accent: #8fb5dc;
-    --seal: #ea7056;
+    --paper: #111418;
+    --card: #181c21;
+    --sunk: #1f242a;
+    --ink: #e7e9ec;
+    --muted: #9aa1aa;
+    --line: #2b3138;
+    --accent: #8db6e0;
+    --seal: #e2725c;
     --ok: #74c29a;
     --warn: #e2a554;
     --bad: #f08374;
@@ -56,8 +55,7 @@
   --color-on-ink: var(--on-ink);
   --color-on-accent: var(--on-accent);
   --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 html {
@@ -69,7 +67,19 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-sans);
-  font-feature-settings: "ss01", "cv11";
+  font-feature-settings: "tnum" 0;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+  letter-spacing: -0.015em;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 ::selection {
@@ -86,37 +96,11 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Serif headlines: tighter, with optical sizing. */
-.font-serif {
-  font-optical-sizing: auto;
-  letter-spacing: -0.012em;
-}
-
-/* Small caps label used above sections ("§ 02 · Every hand"). */
+/* A quiet label above a heading or a figure. */
 .eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--muted);
-}
-
-/* A ruled ledger background for figures. */
-.ledger-rules {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 27px,
-    color-mix(in oklab, var(--line) 70%, transparent) 27px,
-    color-mix(in oklab, var(--line) 70%, transparent) 28px
-  );
-}
-
-/* Perforated edge, for receipts. */
-.perforated {
-  background-image: radial-gradient(circle at 6px 0, var(--paper) 4px, transparent 4.5px);
-  background-size: 12px 8px;
-  background-repeat: repeat-x;
 }
 
 /* ---- motion ---------------------------------------------------------------------------------- */
@@ -133,17 +117,13 @@ body {
 }
 
 @keyframes kept-stamp {
-  0% {
+  from {
     opacity: 0;
-    transform: scale(1.6) rotate(-14deg);
+    transform: scale(0.6);
   }
-  60% {
+  to {
     opacity: 1;
-    transform: scale(0.94) rotate(-7deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(-7deg);
+    transform: none;
   }
 }
 
@@ -176,7 +156,7 @@ body {
   animation: kept-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 .stamp-in {
-  animation: kept-stamp 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  animation: kept-stamp 0.3s ease-out both;
 }
 .draw-in {
   stroke-dasharray: var(--len, 2000);
