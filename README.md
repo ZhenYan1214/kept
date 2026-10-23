@@ -5,7 +5,7 @@
 # Kept
 
 **Disaster-relief promises you can verify.**<br/>
-Other systems prove aid was sent. Kept lets the people it was sent to say whether it arrived.
+Aid trackers record what custodians say they did. Kept lets the people the money was for confirm or dispute it, on the record.
 
 [![Live demo](https://img.shields.io/badge/demo-live-2ea44f?style=flat-square)](https://kept-lilac.vercel.app)
 [![Base Sepolia](https://img.shields.io/badge/chain-Base%20Sepolia-0052FF?style=flat-square)](contracts/deployments/84532.json)
@@ -31,6 +31,8 @@ Other systems prove aid was sent. Kept lets the people it was sent to say whethe
 **Why on-chain:** the custodians being checked should not keep the only ledger. **Who runs it:** custodians record as they pay; phase 0 needs no one's permission, since volunteers can already turn published disclosures into open data, as the real-data page does.
 
 **→ [Real data](https://kept-lilac.vercel.app/replay) · [Live demo](https://kept-lilac.vercel.app) · [Why Kept](https://kept-lilac.vercel.app/why) · [Draft county ordinance](docs/policy/ordinance-summary-en.md)**
+
+**Try it in 2 minutes, no wallet:** (1) read-only, the same for everyone: the [real-data page](https://kept-lilac.vercel.app/replay). (2) Interactive, screens under *Try a role*: *Household* → Create credential → Simulate: chief scans this code; *Village & township* → Propose registration, act as the township office, Approve; *Custodians* → tick your household → Publish payment lines; *Household* → I did not receive it; then *Show code at the counter* and verify it on the *NGO counter* (a second try is rejected). The demo is shared, so others' data may be there; your credential stays in your browser. Fund changes wait a real 5-minute public period.
 
 > [!NOTE]
 > The demo fund, households and decisions are **simulated**. The [Guangfu, real data](https://kept-lilac.vercel.app/replay) page is not: it replays the relief foundation's published disclosure. Place names follow Guangfu Township, Hualien (Taiwan), where a barrier lake overflowed on 2025-09-23.
@@ -147,7 +149,7 @@ A Monte Carlo simulation at Guangfu's scale (4,039 households, 4,000 runs per ca
 | Ghost households registered by colluding officials | Not in the public record | ≈ chance | 28%, day 27 |
 | Eligible households left off every roster | Not in the public record | 90%, day 29 | 85%, day 31 |
 
-At 2% the audit detects ghosts in 73% of runs, at 5% in 100%; it costs 480 visits (12% of households) and cannot see households who are on no roster. Full results, sensitivity and limits: the [Why Kept](https://kept-lilac.vercel.app/why) page; reproduce with `node web/scripts/fraud-sim.mjs`.
+At 2% the audit detects ghosts in 73% of runs, at 5% in 100%, assuming the auditor visits honestly; it costs 480 visits (12% of households) and cannot see households who are on no roster. Full results, sensitivity and limits: the [Why Kept](https://kept-lilac.vercel.app/why) page; reproduce with `node web/scripts/fraud-sim.mjs`.
 
 ### On real records: a backtest
 
@@ -192,7 +194,7 @@ npm run e2e                # optional: 17 end-to-end checks with real Semaphore 
 
 cd ../web && npm install
 npm run dev                # http://localhost:3000, then Setup → Set up scenario
-npm run verify:data        # 67 checks: recomputes every real-data figure we publish and compares it with the docs (Node 22.18+)
+npm run verify:data        # 70 checks: recomputes every real-data figure we publish and compares it with the docs (Node 22.18+)
 ```
 
 The dashboard has a 7-step guided demo. Institutional keys are held by the demo server and a relayer pays gas for households; in production each institution signs with its own wallet.

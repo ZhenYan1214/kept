@@ -1,7 +1,7 @@
 # Kept — submission text (draft)
 
 > Draft for the DoraHacks "Submit Build" form. Paste each section into the matching field.
-> Placeholders in [brackets] must be filled before submitting. Currency: NT$32 ≈ US$1 (approximate, for readers outside Taiwan).
+> Placeholders in [brackets] must be filled before submitting (only the video link is left). Currency: NT$32 ≈ US$1 (approximate, for readers outside Taiwan).
 
 ---
 
@@ -15,7 +15,7 @@ Disaster-relief promises you can verify: past the first hand, with a voice for t
 
 ## Short description (about 280 characters)
 
-After the first hand, disaster donations vanish into aggregate totals. Kept has every custodian publish payments as pseudonymous lines that verified households confirm or dispute, plus a random sample drawn on-chain that an independent auditor visits in person.
+Aid trackers record what custodians say they did. Kept lets the people the money was for confirm or dispute it, on the record. Custodians publish payments as pseudonymous lines that verified households answer, and a random sample drawn on-chain is visited by an independent auditor.
 
 ## Links
 
@@ -26,20 +26,35 @@ After the first hand, disaster donations vanish into aggregate totals. Kept has 
 
 ## Track
 
-Tech Track. Solo builder: [name, one line about you].
+Tech Track. Solo builder: a first-year master's student in Taiwan, interested in blockchain.
 
 ---
 
 ## Description (long, markdown)
 
+**Aid trackers record what custodians say they did. Kept lets the people the money was for confirm or dispute it, on the record.**
+
+After the 2025 Guangfu flood in Taiwan, the public could see NT$1.21bn leave the national relief foundation, 98.8% of it as pre-allocations, but not whether it reached anyone: for eight months the foundation's own reports showed no pre-allocated money newly reconciled. After the 2024 Hualien earthquake, the county had paid out 16% of NT$792M eleven months on. Kept follows donated money hand by hand until the household it was meant for can say whether it arrived.
+
+### Try it in 2 minutes (no wallet, no sign-up)
+
+1. **Real records, read-only (1 min).** [Guangfu, real data](https://kept-lilac.vercel.app/replay): the relief foundation's 48 transfers and all eleven monthly disclosures, the reconciliation line that stays flat for eight months, and the backtest. Nobody can change this page, so every reviewer sees the same thing.
+2. **The loop, interactive (1–2 min).** On the shared testnet demo (role screens are under *Try a role* in the header):
+   - **Household:** *Create credential*, then *Simulate: chief scans this code*.
+   - **Village & township:** *Propose registration*, switch *Acting as* to the township office, then *Approve*. The household now shows "Verified household".
+   - **Custodians:** tick your household, then *Publish payment lines*.
+   - **Household:** *I did not receive it*. The public dashboard counts the dispute.
+   - **NGO counter:** on the Household screen press *Show code at the counter*, then *Verify & record hand-over* on the NGO counter. A second try with the same household is rejected.
+
+The demo is public, so other visitors may have added households or proposals. Your credential lives in your own browser, so the steps above work regardless. Changes to the fund (Fund committee) wait through a real 5-minute public period that cannot be skipped on the testnet. The 3-minute video shows the full flow, including a household veto.
+
 ### The problem: trust stops at the first hand
 
-A disaster fund makes two promises: to donors, about how the money will be used; to affected households, that no one will be left out. Both are hard to check, and the same loop repeats across countries: money is raised before a plan exists, the custodian keeps every record, the people affected have no say, money sits unspent or arrives late, and trust moves elsewhere.
+A disaster fund makes two promises: to donors, about how the money will be used; to affected households, that no one will be left out. Both are hard to check, and the same loop repeats across countries: money is raised before a plan exists, the custodian keeps every record, the people affected have no say, money sits unspent or arrives late, and trust moves elsewhere. Taiwan first, where our data comes from:
 
-- **Haiti, 2010:** the American Red Cross raised US$488M and built six permanent homes (ProPublica/NPR, 2015).
-- **Valencia, Spain, 2024:** after the DANA floods, most of the €22.1M donated was allocated only in the last quarter of 2025, a year after the floods, and the regional audit office found the way donations were recorded "inadecuado" (El Español, 2026).
 - **Hualien, Taiwan, 2024:** the county received NT$792M (≈US$25M) in donations for the earthquake; eleven months later it had earmarked NT$425M and actually paid out NT$124M, 16% (county committee report, February 2025). Its committee had met only three or four times (reports differ), with no affected households on it (PTS, 2025). Most donors gave to the national relief foundation instead, NT$1.65bn, about twice the county's; the press attributed this to disputes over the county's 2018 donations (LTN, 2025), and a councillor said people "would rather give to the central government" (PTS, 2024).
 - **Guangfu, Taiwan, 2025:** a barrier lake overflowed, killing 19 people with 5 missing. The national relief foundation raised NT$1.398bn (≈US$44M) and, to its credit, publishes every transfer it makes. We transcribed all eleven of its monthly disclosures: of NT$1.209bn paid out in 48 transfers, **98.8% was pre-allocated**, 93% to one ministry, and NT$49M (4%) had been reconciled a year later. From December 2025 to August 2026, reconciled minus paid-on-claim stayed at exactly NT$15.2M in every disclosure: **for eight months, no pre-allocated money was newly reported as reconciled**. Pre-allocating and reconciling later is normal in an emergency. The problem is that **after the first hand, the public sees only aggregate totals** (the ministry reported 2,582 households paid by December 2025), the foundation's reconciliation lags by a year, and **households have no public, recorded way to confirm their own payment or to say that it never arrived**; they can only petition.
+- **Elsewhere, the same loop.** Haiti, 2010: the American Red Cross raised US$488M and built six permanent homes (ProPublica/NPR, 2015). Valencia, Spain, 2024: after the DANA floods, most of the €22.1M donated was allocated only in the last quarter of 2025, a year after the floods, and the regional audit office found the way donations were recorded "inadecuado" (El Español, 2026).
 
 Two more gaps from the same disaster: residents of three villages outside the "red zone" protested at being left off the county's first consolation list; and the foundation's own estimate of affected households moved from 1,837 to about 3,325 within a month, and later to 4,039 for one programme. Victims have no vote on how the money is used: the foundation's board reserves no seat for them, and Hualien's rules let at most five attend committee meetings, speaking only with the chair's permission.
 
@@ -62,11 +77,21 @@ Two more gaps from the same disaster: residents of three villages outside the "r
 
 ### Why Web3, and where we deliberately do not use it
 
+**In one line:** the custodians who pay cannot rewrite the record afterwards, and the households they paid can say, anonymously and on the record, whether the money arrived. Zero-knowledge eligibility is a building block here, not the selling point (the Spanish Red Cross's RedChain already does it).
+
 - **The people being overseen should not keep the ledger.** Today each custodian keeps its own records and decides what to publish. A shared, append-only record that no single custodian controls is the point.
 - **Several independent custodians need shared state** (foundation, ministries, county, NGOs), and none of them is a natural operator for the others.
 - **Households need anonymous standing.** In small communities a named "no" carries social cost; zero-knowledge proofs give "a verified household, one vote, not saying which".
 - **Law acts after the fact; code acts before.** Taiwan's donation law was last amended in January 2020, and later bills that would cover government accounts have not passed; Kept can be the technical implementation of the county ordinance that a councillor and nearly 300 residents called for in 2024.
 - **Off-chain on purpose:** personal data and bank payments. In phase 1, while donations stay in banks, the contracts bind the public record, not the bank account: spending outside the charter cannot be recorded as compliant, but it can still happen off the record. We say so plainly.
+
+### Where Kept sits next to existing work
+
+| | What it establishes | What Kept adds |
+|---|---|---|
+| UMA "Blockchain for Good · Proof of Aid" qualifier (Sept 2026): tracking NGO aid from need to delivery, protecting recipients' data | Aid traced from need to delivery (the brief) | The household's own recorded answer, a random audit for those who never answer, and a public record of who was left off the roster |
+| Spanish Red Cross RedChain; WFP Building Blocks | Private eligibility; deduplication across agencies | Commitments to donors fixed in the charter, with a household veto on changes |
+| guangfu.tw (civic platform) | Information for affected residents | Verifiable payment and eligibility data such a platform can display |
 
 ### Would anyone notice? A simulation at Guangfu's scale
 
@@ -79,7 +104,7 @@ A Monte Carlo model (4,039 households, 4,000 runs per case, every assumption sta
 | Ghosts registered by colluding officials | not in the public record | ≈ chance | 28%, day 27 |
 | Left off every roster | not in the public record | 90% (via "still waiting"), day 29 | 85%, day 31 |
 
-At 2% the audit detects ghosts in 73% of runs, at 5% in 100%, for 480 visits (12% of households). Households' own answers are strong where victims speak and blind where nobody does; the audit is what covers that gap, and it cannot see households who are on no roster.
+At 2% the audit detects ghosts in 73% of runs, at 5% in 100%, for 480 visits (12% of households); these figures assume the auditor visits honestly. Households' own answers are strong where victims speak and blind where nobody does; the audit is what covers that gap, and it cannot see households who are on no roster.
 
 ### On real records: a backtest
 
@@ -122,7 +147,9 @@ We have not yet interviewed practitioners. Our evidence is public statements and
 - The registry authority is a single key in the demo; in production it should be a multisig of independent bodies, since the ministry is also a custodian.
 - Votes are veto-only and need a turnout quorum; victims cannot yet elect committee representatives.
 
-### Plan for the mentoring period (27 Oct – 25 Nov)
+### Plan for the next rounds
+
+Official timeline: initial screening 26–31 Oct, presentation video 1–3 Nov, shortlist 4 Nov, refinement with mentors 5–25 Nov, final 26 Nov. During refinement:
 
 - Validate with practitioners: ask mentors and partner NGOs to connect us with a relief custodian and a social worker; test the household screens with older users.
 - Accountant-signed balance attestations for custodian bank accounts, to compare money held with money recorded.
