@@ -43,6 +43,7 @@ async function setup() {
     headless: true,
     viewport: { width: 1536, height: 864 },
     deviceScaleFactor: 1.25,
+    reducedMotion: "reduce",
     args: ["--hide-scrollbars"],
   });
   // No animations: a waiting spinner would otherwise produce frames, and idle waits could not be cut.
@@ -84,7 +85,7 @@ async function ring(locator) {
   if (!box) return;
   await page.evaluate(({ x, y }) => {
     const d = document.createElement("div");
-    d.style.cssText = `position:fixed;left:${x - 22}px;top:${y - 22}px;width:44px;height:44px;border-radius:50%;border:4px solid #0f6e64;background:rgba(15,110,100,.15);z-index:99999;pointer-events:none`;
+    d.style.cssText = `position:fixed;left:${x - 22}px;top:${y - 22}px;width:44px;height:44px;border-radius:50%;border:4px solid #245b8a;background:rgba(36,91,138,.15);z-index:99999;pointer-events:none`;
     document.body.appendChild(d);
     setTimeout(() => d.remove(), 900);
   }, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
@@ -210,7 +211,7 @@ async function part1() {
   await go("/", "Sample audits");
   await scrollToEl(page.getByRole("heading", { name: /Where the money is, hand by hand/ }).first(), 100, 2500);
   await sleep(2500);
-  await scrollToEl(page.getByText("Sample audits").first(), 100, 2500);
+  await scrollToEl(page.getByRole("heading", { name: "Sample audits", exact: true }), 100, 2500);
   await sleep(3000);
   await stop();
 
@@ -298,6 +299,14 @@ async function part3() {
   await start("verified");
   await page.getByText(/^Verified household ·/).first().waitFor({ timeout: 180_000 });
   await sleep(2500);
+  await stop();
+  // The dashboard's jump bar also says "Sample audits", so scroll to the section heading itself.
+  await go("/", "Accountability alerts");
+  await page.getByRole("heading", { name: "Sample audits", exact: true }).waitFor({ timeout: 120_000 });
+  await scrollToEl(page.getByRole("heading", { name: "Sample audits", exact: true }), 120, 0);
+  await sleep(800);
+  await start("audits");
+  await sleep(5000);
   await stop();
 }
 

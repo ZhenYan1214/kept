@@ -38,8 +38,8 @@ const still = (name, until) => {
 const plan = [
   [slide("01-hook.png")],
   [slide("02-loop.png", wordAt(1, /^Hualien$/) - 0.6), slide("03-hualien.png", wordAt(1, /^After$/) - 0.3), slide("04-trust.png")],
-  [still("rd-numbers", wordAt(2, /^most$/) - 0.2), still("rd-ministry", wordAt(2, /^eleven$/) - 0.4), still("rd-timeline", wordAt(2, /^Pre-allocating$/) - 0.3), still("rd-trail")],
-  [clip("register"), clip("verified", -2.6), clip("lines")],
+  [still("rd-numbers", wordAt(2, /^most$/, rows[2].words.findIndex((w) => w.w === "pre-allocated")) - 0.2), still("rd-ministry", wordAt(2, /^eleven$/) - 0.4), still("rd-timeline", wordAt(2, /^Pre-allocating$/) - 0.3), still("rd-trail")],
+  [clip("register"), clip("verified", -2.6), clip("lines", undefined, 22.5), clip("audits")],
   [clip("ngo")],
   [clip("committee1"), clip("committee2"), clip("committee3")],
   [slide("06-why-web3.png")],

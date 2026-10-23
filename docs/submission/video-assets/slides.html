@@ -4,18 +4,18 @@
 <meta charset="utf-8">
 <title>Kept video slides</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Each slide is rendered at 1920×1080: open slides.html#3 to see slide 3. Brand tokens match the app. */
-  :root { --paper:#f7f5f0; --ink:#1c2127; --muted:#66707c; --line:#e3dfd6; --accent:#0f6e64; --warn:#b25e09; }
+  :root { --paper:#f6f5f2; --ink:#1b1f24; --muted:#646a73; --line:#e4e1db; --accent:#245b8a; --warn:#9a5b0c; }
   * { box-sizing: border-box; margin: 0; }
   html, body { width: 1920px; height: 1080px; overflow: hidden; }
-  body { font-family: Inter, "Segoe UI", system-ui, sans-serif; background: var(--paper); color: var(--ink); }
+  body { font-family: "Public Sans", "Segoe UI", system-ui, sans-serif; background: var(--paper); color: var(--ink); }
   .slide { display: none; width: 1920px; height: 1080px; padding: 120px 160px; position: relative; }
   .slide.on { display: flex; flex-direction: column; justify-content: center; }
   .dark { background: var(--ink); color: #fff; }
   .kicker { font-size: 30px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 36px; }
-  .dark .kicker { color: #6fd3c4; }
+  .dark .kicker { color: #8db6e0; }
   h1 { font-size: 88px; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; }
   .huge { font-size: 168px; font-weight: 800; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
   .arrow { font-size: 96px; color: #9aa4af; margin: 28px 0; }
@@ -114,7 +114,7 @@
 
 <!-- 7 · 2:52 Close -->
 <section class="slide dark close">
-  <img src="../../assets/logo.svg" alt="">
+  <img src="../../../web/src/app/icon.svg" alt="">
   <h1>Kept</h1>
   <div style="font-size:52px;margin-top:20px;color:#d7dde3">Disaster-relief promises you can verify</div>
   <div class="links">kept-lilac.vercel.app<br>github.com/ZhenYan1214/kept</div>
