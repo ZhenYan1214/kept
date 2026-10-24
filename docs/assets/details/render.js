@@ -20,15 +20,15 @@ async function frame(browser, html, out) {
 (async () => {
   const browser = await chromium.launch({ executablePath: CHROME });
 
-  await frame(browser, "how-kept-works.html", "how-kept-works.png");
+  await frame(browser, "how-kept-works.html", "kept-flow.png");
 
   const page = await browser.newPage({ viewport: { width: 1200, height: 900 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
   await page.goto(`${SITE}/replay`, { waitUntil: "networkidle" });
   const card = page.locator("section", { has: page.getByRole("heading", { name: /confirming it arrived did not/ }) }).first();
   await card.waitFor();
   await card.screenshot({ path: here("reconciliation-card.png") });
-  await frame(browser, "chart-frame.html", "reconciliation-guangfu.png");
+  await frame(browser, "chart-frame.html", "guangfu-reconciliation.png");
 
   await browser.close();
-  console.log("wrote how-kept-works.png and reconciliation-guangfu.png");
+  console.log("wrote kept-flow.png and guangfu-reconciliation.png");
 })();
