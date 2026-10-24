@@ -21,6 +21,7 @@ async function frame(browser, html, out) {
   const browser = await chromium.launch({ executablePath: CHROME });
 
   await frame(browser, "how-kept-works.html", "kept-flow.png");
+  await frame(browser, "architecture.html", "kept-architecture.png");
 
   const page = await browser.newPage({ viewport: { width: 1200, height: 900 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
   await page.goto(`${SITE}/replay`, { waitUntil: "networkidle" });
@@ -30,5 +31,5 @@ async function frame(browser, html, out) {
   await frame(browser, "chart-frame.html", "guangfu-reconciliation.png");
 
   await browser.close();
-  console.log("wrote kept-flow.png and guangfu-reconciliation.png");
+  console.log("wrote kept-flow.png, kept-architecture.png and guangfu-reconciliation.png");
 })();

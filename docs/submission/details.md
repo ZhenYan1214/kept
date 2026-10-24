@@ -58,6 +58,9 @@ Every hand signs for what it receives, and the last hand is the household.
 
 ## Why on-chain
 
+![Architecture: the browser holds each household's identity and makes the proofs; a demo server signs as the institutions and relays gas; six source-verified contracts on Base Sepolia hold the record](../assets/details/kept-architecture.png)
+
+
 - **No single custodian controls the record.** Four kinds of custodian share one append-only chain; if one of them ran the database, the party being checked would keep the pen.
 - **Anyone can recompute.** Alerts and the audit's 95% bound come from public state, not a custodian's report.
 - **Households take part anonymously.** Semaphore proofs show "a verified household, one vote, not saying which", and let an NGO check eligibility without seeing the roster.
