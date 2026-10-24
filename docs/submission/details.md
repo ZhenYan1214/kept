@@ -27,7 +27,7 @@ After the September 2025 barrier-lake flood in Guangfu, Taiwan, the national rel
 
 I transcribed all eleven of its monthly disclosures. 98.8% of the money went out as pre-allocations, 93% to one ministry. From December 2025 to August 2026, not one more pre-allocated dollar was reported as reconciled.
 
-![Guangfu 2025, from the foundation's own disclosures: cumulative payouts rise to NT$1.21bn within months, while the reconciled line stays near zero for eight months and reaches NT$49.1M (4%) a year later](https://raw.githubusercontent.com/ZhenYan1214/kept/main/docs/assets/details/reconciliation-guangfu.png)
+![Guangfu 2025, from the foundation's own disclosures: cumulative payouts rise to NT$1.21bn within months, while the reconciled line stays near zero for eight months and reaches NT$49.1M (4%) a year later](../assets/details/reconciliation-guangfu.png)
 
 After that first hand the public sees only totals. A household has no public, recorded way to say its payment never arrived; it can only petition.
 
@@ -47,7 +47,7 @@ My one rule was to start from records anyone can check, not an imagined case. I 
 
 Every hand signs for what it receives, and the last hand is the household.
 
-![How Kept works: custody chain, pseudonymous payment lines that households answer, a random sample audit, and a charter households can veto](https://raw.githubusercontent.com/ZhenYan1214/kept/main/docs/assets/details/how-kept-works.png)
+![How Kept works: custody chain, pseudonymous payment lines that households answer, a random sample audit, and a charter households can veto](../assets/details/how-kept-works.png)
 
 1. Each transfer between custodians (foundation → ministry → county or NGO) is recorded by the sender and acknowledged by the receiver.
 2. A household is registered with two signatures, from the village chief and the township office. No name, ID or bank account goes on-chain.
