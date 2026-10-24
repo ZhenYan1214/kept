@@ -5,61 +5,83 @@
 <title>How Kept works</title>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* Rendered 2400 wide, height fits the content, for the DoraHacks Details and the README. Tokens match web/src/app/globals.css. */
-  :root { --paper:#f6f5f2; --card:#fff; --sunk:#f0eeea; --ink:#1b1f24; --muted:#646a73; --line:#e4e1db; --accent:#245b8a; --ok:#2c7350; --bad:#b03a2e; --warn:#9a5b0c; }
+  /* Rendered 2400 wide, height fits the content. Colours come from the logo (web/src/app/icon.svg):
+     tile #17202a, cream #f3efe6, ring cream at 60%, check #ea7056. */
+  :root {
+    --tile: #17202a; --card: #1f2a36; --card2: #263342; --line: #33414f;
+    --cream: #f3efe6; --muted: #a9b0b8; --ring: #8e9298; --check: #ea7056;
+    --ok: #8fd0a8; --bad: #f2937f;
+  }
   * { box-sizing: border-box; margin: 0; }
-  body { width: 2400px; background: var(--paper); color: var(--ink); font-family: "Public Sans", system-ui, sans-serif; padding: 70px 90px; }
-  h1 { font-size: 54px; font-weight: 700; letter-spacing: -.01em; }
-  .sub { font-size: 30px; color: var(--muted); margin-top: 10px; }
-  .main { display: grid; grid-template-columns: 1fr 520px; gap: 60px; margin-top: 56px; }
-  .label { font-size: 22px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
+  body { width: 2400px; background: var(--tile); color: var(--cream); font-family: "Public Sans", system-ui, sans-serif; padding: 64px 90px 56px; }
+  header { display: flex; align-items: center; gap: 34px; }
+  header svg { width: 108px; height: 108px; flex: none; }
+  h1 { font-size: 52px; font-weight: 700; letter-spacing: -.01em; }
+  h1 em { font-style: normal; color: var(--check); }
+  .sub { font-size: 28px; color: var(--muted); margin-top: 8px; }
+  .main { display: grid; grid-template-columns: 1fr 520px; gap: 56px; margin-top: 54px; }
+  .label { display: flex; align-items: center; gap: 14px; font-size: 22px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+  .num { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--check); color: var(--tile); font-size: 22px; font-weight: 700; letter-spacing: 0; }
   .chain { display: flex; align-items: center; }
-  .box { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 22px 26px; font-size: 30px; font-weight: 600; text-align: center; min-width: 230px; }
+  .box { position: relative; background: var(--card2); border: 2px solid var(--line); border-radius: 18px; padding: 24px 28px; font-size: 30px; font-weight: 600; text-align: center; min-width: 240px; }
+  .box::before { content: ""; position: absolute; top: -11px; left: 50%; margin-left: -11px; width: 22px; height: 22px; border-radius: 50%; background: var(--cream); border: 4px solid var(--tile); }
   .box small { display: block; font-size: 21px; font-weight: 400; color: var(--muted); margin-top: 6px; }
-  .arrow { flex: 1; text-align: center; color: var(--accent); font-size: 21px; line-height: 1.25; padding: 0 10px; min-width: 150px; }
-  .arrow b { display: block; font-size: 40px; line-height: 1; margin-bottom: 4px; }
-  .down { margin: 26px 0 0 auto; width: 560px; text-align: center; color: var(--accent); font-size: 21px; }
-  .down b { display: block; font-size: 40px; line-height: 1; }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; margin-top: 18px; }
+  .arrow { flex: 1; text-align: center; color: var(--check); font-size: 21px; line-height: 1.25; padding: 0 10px; min-width: 150px; }
+  .arrow b { display: block; font-size: 42px; line-height: 1; margin-bottom: 4px; }
+  .arrow span { color: var(--muted); }
+  .down { margin: 24px 0 0 auto; width: 560px; text-align: center; font-size: 21px; color: var(--muted); }
+  .down b { display: block; font-size: 42px; line-height: 1; color: var(--check); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; margin-top: 18px; }
   .panel { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 26px 30px; }
   .panel h3 { font-size: 30px; font-weight: 600; margin-bottom: 14px; }
   .panel p { font-size: 23px; color: var(--muted); line-height: 1.4; }
-  .line { display: flex; justify-content: space-between; font-family: ui-monospace, Consolas, monospace; font-size: 23px; padding: 10px 14px; border-radius: 10px; background: var(--sunk); margin-top: 10px; }
+  .line { display: flex; justify-content: space-between; align-items: center; font-family: ui-monospace, Consolas, monospace; font-size: 23px; padding: 10px 14px; border-radius: 10px; background: var(--card2); margin-top: 10px; }
   .line .st { font-family: "Public Sans", sans-serif; font-weight: 600; }
-  .ok { color: var(--ok); } .bad { color: var(--bad); } .none { color: var(--muted); }
-  .side { display: flex; flex-direction: column; gap: 30px; }
-  .side .panel { padding: 28px 32px; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); } .none { color: var(--ring); }
+  .side { display: flex; flex-direction: column; gap: 28px; }
   .off { border-style: dashed; background: transparent; }
-  .foot { margin-top: 44px; font-size: 22px; color: var(--muted); }
+  .foot { margin-top: 40px; font-size: 22px; color: var(--muted); display: flex; justify-content: space-between; }
 </style>
 </head>
 <body>
-  <h1>Every hand signs for what it receives. The last hand is the household.</h1>
-  <div class="sub">Kept on Base Sepolia: who records what, and who can check it</div>
+  <header>
+    <svg viewBox="0 0 40 40" aria-hidden="true">
+      <rect width="40" height="40" rx="9" fill="#0f161d" stroke="#33414f" stroke-width=".6"/>
+      <g fill="none" stroke="#f3efe6" stroke-width="2" stroke-linecap="round" opacity=".6">
+        <path d="M20 6.5 A13.5 13.5 0 0 1 31.7 26.75"/><path d="M31.7 26.75 A13.5 13.5 0 0 1 8.3 26.75"/><path d="M8.3 26.75 A13.5 13.5 0 0 1 20 6.5"/>
+      </g>
+      <g fill="#f3efe6" stroke="#0f161d" stroke-width="1.6"><circle cx="20" cy="6.5" r="3.2"/><circle cx="31.7" cy="26.75" r="3.2"/><circle cx="8.3" cy="26.75" r="3.2"/></g>
+      <path d="M14.6 20.6 L18.4 24.3 L25.6 16.6" fill="none" stroke="#ea7056" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <h1>Every hand signs for what it receives. <em>The last hand is the household.</em></h1>
+      <div class="sub">How Kept works: who records what, and who can check it</div>
+    </div>
+  </header>
 
   <div class="main">
     <div>
-      <div class="label">1 · Custody chain</div>
+      <div class="label"><span class="num">1</span>Custody chain</div>
       <div class="chain">
         <div class="box">Relief foundation<small>raises the fund</small></div>
-        <div class="arrow"><b>→</b>sender records<br>receiver acknowledges</div>
+        <div class="arrow"><b>→</b><span>sender records<br>receiver acknowledges</span></div>
         <div class="box">Ministry<small>custodian</small></div>
-        <div class="arrow"><b>→</b>same, at<br>every hand</div>
+        <div class="arrow"><b>→</b><span>same, at<br>every hand</span></div>
         <div class="box">County or NGO<small>custodian</small></div>
       </div>
       <div class="down"><b>↓</b>pays households, then publishes the batch</div>
 
       <div class="row2">
         <div class="panel">
-          <div class="label" style="margin-bottom:10px">2 · Payment lines</div>
+          <div class="label" style="margin-bottom:12px"><span class="num">2</span>Payment lines</div>
           <h3>Pseudonymous: an address and an amount</h3>
-          <div class="line"><span>0x3f9c…a1</span><span>NT$50,000</span><span class="st ok">received</span></div>
-          <div class="line"><span>0x81d2…7e</span><span>NT$50,000</span><span class="st bad">not received</span></div>
+          <div class="line"><span>0x3f9c…a1</span><span>NT$50,000</span><span class="st ok">✓ received</span></div>
+          <div class="line"><span>0x81d2…7e</span><span>NT$50,000</span><span class="st bad">✗ not received</span></div>
           <div class="line"><span>0xc04b…19</span><span>NT$50,000</span><span class="st none">no answer</span></div>
           <p style="margin-top:14px">Each household finds its own line and signs with its own key. Lines that are not registered households are counted in public.</p>
         </div>
         <div class="panel">
-          <div class="label" style="margin-bottom:10px">3 · Sample audit</div>
+          <div class="label" style="margin-bottom:12px"><span class="num">3</span>Sample audit</div>
           <h3>For those who never answer</h3>
           <p>The contract draws a random sample of each batch, seeded by a block fixed at publication. An independent auditor visits; the household signs the visit with its own key, or the auditor records "nobody there" under its own address.</p>
           <p style="margin-top:14px">Anyone can compute how much of the batch could be undelivered (95% upper bound).</p>
@@ -69,19 +91,19 @@
 
     <div class="side">
       <div class="panel">
-        <div class="label" style="margin-bottom:10px">Who is a household</div>
+        <div class="label" style="margin-bottom:12px">Who is a household</div>
         <p>Registered with two signatures: the village chief and the township office. The credential lives on a phone or a printed card.</p>
       </div>
       <div class="panel">
-        <div class="label" style="margin-bottom:10px">4 · The charter</div>
+        <div class="label" style="margin-bottom:12px"><span class="num">4</span>The charter</div>
         <p>Purposes and caps are fixed when the money is raised. Spending outside them reverts. Changes wait in public, and households can veto them anonymously (Semaphore, one vote per household).</p>
       </div>
       <div class="panel off">
-        <div class="label" style="margin-bottom:10px;color:var(--muted)">Never on-chain</div>
+        <div class="label" style="margin-bottom:12px">Never on-chain</div>
         <p>Names, ID numbers, bank accounts. In phase 1 the money itself stays in banks.</p>
       </div>
     </div>
   </div>
-  <div class="foot">The demo fund and households are simulated. github.com/ZhenYan1214/kept</div>
+  <div class="foot"><span>The demo fund and households are simulated.</span><span>Kept · github.com/ZhenYan1214/kept</span></div>
 </body>
 </html>

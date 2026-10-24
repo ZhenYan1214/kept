@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guangfu reconciliation</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Frames the live /replay chart (reconciliation-card.png, taken by render.js) in the logo's colours. */
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 2400px; background: #17202a; color: #f3efe6; font-family: "Public Sans", system-ui, sans-serif; padding: 64px 90px 56px; }
+  header { display: flex; align-items: center; gap: 34px; margin-bottom: 44px; }
+  header svg { width: 108px; height: 108px; flex: none; }
+  .tag { display: inline-block; font-size: 22px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #17202a; background: #ea7056; border-radius: 8px; padding: 4px 12px; margin-bottom: 12px; }
+  h1 { font-size: 52px; font-weight: 700; letter-spacing: -.01em; }
+  .sub { font-size: 28px; color: #a9b0b8; margin-top: 8px; }
+  .card { border-radius: 22px; overflow: hidden; border: 3px solid #33414f; }
+  .card img { display: block; width: 100%; }
+  .foot { margin-top: 32px; font-size: 22px; color: #a9b0b8; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+  <header>
+    <svg viewBox="0 0 40 40" aria-hidden="true">
+      <rect width="40" height="40" rx="9" fill="#0f161d" stroke="#33414f" stroke-width=".6"/>
+      <g fill="none" stroke="#f3efe6" stroke-width="2" stroke-linecap="round" opacity=".6">
+        <path d="M20 6.5 A13.5 13.5 0 0 1 31.7 26.75"/><path d="M31.7 26.75 A13.5 13.5 0 0 1 8.3 26.75"/><path d="M8.3 26.75 A13.5 13.5 0 0 1 20 6.5"/>
+      </g>
+      <g fill="#f3efe6" stroke="#0f161d" stroke-width="1.6"><circle cx="20" cy="6.5" r="3.2"/><circle cx="31.7" cy="26.75" r="3.2"/><circle cx="8.3" cy="26.75" r="3.2"/></g>
+      <path d="M14.6 20.6 L18.4 24.3 L25.6 16.6" fill="none" stroke="#ea7056" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <div class="tag">Real data · not simulated</div>
+      <h1>Guangfu 2025: the money moved, the trail stopped</h1>
+      <div class="sub">From the national relief foundation's eleven monthly disclosures, transcribed by hand</div>
+    </div>
+  </header>
+  <div class="card"><img src="reconciliation-card.png" alt=""></div>
+  <div class="foot"><span>Live chart: kept-lilac.vercel.app/replay</span><span>Kept · github.com/ZhenYan1214/kept</span></div>
+</body>
+</html>
