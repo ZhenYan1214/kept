@@ -2,7 +2,7 @@
 
 > Draft for the DoraHacks "Submit Build" form. Paste each section into the matching field.
 > **For the Details field, paste `details.md` instead of the long description below** (it follows the 2026-10-24 details guide: no tables, about 1,200 words). The long description stays as the fuller reference.
-> Placeholders in [brackets] must be filled before submitting (only the video link is left). Currency: NT$32 ≈ US$1 (approximate, for readers outside Taiwan).
+> All placeholders are filled. Currency: NT$32 ≈ US$1 (approximate, for readers outside Taiwan).
 
 ---
 
@@ -21,7 +21,7 @@ Aid trackers record what custodians say they did. Kept lets the people the money
 ## Links
 
 - Demo: https://kept-lilac.vercel.app
-- Video: [https://… (YouTube, unlisted is fine)]
+- Video (3:36): https://youtu.be/kaRP-dOuPSM
 - Code: https://github.com/ZhenYan1214/kept
 - All seven contracts are source-verified on Blockscout and Sourcify (exact match, 2026-10-24).
 - Contracts on Base Sepolia (chain 84532): KeptFactory `0xD2f8E97EB8cDde0d4446b3464f36Cf01F54A13C0`, CustodyLedger `0x36e9859d90E06A084AF602282985c7b568e18072`, EligibilityRegistry `0xB784Cbe3d5Db9288baa6Ffc5F2cc909A1E2aC016`, VoiceModule `0x6ceFbf6C843A217B077e518f1808f1bb3e97ADBB`, AidPrograms `0xFf7D18bB5E7702DA924Daa07D56Fe15B6A9117be` (Semaphore v4 `0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`)
