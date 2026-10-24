@@ -1,19 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-labelledby="t">
-  <title id="t">Kept</title>
-  <!-- Dark tile so the mark reads the same on GitHub's light and dark themes. -->
-  <rect width="160" height="160" rx="28" fill="#0d1117"/>
-  <rect x="0.5" y="0.5" width="159" height="159" rx="27.5" fill="none" stroke="#30363d"/>
-  <!-- The custody chain: three hands passing the money on, closing into a seal. -->
-  <g fill="none" stroke="#8b949e" stroke-width="4" stroke-linecap="round">
-    <path d="M80 34 A46 46 0 0 1 119.84 103"/>
-    <path d="M119.84 103 A46 46 0 0 1 40.16 103"/>
-    <path d="M40.16 103 A46 46 0 0 1 80 34"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="134 110 1020 1020" width="160" height="160" role="img" aria-label="Kept">
+  <rect x="134" y="110" width="1020" height="1020" rx="230" fill="#0e1d31"/>
+  <g fill="#fe704e">
+    <path d="M505 302H401Q326 302 326 377V863Q326 938 401 938H505Z"/>
+    <path d="M740 352H930L614 647L548 581Q530 550 548 518L705 366Q720 352 740 352Z"/>
+    <path d="M537 614L684 757L826 625Q860 595 895 627L962 691L712 925Q684 950 655 925L555 825Q537 805 537 780Z"/>
   </g>
-  <g fill="#e6edf3" stroke="#0d1117" stroke-width="4">
-    <circle cx="80" cy="34" r="8"/>
-    <circle cx="119.84" cy="103" r="8"/>
-    <circle cx="40.16" cy="103" r="8"/>
-  </g>
-  <!-- Kept: the household's own "received". -->
-  <path d="M61 80 L74 93 L99 66" fill="none" stroke="#3fb950" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

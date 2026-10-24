@@ -23,29 +23,32 @@ function Svg({ className, title, children }: P & { children: React.ReactNode }) 
   );
 }
 
-/** The mark: three hands passing money on around a ring that closes in a household's "received". */
+/** The mark: a K whose lower arm is a check, for a household's "received". Traced from the logo artwork. */
+const K_PATHS = [
+  "M505 302H401Q326 302 326 377V863Q326 938 401 938H505Z",
+  "M740 352H930L614 647L548 581Q530 550 548 518L705 366Q720 352 740 352Z",
+  "M537 614L684 757L826 625Q860 595 895 627L962 691L712 925Q684 950 655 925L555 825Q537 805 537 780Z",
+];
+
 export function KeptMark({ className, seal = true }: { className?: string; seal?: boolean }) {
-  const a = { x: 20, y: 6.5 };
-  const b = { x: 31.7, y: 26.75 };
-  const c = { x: 8.3, y: 26.75 };
+  // seal: the full logo on its navy tile. Without it, the bare K in the text colour (e.g. on the credential card).
+  if (!seal) {
+    return (
+      <svg viewBox="326 302 636 636" className={className ?? "h-8 w-8"} fill="currentColor" aria-hidden>
+        {K_PATHS.map((d) => (
+          <path key={d} d={d} />
+        ))}
+      </svg>
+    );
+  }
   return (
-    <svg viewBox="0 0 40 40" className={className ?? "h-8 w-8"} aria-hidden>
-      <g fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" opacity={0.55}>
-        <path d={`M${a.x} ${a.y} A13.5 13.5 0 0 1 ${b.x} ${b.y}`} />
-        <path d={`M${b.x} ${b.y} A13.5 13.5 0 0 1 ${c.x} ${c.y}`} />
-        <path d={`M${c.x} ${c.y} A13.5 13.5 0 0 1 ${a.x} ${a.y}`} />
+    <svg viewBox="134 110 1020 1020" className={className ?? "h-8 w-8"} aria-hidden>
+      <rect x="134" y="110" width="1020" height="1020" rx="230" fill="#0e1d31" />
+      <g fill="#fe704e">
+        {K_PATHS.map((d) => (
+          <path key={d} d={d} />
+        ))}
       </g>
-      {[a, b, c].map((p) => (
-        <circle key={p.x} cx={p.x} cy={p.y} r={3.2} fill="currentColor" stroke="var(--paper)" strokeWidth={1.6} />
-      ))}
-      <path
-        d="M14.6 20.6 L18.4 24.3 L25.6 16.6"
-        fill="none"
-        stroke={seal ? "var(--seal)" : "currentColor"}
-        strokeWidth={3}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
     </svg>
   );
 }
