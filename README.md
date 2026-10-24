@@ -217,7 +217,7 @@ cd contracts && npm run deploy:base-sepolia   # writes deployments/84532.json
 cd ../web && npm run dev:testnet              # http://localhost:3001
 ```
 
-Current addresses are in [`contracts/deployments/84532.json`](contracts/deployments/84532.json).
+Current addresses are in [`contracts/deployments/84532.json`](contracts/deployments/84532.json). All seven contracts are source-verified (exact match) on [Blockscout](https://base-sepolia.blockscout.com/address/0x36e9859d90E06A084AF602282985c7b568e18072?tab=contract) and Sourcify, so transactions and events decode.
 
 </details>
 

@@ -11,14 +11,19 @@ const BUILD = path.join(ROOT, "build");
 fs.mkdirSync(BUILD, { recursive: true });
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 
+// Narration: AUDIO=<dir> AUDIO_EXT=wav to use a recorded voice (see prep-voice.js) instead of the synthesised one.
+const AUDIO = process.env.AUDIO || path.join(ROOT, "audio");
+const AUDIO_EXT = process.env.AUDIO_EXT || "mp3";
 const LEAD = 0.5; // silence before each row's narration
 const CAP = 0.7; // longest a recorded frame may stay on screen before scaling (cuts out waiting)
 const ff = (args) => execFileSync("ffmpeg", ["-loglevel", "error", "-y", ...args], { cwd: BUILD, stdio: ["ignore", "inherit", "inherit"] });
 
-const rows = [...Array(8)].map((_, i) => JSON.parse(fs.readFileSync(path.join(ROOT, "audio", `row${i}.json`), "utf8")));
+const rows = [...Array(8)].map((_, i) => JSON.parse(fs.readFileSync(path.join(AUDIO, `row${i}.json`), "utf8")));
 const spoken = rows.map((r) => r.words.at(-1).t + r.words.at(-1).d);
+// Word timings may carry the script's punctuation ("pre-allocated,"), so compare bare words.
+const bare = (w) => w.replace(/[^A-Za-z0-9-]/g, "");
 const wordAt = (row, re, from = 0) => {
-  const i = rows[row].words.findIndex((w, k) => k >= from && re.test(w.w));
+  const i = rows[row].words.findIndex((w, k) => k >= from && re.test(bare(w.w)));
   if (i < 0) throw new Error(`word ${re} not in row ${row}`);
   return LEAD + rows[row].words[i].t;
 };
@@ -38,7 +43,7 @@ const still = (name, until) => {
 const plan = [
   [slide("01-hook.png")],
   [slide("02-loop.png", wordAt(1, /^Hualien$/) - 0.6), slide("03-hualien.png", wordAt(1, /^After$/) - 0.3), slide("04-trust.png")],
-  [still("rd-numbers", wordAt(2, /^most$/, rows[2].words.findIndex((w) => w.w === "pre-allocated")) - 0.2), still("rd-ministry", wordAt(2, /^eleven$/) - 0.4), still("rd-timeline", wordAt(2, /^Pre-allocating$/) - 0.3), still("rd-trail")],
+  [still("rd-numbers", wordAt(2, /^most$/, rows[2].words.findIndex((w) => bare(w.w) === "pre-allocated")) - 0.2), still("rd-ministry", wordAt(2, /^eleven$/) - 0.4), still("rd-timeline", wordAt(2, /^Pre-allocating$/) - 0.3), still("rd-trail")],
   [clip("register"), clip("verified", -2.6), clip("lines", undefined, 22.5), clip("audits")],
   [clip("ngo")],
   [clip("committee1"), clip("committee2"), clip("committee3")],
@@ -148,7 +153,7 @@ if (only) process.exit(0);
 fs.writeFileSync(path.join(BUILD, "rows.txt"), plan.map((_, i) => `file 'row${i}.mp4'`).join("\n") + "\n");
 ff(["-f", "concat", "-safe", "0", "-i", "rows.txt", "-c", "copy", "video.mp4"]);
 
-const ins = rows.flatMap((_, i) => ["-i", path.join(ROOT, "audio", `row${i}.mp3`)]);
+const ins = rows.flatMap((_, i) => ["-i", path.join(AUDIO, `row${i}.${AUDIO_EXT}`)]);
 const delays = rows.map((_, i) => `[${i}]adelay=${Math.round((offsets[i] + LEAD) * 1000)}:all=1[a${i}]`).join(";");
 ff([...ins, "-filter_complex", `${delays};${rows.map((_, i) => `[a${i}]`).join("")}amix=inputs=${rows.length}:normalize=0,apad,atrim=0:${total.toFixed(3)},loudnorm=I=-16:TP=-1.5:LRA=11[a]`,
   "-map", "[a]", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "voice.m4a"]);

@@ -465,4 +465,9 @@ cd ../web && npm install && npm run dev                          # http://localh
 - 完整版已做好：`kept-demo.mp4`（2:58，1080p，AI 旁白 en-US-AndrewNeural，字幕燒入），連同 `kept-demo.srt` 放在錄製那台電腦的 `contest/video/`，**不在 git 裡**。
 - 畫面是在正式網站（Base Sepolia）實際操作錄下來的。錄影時寫入了模擬資料：新住戶、提案 #3（被住戶否決）、一筆付款明細＋申訴、一次 NGO 領取。
 - 製作工具與步驟：`docs/submission/video-assets/tools/README.md`。**若之後修改網站 UI**（按鈕文字、卡片標題），`record.js` 的選擇器可能要跟著改，影片也需要重錄重剪。
-- 待辦：使用者看過後確認或要求修改 → 上傳 YouTube（不公開）→ 在 `docs/submission/description.md` 填入影片連結和一句自我介紹 → 在 DoraHacks 送出（截止 2026-10-25 08:00 台灣時間，目標 10/24 中午）。
+- **2026-10-23～24 更新**：
+  - 影片改用使用者本人的聲音：`contest/video/kept-demo-myvoice.mp4`，3:36。流程是本機 faster-whisper 對齊、降噪、加速 1.15 倍。工具是 `tools/align.py` 和 `tools/prep-voice.js`。
+  - Details 改寫成 `docs/submission/details.md`，依 `C:UsersUserDesktopCircle_arc_privatedocsDETAILS_GUIDE.md`。動機和自我介紹由使用者授權代寫，只寫查得到的經過，沒有編造個人經歷。
+  - 7 個合約在 Sourcify 和 Blockscout 驗證完成，都是 exact match，交易事件能解碼。
+  - 表單填寫包放在 `contest/submission_kit/`，在 repo 外：Logo、Vision、標籤、YouTube 說明、送出後檢查。
+- 待辦（舊）：使用者看過後確認或要求修改 → 上傳 YouTube（不公開）→ 在 `docs/submission/description.md` 填入影片連結和一句自我介紹 → 在 DoraHacks 送出（截止 2026-10-25 08:00 台灣時間，目標 10/24 中午）。

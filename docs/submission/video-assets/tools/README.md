@@ -18,4 +18,12 @@ Needs Node, ffmpeg in PATH, Chrome, and Python with `edge-tts` (7.3.1). Run ever
    - Captions are cut from the script text and timed by the voice.
    - Writes the MP4 with burned-in captions, plus a matching `.srt`.
 
+**Your own voice.** Record one file per script row, then:
+1. Convert each file with `ffmpeg -i <file> -ac 1 -ar 48000 voice/rawN.wav`.
+2. Run `python align.py audio voice`. This uses local faster-whisper `small.en`, which needs `requests` and works around a PyAV version mismatch by decoding through ffmpeg. It writes word timings for the script's words.
+3. Run `node prep-voice.js voice 1.15`. This applies light noise reduction, trims the ends, cuts pauses over 0.4 s, and speeds the voice up 1.15× at the same pitch.
+4. Run `AUDIO=voice/out AUDIO_EXT=wav node compose.js out.mp4`.
+
+The 2026-10-23 recording became `kept-demo-myvoice.mp4` (3:36).
+
 If the UI changes, re-record (step 2) and re-run step 4. The selectors in `record.js` use visible button labels and card titles, so renamed labels break them. To use your own voice, replace `audio/rowN.mp3`/`.json` with matching timings, or re-time `want` in `compose.js`.
