@@ -12,7 +12,7 @@ Kept lets the households a disaster fund was meant for confirm or dispute, on a 
   - **Household:** press *I did not receive it*.
 
   The demo is shared; fund changes wait a real 5-minute period.
-- **Video (3:36):** https://youtu.be/kaRP-dOuPSM
+- **Video (3:36):** https://youtu.be/1wSICTfZONE
 - **Code:** https://github.com/ZhenYan1214/kept. `forge test` in `contracts/` runs 74 unit tests and 4 invariants. `npm run verify:data` in `web/` recomputes every real-data figure (70 checks).
 - **Proof on Base Sepolia (demo run, 23 Oct 2026; all contracts source-verified, so events decode):**
   - Payment lines published: https://base-sepolia.blockscout.com/tx/0x7c55dfffeb99b27ab479e0cb76fb668717de81035d30194596e8b94b31f1f83f
