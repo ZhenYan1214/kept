@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>How Kept works</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Rendered 2400 wide, height fits the content, for the DoraHacks Details and the README. Tokens match web/src/app/globals.css. */
+  :root { --paper:#f6f5f2; --card:#fff; --sunk:#f0eeea; --ink:#1b1f24; --muted:#646a73; --line:#e4e1db; --accent:#245b8a; --ok:#2c7350; --bad:#b03a2e; --warn:#9a5b0c; }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 2400px; background: var(--paper); color: var(--ink); font-family: "Public Sans", system-ui, sans-serif; padding: 70px 90px; }
+  h1 { font-size: 54px; font-weight: 700; letter-spacing: -.01em; }
+  .sub { font-size: 30px; color: var(--muted); margin-top: 10px; }
+  .main { display: grid; grid-template-columns: 1fr 520px; gap: 60px; margin-top: 56px; }
+  .label { font-size: 22px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
+  .chain { display: flex; align-items: center; }
+  .box { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 22px 26px; font-size: 30px; font-weight: 600; text-align: center; min-width: 230px; }
+  .box small { display: block; font-size: 21px; font-weight: 400; color: var(--muted); margin-top: 6px; }
+  .arrow { flex: 1; text-align: center; color: var(--accent); font-size: 21px; line-height: 1.25; padding: 0 10px; min-width: 150px; }
+  .arrow b { display: block; font-size: 40px; line-height: 1; margin-bottom: 4px; }
+  .down { margin: 26px 0 0 auto; width: 560px; text-align: center; color: var(--accent); font-size: 21px; }
+  .down b { display: block; font-size: 40px; line-height: 1; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; margin-top: 18px; }
+  .panel { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 26px 30px; }
+  .panel h3 { font-size: 30px; font-weight: 600; margin-bottom: 14px; }
+  .panel p { font-size: 23px; color: var(--muted); line-height: 1.4; }
+  .line { display: flex; justify-content: space-between; font-family: ui-monospace, Consolas, monospace; font-size: 23px; padding: 10px 14px; border-radius: 10px; background: var(--sunk); margin-top: 10px; }
+  .line .st { font-family: "Public Sans", sans-serif; font-weight: 600; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); } .none { color: var(--muted); }
+  .side { display: flex; flex-direction: column; gap: 30px; }
+  .side .panel { padding: 28px 32px; }
+  .off { border-style: dashed; background: transparent; }
+  .foot { margin-top: 44px; font-size: 22px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <h1>Every hand signs for what it receives. The last hand is the household.</h1>
+  <div class="sub">Kept on Base Sepolia: who records what, and who can check it</div>
+
+  <div class="main">
+    <div>
+      <div class="label">1 · Custody chain</div>
+      <div class="chain">
+        <div class="box">Relief foundation<small>raises the fund</small></div>
+        <div class="arrow"><b>→</b>sender records<br>receiver acknowledges</div>
+        <div class="box">Ministry<small>custodian</small></div>
+        <div class="arrow"><b>→</b>same, at<br>every hand</div>
+        <div class="box">County or NGO<small>custodian</small></div>
+      </div>
+      <div class="down"><b>↓</b>pays households, then publishes the batch</div>
+
+      <div class="row2">
+        <div class="panel">
+          <div class="label" style="margin-bottom:10px">2 · Payment lines</div>
+          <h3>Pseudonymous: an address and an amount</h3>
+          <div class="line"><span>0x3f9c…a1</span><span>NT$50,000</span><span class="st ok">received</span></div>
+          <div class="line"><span>0x81d2…7e</span><span>NT$50,000</span><span class="st bad">not received</span></div>
+          <div class="line"><span>0xc04b…19</span><span>NT$50,000</span><span class="st none">no answer</span></div>
+          <p style="margin-top:14px">Each household finds its own line and signs with its own key. Lines that are not registered households are counted in public.</p>
+        </div>
+        <div class="panel">
+          <div class="label" style="margin-bottom:10px">3 · Sample audit</div>
+          <h3>For those who never answer</h3>
+          <p>The contract draws a random sample of each batch, seeded by a block fixed at publication. An independent auditor visits; the household signs the visit with its own key, or the auditor records "nobody there" under its own address.</p>
+          <p style="margin-top:14px">Anyone can compute how much of the batch could be undelivered (95% upper bound).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="panel">
+        <div class="label" style="margin-bottom:10px">Who is a household</div>
+        <p>Registered with two signatures: the village chief and the township office. The credential lives on a phone or a printed card.</p>
+      </div>
+      <div class="panel">
+        <div class="label" style="margin-bottom:10px">4 · The charter</div>
+        <p>Purposes and caps are fixed when the money is raised. Spending outside them reverts. Changes wait in public, and households can veto them anonymously (Semaphore, one vote per household).</p>
+      </div>
+      <div class="panel off">
+        <div class="label" style="margin-bottom:10px;color:var(--muted)">Never on-chain</div>
+        <p>Names, ID numbers, bank accounts. In phase 1 the money itself stays in banks.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot">The demo fund and households are simulated. github.com/ZhenYan1214/kept</div>
+</body>
+</html>
