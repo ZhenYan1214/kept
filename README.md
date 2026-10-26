@@ -24,7 +24,7 @@ Aid trackers record what custodians say they did. Kept lets the people the money
 ### What the public record shows
 
 - **Guangfu flood, Taiwan, 2025.** The national relief foundation paid out NT$1.21bn; **98.8% went out as pre-allocations**, to be accounted for later. In its own monthly reports, **for eight months (Dec 2025 – Aug 2026) no pre-allocated money was newly reported as reconciled**. After the first hand the public sees only totals, and households have no public, recorded way to say whether their payment arrived.
-- **Hualien earthquake, 2024.** The county received NT$792M in donations; eleven months later it had paid out 16%. Replayed on the county's own records, Kept's *"held over 90 days"* alert would have fired **199 days before the first news story we found**.
+- **Hualien earthquake, 2024.** The county received NT$792M in donations; eleven months later it had paid out 16%. Replayed on the county's own records, Kept's *"held over 90 days"* alert would have fired **199 days before the first news story we found on the unspent balance**.
 
 **What Kept does.** Each custodian acknowledges what it receives; households confirm or dispute their own pseudonymous payment line; a random sample drawn on-chain is visited in person by an independent auditor. Getting paid needs nothing from a household, and no names, IDs or bank accounts go on-chain.
 

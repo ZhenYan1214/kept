@@ -77,7 +77,7 @@ Personal data and bank payments stay off-chain. At Guangfu's scale a disaster co
 ## Evidence
 
 - **Contracts:** 74 unit tests; 4 invariants over random call sequences (money conserved, caps respected, custody tree balances, lines add up); an end-to-end script with real Semaphore v4 proofs (17 checks); Slither findings triaged in `docs/security-review.md`.
-- **Backtest:** in a backtest that assumes Hualien County had recorded its 2024 donation account under Kept, the "held over 90 days" alert would have fired 199 days before the first news story I found.
+- **Backtest:** in a backtest that assumes Hualien County had recorded its 2024 donation account under Kept, the "held over 90 days" alert would have fired 199 days before the first news story I found on the unspent balance.
 - **Simulation:** I modelled officials registering ghost households for 1% of Guangfu's 4,039 households, assuming an honest auditor.
   - Households' own answers catch it only at chance level.
   - The sample audit catches it in 28% of runs, 73% at 2%, and 100% at 5%.
