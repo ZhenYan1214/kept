@@ -29,13 +29,13 @@ I transcribed all eleven of its monthly disclosures. 98.8% of the money went out
 
 ![Guangfu 2025, from the foundation's own disclosures: cumulative payouts rise to NT$1.21bn within months, while the reconciled line stays near zero for eight months and reaches NT$49.1M (4%) a year later](../assets/details/guangfu-reconciliation.png)
 
-After that first hand the public sees only totals. A household has no public, recorded way to say its payment never arrived; it can only petition.
+After that first hand the public sees only totals. The household harm that is documented is being left out and kept waiting: three villages protested at being left off the county's first payment list, and six months after the flood the township's own list still showed 319 households without a fridge, while the money set aside for them was still unspent at the end of August 2026. A household has no public, recorded way to say it is still waiting or that a payment never arrived; it can only petition.
 
 A year earlier, Hualien County received NT$792M for the 2024 earthquake. Eleven months later it had paid out 16%, with no affected households on its committee (county committee report, February 2025; PTS).
 
 ## Why it is still unsolved
 
-Pre-allocating in an emergency is normal; the gap is what comes next. Each custodian keeps its own records, so the party being checked holds the pen. Existing tools solve neighbouring problems (RedChain: private eligibility; WFP Building Blocks: deduplication across agencies), but none that I found lets recipients record "it did not arrive".
+Pre-allocating in an emergency is normal; the gap is what comes next. Each custodian keeps its own records, so the party being checked holds the pen. Existing tools solve neighbouring problems (RedChain: private eligibility; WFP Building Blocks: deduplication across agencies), but none that I found gives disaster households a public, anonymous way to say "still waiting", lets each answer its own payment line, and audits the ones who stay silent.
 
 ## Why I built this
 
@@ -77,7 +77,7 @@ Personal data and bank payments stay off-chain. At Guangfu's scale a disaster co
 ## Evidence
 
 - **Contracts:** 74 unit tests; 4 invariants over random call sequences (money conserved, caps respected, custody tree balances, lines add up); an end-to-end script with real Semaphore v4 proofs (17 checks); Slither findings triaged in `docs/security-review.md`.
-- **Backtest:** in a backtest that assumes Hualien County had recorded its 2024 donation account under Kept, the "held over 90 days" alert would have fired 199 days before the first news story I found on the unspent balance.
+- **Backtest:** in a backtest that assumes Hualien County had recorded its 2024 donation account under Kept, the "held over 90 days" alert would have fired 199 days before the first news story I found on the unspent balance. On the county's public records alone it would have fired 185 days before that story: the data was there, and nobody was watching.
 - **Simulation:** I modelled officials registering ghost households for 1% of Guangfu's 4,039 households, assuming an honest auditor.
   - Households' own answers catch it only at chance level.
   - The sample audit catches it in 28% of runs, 73% at 2%, and 100% at 5%.
@@ -92,6 +92,7 @@ Personal data and bank payments stay off-chain. At Guangfu's scale a disaster co
 
 - **What is simulated:** the demo fund, households and decisions; institution keys sit on the demo server. Only the real-data page is real.
 - **No outside input yet:** no practitioner interviews or tests with older users.
+- **Visibility, not delivery:** Kept makes waiting and exclusion visible and timed; it does not deliver the aid, and it cannot see a household that was never registered. Duplicate payment lines are checked within a batch, not across batches.
 - **Phase 1 keeps money in banks**, so off-record payments are harder to hide, not impossible.
 - **Security:** the audit seed is a block hash (production should use drand), the contracts are unaudited, and the registry is a single key in the demo.
 
