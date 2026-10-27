@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kept Round 2 slides</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Round 2 video slides, 1920×1080: open slides-round2.html#2 for slide 2. Same tokens as slides.html. */
+  :root { --paper:#f6f5f2; --ink:#1b1f24; --muted:#646a73; --line:#e4e1db; --accent:#245b8a; --navy:#0e1d31; --orange:#fe704e; --ok:#2c7350; --bad:#b03a2e; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+  body { font-family: "Public Sans", "Segoe UI", system-ui, sans-serif; background: var(--paper); color: var(--ink); }
+  .slide { display: none; width: 1920px; height: 1080px; padding: 120px 160px; position: relative; }
+  .slide.on { display: flex; flex-direction: column; justify-content: center; }
+  .dark { background: var(--navy); color: #fff; }
+  .kicker { font-size: 30px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 36px; }
+  .dark .kicker { color: var(--orange); }
+  h1 { font-size: 88px; line-height: 1.08; font-weight: 700; letter-spacing: -.02em; }
+  .big { font-size: 150px; font-weight: 800; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .sub { font-size: 44px; color: #c9d0d8; margin-top: 28px; }
+  .src { position: absolute; left: 160px; bottom: 80px; font-size: 24px; color: var(--muted); max-width: 1600px; }
+  .dark .src { color: #8f9aa6; }
+  .rows { display: flex; flex-direction: column; gap: 34px; margin-top: 30px; }
+  .row { display: flex; align-items: baseline; gap: 44px; font-size: 52px; }
+  .row .n { font-weight: 800; color: var(--orange); min-width: 300px; text-align: right; font-variant-numeric: tabular-nums; }
+  .row.dim { color: #8f9aa6; }
+  .row.dim .n { color: #c9d0d8; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 56px; }
+  .box { border: 3px solid var(--line); border-radius: 28px; padding: 44px 48px; background: #fff; }
+  .box h3 { font-size: 34px; font-weight: 600; color: var(--muted); margin-bottom: 18px; }
+  .box .v { font-size: 92px; font-weight: 800; line-height: 1; white-space: nowrap; }
+  .box.good .v { font-size: 74px; }
+  .box p { font-size: 32px; color: var(--muted); margin-top: 18px; line-height: 1.3; }
+  .box.good { border-color: var(--accent); }
+  .box.good .v { color: var(--accent); }
+  .tl { position: relative; margin-top: 90px; height: 260px; }
+  .tl .bar { position: absolute; left: 0; right: 0; top: 120px; height: 8px; background: var(--line); border-radius: 4px; }
+  .tl .span { position: absolute; top: 112px; height: 24px; background: var(--orange); border-radius: 12px; opacity: .35; }
+  .tl .pt { position: absolute; top: 102px; width: 44px; height: 44px; border-radius: 50%; margin-left: -22px; }
+  .tl .lab { position: absolute; width: 520px; margin-left: -260px; text-align: center; font-size: 30px; line-height: 1.3; }
+  .tl .lab b { display: block; font-size: 38px; }
+  .gap { position: absolute; top: 20px; font-size: 44px; font-weight: 800; color: var(--orange); text-align: center; width: 600px; margin-left: -300px; }
+  .next { margin-top: 70px; font-size: 44px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- 1 · N0 first half: what happened -->
+<section class="slide dark">
+  <div class="kicker">Guangfu, Hualien, Taiwan · 23 September 2025</div>
+  <h1>The Mataian barrier lake<br>burst into Guangfu.</h1>
+  <div class="big" style="margin-top:60px">19 dead</div>
+  <div class="sub">5 missing · 157 injured</div>
+  <div class="src">Official count, 8 October 2025</div>
+</section>
+
+<!-- 2 · N0 second half: still waiting -->
+<section class="slide dark">
+  <div class="kicker">Six months later · the Guangfu township's own list</div>
+  <div class="rows">
+    <div class="row"><span class="n">319</span><span>households still without a fridge</span></div>
+    <div class="row"><span class="n">111</span><span>without a washing machine</span></div>
+    <div class="row"><span class="n">41</span><span>without a gas stove</span></div>
+    <div class="row dim"><span class="n">NT$0</span><span>spent of the NT$7.86M set aside, by 31 August 2026</span></div>
+  </div>
+  <div class="src">Hualien County donation committee, written review dated 30 March 2026 (township needs roster); county donation-account statement as of 31 August 2026</div>
+</section>
+
+<!-- 3 · N4 first half: the simulation -->
+<section class="slide">
+  <div class="kicker">What is new · I tested my own first design</div>
+  <h1>Letting people report is not enough.</h1>
+  <div class="compare">
+    <div class="box">
+      <h3>Officials register fake households.<br>Households' own answers catch it:</h3>
+      <div class="v">≈ chance</div>
+      <p>The same officials can confirm the fakes.</p>
+    </div>
+    <div class="box good">
+      <h3>Add a random audit of every batch.<br>It catches it in:</h3>
+      <div class="v">28% · 73% · 100%</div>
+      <p>of runs, when 1% · 2% · 5% of households are fake</p>
+    </div>
+  </div>
+  <div class="src">Simulation at Guangfu's scale: 4,039 households, 4,000 runs per case; assumes an honest auditor. web/scripts/fraud-sim.mjs</div>
+</section>
+
+<!-- 4 · N4 second half: the backtest and the ask (top-aligned so captions never cover the timeline) -->
+<section class="slide" style="justify-content:flex-start;padding-top:110px">
+  <div class="kicker">Backtest on real records · Hualien County, 2024 earthquake donations</div>
+  <h1>The data was there. Nobody was watching.</h1>
+  <div class="next" style="margin-top:28px;color:var(--muted)">Next: a pilot with one custodian and one village.</div>
+  <div class="tl" style="margin-top:60px">
+    <div class="bar"></div>
+    <div class="span" style="left:16%;right:16%"></div>
+    <div class="pt" style="left:16%;background:var(--orange)"></div>
+    <div class="pt" style="left:84%;background:var(--ink)"></div>
+    <div class="gap" style="left:50%">185 days</div>
+    <div class="lab" style="left:16%;top:170px"><b>16 Jul 2024</b>Kept's alert fires on the county's<br>own public records</div>
+    <div class="lab" style="left:84%;top:170px"><b>17 Jan 2025</b>First news story on<br>the unspent balance</div>
+  </div>
+  <div class="src">Rule: donations held over 90 days without being paid out. An alert is a reason to look, not a finding of wrongdoing.</div>
+</section>
+
+<script>
+  const n = Math.max(1, parseInt(location.hash.slice(1) || "1", 10));
+  document.querySelectorAll(".slide")[n - 1]?.classList.add("on");
+</script>
+</body>
+</html>

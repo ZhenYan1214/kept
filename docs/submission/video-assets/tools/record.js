@@ -1,5 +1,5 @@
 // Records the demo on the live site as clips of JPEG frames (Chrome DevTools screencast, 1920x1080).
-// Usage: node record.js part1 | part2 | part3
+// Usage: node record.js part1 | part2 | part3 | part4
 // part1: registration, committee proposal (starts the 5-minute waiting period), payment lines,
 //        dispute, dashboard, NGO claim.   part2: household vote, neighbours vote, execute -> vetoed.
 // part3: real-data stills in narration order, and the verified badge.
@@ -310,6 +310,29 @@ async function part3() {
   await stop();
 }
 
+async function part4() {
+  // A verified household says, anonymously, that it is still waiting; the public dashboard raises the alert.
+  await go("/household", "Still waiting for aid?");
+  const box = card("Still waiting for aid?");
+  await btn("I am still waiting", box).waitFor({ timeout: 120_000 });
+  await scrollToEl(box, 120, 0);
+  await sleep(800);
+  await start("waiting");
+  await sleep(1200);
+  const village = box.getByLabel("My village");
+  await ring(village);
+  await village.selectOption({ label: await village.locator("option", { hasText: "Nanfu" }).first().innerText() });
+  await sleep(1000);
+  await click(btn("I am still waiting", box), "waiting");
+  await box.getByText(/Reported for this week/).waitFor({ timeout: 180_000 });
+  await sleep(2000);
+  await go("/", "Accountability alerts");
+  await scrollToEl(page.getByRole("heading", { name: /Accountability alerts/i }).first(), 100, 1500);
+  await page.getByText(/Households say they are waiting/).first().waitFor({ timeout: 120_000 });
+  await sleep(3500);
+  await stop();
+}
+
 (async () => {
   const ctx = await setup();
   const which = process.argv[2];
@@ -317,6 +340,7 @@ async function part3() {
     if (which === "part1") await part1();
     else if (which === "part2") await part2();
     else if (which === "part3") await part3();
+    else if (which === "part4") await part4();
     else throw new Error("usage: node record.js part1|part2");
     log("done", which);
   } catch (e) {
