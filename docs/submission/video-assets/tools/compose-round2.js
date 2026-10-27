@@ -1,9 +1,12 @@
 // Builds the Round 2 presentation video (presentation-script.md): recorded narration rows, some trimmed by word timings,
 // new rows N0–N5, stills and screen clips fitted to the narration, a part label in the corner, burned-in captions.
+// Animated scenes (motion-round2.html) are rendered by render-motion.js with cues taken from the narration's word timings.
 // Usage: OLD=<voice dir with rowN.wav/json> NEW=<voice dir for N0–N5> CLIPS=<record.js clips dir> node compose-round2.js <out.mp4>
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
+const { pathToFileURL } = require("url");
+const { openMotion } = require("./render-motion");
 
 const ASSETS = path.resolve(__dirname, "..");
 const R2 = path.join(ASSETS, "round2");
@@ -50,6 +53,8 @@ function cutAudio(name, row, ranges) {
 // ---- Visuals -------------------------------------------------------------------------------------------------------
 const S = (file, until, crop) => ({ still: file, until, crop });
 const C = (name, until, from, to) => ({ clip: name, until, from, to });
+// An animated scene; cues are segment times (from at()), made relative to the scene's start when it is rendered.
+const M = (scene, until, cues, opts) => ({ motion: scene, until, cues, opts });
 function clipFrames({ clip: name, from, to }) {
   const dir = path.join(CLIPS, name);
   const j = JSON.parse(fs.readFileSync(path.join(dir, "frames.json"), "utf8"));
@@ -88,33 +93,39 @@ const FLOW = slash(path.resolve(ASSETS, "../../assets/details/kept-flow.png"));
 const r1 = old(1), r2 = old(2), r3 = old(3);
 const segments = [
   { label: "1 · Problem", audio: () => cutAudio("a00", neu(0), [[0, neu(0).words.length - 1]]),
-    vis: (at) => [S(RD("slide-1.png"), at(/^Six$/) - 0.3), S(RD("slide-2.png"))] },
+    vis: (at, w) => [M("mataian", at(/^Six$/) - 0.3, { burst: at(/^burst$/), toll: at(/^Nineteen$/) }),
+      M("shortfall", undefined, { fridge: at(/^three$/), washer: at(/^hundred$/, w(/^fridge$/)), money: at(/^money$/), unspent: at(/^unspent$/), voice: at(/^Those$/), reached: at(/^it$/, w(/^say$/)), before: at(/^And$/, w(/^us$/)) })] },
   { label: "1 · Problem", audio: () => cutAudio("a01", r1, [[find(r1.words, /^In$/), r1.words.length - 1]]),
-    vis: (at) => [S(SL("03-hualien.png"), at(/^After$/) - 0.3), S(SL("04-trust.png"))] },
+    vis: (at) => [M("hualien", undefined, { donated: at(/^eight$/), eleven: at(/^Eleven$/), sixteen: at(/^sixteen$/), committee: at(/^committee$/), after: at(/^After$/), national: at(/^national$/), twice: at(/^twice$/), people: at(/^People$/), they: at(/^They$/) })] },
   { label: "1 · Problem", audio: () => cutAudio("a02", r2, [[find(r2.words, /^The$/), r2.words.length - 1]]),
-    vis: (at, w) => [S(lastFrame("rd-numbers"), at(/^most$/, w(/^pre-allocated$/)) - 0.2), S(lastFrame("rd-ministry"), at(/^eleven$/) - 0.4), S(lastFrame("rd-timeline"), at(/^Pre-allocating$/) - 0.3), S(lastFrame("rd-trail"))] },
+    vis: (at, w) => [M("foundation", undefined, { publishes: at(/^publishes$/), paid: at(/^billion$/) - 0.4, prealloc: at(/^ninety-nine$/), ministry: at(/^most$/, w(/^pre-allocated$/)), eleven: at(/^eleven$/), eight: at(/^eight$/), notone: at(/^not$/, w(/^eight$/)), normal: at(/^Pre-allocating$/), after: at(/^after$/, w(/^next$/)), households: at(/^households$/, w(/^totals$/)) })] },
   { label: "2 · Solution", audio: () => cutAudio("a03", neu(1), [[0, neu(1).words.length - 1]]),
-    vis: (at, w) => [S(FLOW, at(/^verified$/) - 0.6), C("waiting", at(/^And$/, w(/^received$/)) - 0.3), S(FLOW)] },
+    vis: (at, w) => [M("chain", at(/^verified$/) - 0.6, { voice: at(/^public$/), hand: at(/^every$/) }), C("waiting", at(/^And$/, w(/^received$/)) - 0.3),
+      M("audit", undefined, { fake: at(/^fake$/), confirm: at(/^confirm$/), sample: at(/^random$/), visit: at(/^independent$/) })] },
   { label: "3 · Technical architecture", audio: () => cutAudio("a04", neu(2), [[0, neu(2).words.length - 1]]),
-    vis: (at, w) => [S(RD("arch-0.png"), at(/^phone$/) - 0.6), S(RD("arch-1.png"), at(/^relayer$/) - 0.4), S(RD("arch-2.png"), at(/^Base$/, w(/^wallet$/)) - 0.5), S(RD("arch-3.png"))] },
+    vis: (at, w) => [M("arch", undefined, { phone: at(/^phone$/), identity: at(/^identity$/), receipt: at(/^receipt$/), zk: at(/^zero-knowledge$/), signed: at(/^signed$/), relayer: at(/^relayer$/), gas: at(/^gas$/), server: at(/^server$/), realuse: at(/^real$/), base: at(/^Base$/), six: at(/^six$/), charter: at(/^charter$/), ownkey: at(/^own$/, w(/^charter$/)), twosig: at(/^two$/) })] },
   { label: "4 · Working prototype", audio: () => { const a = find(r3.words, /^custodian$/, 20) - 1, b = find(r3.words, /^And$/, a) - 1; return cutAudio("a05", r3, [[0, a - 1], [b + 1, r3.words.length - 1]]); },
     vis: () => [C("register"), C("verified", undefined, -2.6), C("lines", undefined, undefined, 22.5), C("audits")] },
   { label: "4 · Working prototype", want: 18, audio: () => cutAudio("a06", old(5), [[0, old(5).words.length - 1]]),
     vis: () => [C("committee1"), C("committee2"), C("committee3")] },
   { label: "4 · Working prototype", audio: () => cutAudio("a07", neu(3), [[0, neu(3).words.length - 1]]),
-    vis: (at) => [S(RD("blockscout-logs.png"), at(/^you$/, 20) - 0.4, "980:551:320:360"), S(firstFrame("register"))] },
+    vis: (at) => [M("explorer", at(/^contracts$/) - 0.3, { zoom: at(/^Here$/) - 0.6, received: at(/^received$/) }),
+      M("try", undefined, { verified: at(/^source-verified$/), github: at(/^GitHub$/), url: at(/^kept-lilac$/), wallet: at(/^wallet$/) }, { shot: pathToFileURL(firstFrame("register")).href })] },
   { label: "5 · Innovation & impact", audio: () => cutAudio("a08", old(6), [[0, old(6).words.length - 1]]),
-    vis: () => [S(SL("06-why-web3.png"))] },
+    vis: (at) => [M("why", undefined, { because: at(/^Because$/), ledger: at(/^only$/), several: at(/^several$/), shared: at(/^shared$/), names: at(/^Names$/), law: at(/^law$/), costs: at(/^costs$/), fifty: at(/^fifty$/), fifteen: at(/^fifteen$/) })] },
   { label: "5 · Innovation & impact", audio: () => cutAudio("a09", neu(4), [[0, neu(4).words.length - 1]]),
-    vis: (at, w) => [S(RD("slide-3.png"), at(/^And$/, w(/^honest$/)) - 0.3), S(RD("slide-4.png"))] },
+    vis: (at, w) => [M("sim", at(/^And$/, w(/^honest$/)) - 0.3, { letting: at(/^Letting$/), simulation: at(/^simulation$/), fake: at(/^fake$/), chance: at(/^chance$/), audit: at(/^random$/), seventy: at(/^seventy-three$/), honest: at(/^honest$/) }),
+      M("backtest", undefined, { backtest: at(/^backtest$/), records: at(/^records$/), alert: at(/^alert$/), six: at(/^six$/), news: at(/^news$/), next: at(/^Next$/) })] },
   { label: "", audio: () => cutAudio("a10", neu(5), [[0, neu(5).words.length - 1]]),
-    vis: () => [S(SL("07-close.png"))] },
+    vis: (at) => [M("close", undefined, { money: at(/^money$/), leftout: at(/^no$/), kept: at(/^Kept$/), record: at(/^record$/) })] },
 ];
 
 // ---- Build ---------------------------------------------------------------------------------------------------------
 const pieces = [], cues = [], labels = [], audios = [];
 let t = 0;
-segments.forEach((seg, i) => {
+(async () => {
+const motion = await openMotion();
+for (const [i, seg] of segments.entries()) {
   const au = seg.audio();
   const dur = Math.max(seg.want || 0, LEAD + au.spoken + 0.9);
   const w = (re, from = 0) => find(au.words, re, from);
@@ -128,11 +139,19 @@ segments.forEach((seg, i) => {
   const left = dur - cursor;
   const weights = free.map((it) => (it.clip ? clipFrames(it).reduce((s, f) => s + f.d, 0) : 1));
   const wsum = weights.reduce((a, b) => a + b, 0);
-  let fi = 0;
-  items.forEach((it, k) => {
+  let fi = 0, start = 0;
+  for (const [k, it] of items.entries()) {
     const d = fixed[k] !== null ? fixed[k] : (left * weights[fi++]) / wsum;
-    pieces.push(it.clip ? renderClip(clipFrames(it), d) : renderStill(it.still, d, it.crop));
-  });
+    if (it.motion) {
+      const out = `v${String(pieceNo++).padStart(3, "0")}.mp4`;
+      const rel = Object.fromEntries(Object.entries(it.cues).map(([n, x]) => [n, x - start]));
+      const t0 = Date.now();
+      await motion.render(it.motion, d, rel, it.opts, path.join(BUILD, out));
+      console.log(`   scene ${it.motion} ${d.toFixed(1)}s (${((Date.now() - t0) / 1000).toFixed(0)}s to render)`);
+      pieces.push(out);
+    } else pieces.push(it.clip ? renderClip(clipFrames(it), d) : renderStill(it.still, d, it.crop));
+    start += d;
+  }
   audios.push({ wav: au.wav, at: t + LEAD });
   if (seg.label) labels.push({ text: seg.label, a: t, b: t + dur });
   // Captions: sentences, long ones split near a comma.
@@ -151,7 +170,8 @@ segments.forEach((seg, i) => {
   segCues.forEach((c, k) => { c.end = Math.min(c.end + 0.5, k + 1 < segCues.length ? segCues[k + 1].start - 0.05 : c.end + 0.6); });
   cues.push(...segCues);
   t += dur;
-});
+}
+await motion.close();
 const total = t;
 console.log("total", total.toFixed(1));
 
@@ -172,3 +192,4 @@ const style = "FontName=Arial,FontSize=11,PrimaryColour=&H00FFFFFF,OutlineColour
 const draw = labels.map((l) => `drawtext=fontfile=arial.ttf:text='${l.text}':fontsize=28:fontcolor=white:box=1:boxcolor=${NAVY}@0.88:boxborderw=14:x=w-tw-46:y=h-th-40:enable='between(t,${l.a.toFixed(2)},${l.b.toFixed(2)})'`).join(",");
 ff(["-i", "video.mp4", "-i", "voice.m4a", "-vf", `${draw},subtitles=captions.srt:fontsdir=.:force_style='${style}'`, "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "copy", "-movflags", "+faststart", OUT]);
 console.log("wrote", OUT, `${cues.length} cues`);
+})();

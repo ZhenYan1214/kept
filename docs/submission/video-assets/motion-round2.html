@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kept Round 2 motion scenes</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  /* Animated scenes for the Round 2 video, 1920×1080. Every frame is a pure function of time: render-motion.js calls
+     load(name, cues, D) then seek(t) for each frame, so cues land on the narration's word timings. Open
+     motion-round2.html#shortfall to preview a scene in real time with its default cues. Palette follows the logo. */
+  :root { --paper:#f6f5f2; --ink:#1b1f24; --muted:#646a73; --line:#e4e1db; --accent:#245b8a;
+          --navy:#0e1d31; --card:#16263b; --card2:#1d3049; --dline:#2b405c; --cream:#f3efe6; --dmuted:#a9b0b8;
+          --orange:#fe704e; --ok:#2c7350; --okd:#8fd0a8; --bad:#b03a2e; --badd:#f2937f; --amber:#9a5b0c; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+  body { font-family: "Public Sans", "Segoe UI", system-ui, sans-serif; }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .dark { background: var(--navy); color: var(--cream); }
+  .light { background: var(--paper); color: var(--ink); }
+  .abs { position: absolute; }
+  .glow { position: absolute; inset: -200px; pointer-events: none; }
+  .ic { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14em; flex: none; }
+  .kicker { position: absolute; left: 160px; top: 110px; display: flex; align-items: center; gap: 16px; font-size: 30px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .dark .kicker { color: var(--orange); }
+  .src { position: absolute; left: 160px; right: 160px; bottom: 196px; font-size: 22px; color: var(--muted); }
+  .dark .src { color: #7f8b98; }
+  h1 { font-size: 84px; line-height: 1.08; font-weight: 700; letter-spacing: -.02em; }
+  .num { font-variant-numeric: tabular-nums; font-weight: 800; letter-spacing: -.03em; }
+  .pill { display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px; border-radius: 999px; font-size: 24px; font-weight: 600; }
+  .card { background: var(--card); border: 2px solid var(--dline); border-radius: 26px; }
+  .light .card { background: #fff; border-color: var(--line); }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="icons.js"></script>
+<script>
+// ---- Tiny timeline kit ---------------------------------------------------------------------------------------------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const E = {
+  out: (x) => 1 - Math.pow(1 - x, 3),
+  io: (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
+  back: (x) => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); },
+  lin: (x) => x,
+};
+const P = (t, t0, d = 0.6, e = E.out) => e(clamp((t - t0) / d));
+const fmt = (n) => Math.round(n).toLocaleString("en-US");
+const icon = (n, size = "1em", sw = 1.7) => `<svg class="ic" style="width:${size};height:${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
+const LOGO = (size) => `<svg viewBox="134 110 1020 1020" style="width:${size}px;height:${size}px"><rect x="134" y="110" width="1020" height="1020" rx="230" fill="#0e1d31" stroke="#2b405c" stroke-width="14"/><g fill="#fe704e"><path class="k1" d="M505 302H401Q326 302 326 377V863Q326 938 401 938H505Z"/><path class="k2" d="M740 352H930L614 647L548 581Q530 550 548 518L705 366Q720 352 740 352Z"/><path class="k3" d="M537 614L684 757L826 625Q860 595 895 627L962 691L712 925Q684 950 655 925L555 825Q537 805 537 780Z"/></g></svg>`;
+let stage, S = {}, cur, C, D, O;
+const q = (s) => stage.querySelector(s), qa = (s) => [...stage.querySelectorAll(s)];
+// Entrance helpers: p in 0..1.
+function rise(el, p, dy = 36) { if (!el) return; el.style.opacity = clamp(p); el.style.transform = `translateY(${(1 - p) * dy}px)`; }
+function pop(el, p) { if (!el) return; el.style.opacity = clamp(p * 2.5); el.style.transform = `scale(${lerp(0.5, 1, E.back(clamp(p)))})`; }
+function fade(el, p) { if (el) el.style.opacity = clamp(p); }
+const html = (strings, ...v) => strings.reduce((s, x, i) => s + x + (i < v.length ? v[i] : ""), "");
+function def(name, theme, D, cues, markup, seek) { S[name] = { theme, D, cues, markup, seek }; }
+
+// Slow drifting light on dark scenes, so stills never look frozen.
+function ambient(t) {
+  const g = q(".glow");
+  if (!g) return;
+  const x1 = 30 + 8 * Math.sin(t * 0.21), y1 = 30 + 6 * Math.cos(t * 0.17), x2 = 75 + 7 * Math.cos(t * 0.13), y2 = 70 + 8 * Math.sin(t * 0.19);
+  g.style.background = `radial-gradient(900px 700px at ${x1}% ${y1}%, rgba(36,91,138,.28), transparent 70%), radial-gradient(800px 600px at ${x2}% ${y2}%, rgba(254,112,78,.10), transparent 70%)`;
+}
+window.load = (name, cues = {}, dur, opts = {}) => {
+  cur = S[name]; C = { ...cur.cues, ...cues }; D = dur || cur.D; O = opts;
+  stage.className = cur.theme;
+  stage.innerHTML = (cur.theme === "dark" ? `<div class="glow"></div>` : "") + cur.markup(O);
+  window.seek(0);
+  return document.fonts.ready.then(() => Promise.all(qa("img").map((i) => (i.complete ? 0 : new Promise((r) => (i.onload = i.onerror = r)))))).then(() => true);
+};
+window.seek = (t) => { cur.seek(t, C, D, O); ambient(t); };
+window.SCENES = S;
+
+// ---- 1 · Problem: what happened ------------------------------------------------------------------------------------
+def("mataian", "dark", 9.4, { burst: 4.2, toll: 8.1 }, () => html`
+  <svg class="abs waves" style="left:0;bottom:0;width:1920px;height:420px" viewBox="0 0 1920 420" preserveAspectRatio="none">
+    <path class="w3" fill="#1d3049"/><path class="w2" fill="#1a2c44" /><path class="w1" fill="#152538"/></svg>
+  <div class="kicker">${icon("map-pin", "34px", 2)} Guangfu, Hualien, Taiwan · 23 September 2025</div>
+  <h1 class="abs" style="left:160px;top:200px"><div class="l1">The Mataian barrier lake</div><div class="l2">burst into Guangfu.</div></h1>
+  <div class="abs toll num" style="left:160px;top:440px;font-size:220px;line-height:1"><span class="n">0</span><span style="font-size:110px;font-weight:700;letter-spacing:-.01em"> dead</span></div>
+  <div class="abs sub" style="left:166px;top:690px;font-size:46px;color:#c9d0d8">5 missing · 157 injured</div>
+  <div class="src" style="color:#8f9aa6">Official count, 8 October 2025</div>`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.15)); rise(q(".l1"), P(t, 0.45, 0.8)); rise(q(".l2"), P(t, Math.min(c.burst - 0.3, 1.4), 0.8));
+    const lvl = lerp(430, 150, P(t, c.burst - 0.6, 3.2, E.io));
+    [[".w1", 0, 26, 0.9, 0.006], [".w2", 40, 30, -0.7, 0.0045], [".w3", 80, 22, 0.5, 0.0035]].forEach(([s, off, A, sp, k]) => {
+      let d = `M0 420 `;
+      for (let x = 0; x <= 1920; x += 48) d += `L${x} ${(lvl + off + A * Math.sin(x * k + t * sp * 2) + 0.4 * A * Math.sin(x * k * 2.3 - t * sp)).toFixed(1)} `;
+      q(s).setAttribute("d", d + "L1920 420 Z");
+    });
+    const p = P(t, c.toll - 0.15, 0.5); rise(q(".toll"), p, 50);
+    q(".toll .n").textContent = Math.round(19 * P(t, c.toll - 0.1, 0.9));
+    rise(q(".sub"), P(t, c.toll + 0.7)); fade(q(".src"), P(t, 0.8));
+  });
+
+// ---- 1 · Problem: still waiting ------------------------------------------------------------------------------------
+def("shortfall", "dark", 26.4, { fridge: 4.0, washer: 8.5, money: 11.6, unspent: 14.7, voice: 18.0, reached: 20.6, before: 23.5 }, () => html`
+  <div class="main">
+    <div class="kicker">${icon("file-text", "34px", 2)} Six months later · the Guangfu township's own list</div>
+    <div class="abs" style="left:160px;top:200px;display:grid;grid-template-columns:repeat(3,500px);gap:50px">
+      ${[["refrigerator", "households still without a fridge", 319], ["washing-machine", "without a washing machine", 111], ["cooking-pot", "without a gas stove", 41]].map(([ic, l, n], i) => `
+      <div class="card c${i}" style="padding:36px 40px;height:330px">
+        <div style="color:var(--orange)">${icon(ic, "84px", 1.5)}</div>
+        <div class="num n" data-n="${n}" style="font-size:120px;line-height:1.05;margin-top:14px">0</div>
+        <div style="font-size:30px;color:var(--dmuted);margin-top:6px">${l}</div></div>`).join("")}
+    </div>
+    <div class="abs budget" style="left:160px;top:590px;width:1600px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:32px;color:var(--dmuted)"><span>Set aside to buy them</span><b class="num" style="font-size:44px;color:var(--cream)">NT$7.86M</b></div>
+      <div style="position:relative;height:30px;margin-top:16px">
+        <div class="track" style="position:absolute;inset:0;border:3px dashed #3a5374;border-radius:15px;transform-origin:left"></div>
+        <div class="stub" style="position:absolute;left:0;top:-10px;width:10px;height:50px;border-radius:5px;background:var(--orange)"></div>
+      </div>
+      <div class="spent" style="margin-top:18px;font-size:34px">Spent by 31 August 2026: <b class="num" style="color:var(--orange);font-size:48px">NT$0</b></div>
+    </div>
+  </div>
+  <div class="abs bubble" style="left:460px;top:300px;width:1000px;display:flex;flex-direction:column;align-items:center">
+    <div style="position:relative;background:var(--cream);color:var(--navy);border-radius:40px;padding:50px 70px;font-size:76px;font-weight:700;letter-spacing:-.01em;white-space:nowrap">
+      <span class="q"></span><span class="caret" style="display:inline-block;width:6px;height:70px;background:var(--orange);vertical-align:-8px;margin-left:6px"></span>
+      <div style="position:absolute;left:120px;bottom:-34px;width:0;height:0;border-left:30px solid transparent;border-right:30px solid transparent;border-top:36px solid var(--cream)"></div>
+    </div>
+    <div class="bsub" style="margin-top:70px;font-size:36px;color:var(--dmuted);display:flex;gap:14px;align-items:center">${icon("eye-off", "40px")} No public place to say it</div>
+  </div>
+  <div class="abs before" style="left:0;right:0;top:340px;text-align:center">
+    <div style="color:var(--orange)">${icon("map-pin", "90px", 1.6)}</div>
+    <div style="font-size:96px;font-weight:700;letter-spacing:-.02em;margin-top:20px">Hualien, 2024</div>
+  </div>
+  <div class="src">Hualien County donation committee, written review dated 30 March 2026 (township needs roster); county donation-account statement as of 31 August 2026</div>`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.1));
+    const at = [c.fridge - 0.3, c.washer - 0.3, c.washer + 0.5];
+    qa(".card").forEach((el, i) => {
+      rise(el, P(t, at[i], 0.6), 60);
+      const n = q(`.c${i} .n`); n.textContent = fmt(n.dataset.n * P(t, at[i] + 0.2, i === 0 ? 1.6 : 1.1));
+    });
+    const b = P(t, c.money - 0.3, 0.6); rise(q(".budget"), b);
+    q(".track").style.transform = `scaleX(${P(t, c.money - 0.1, 1.2, E.io)})`;
+    rise(q(".spent"), P(t, c.unspent - 0.2));
+    const blink = t > c.unspent ? 0.45 + 0.55 * Math.abs(Math.cos((t - c.unspent) * 2.4)) : 1;
+    q(".stub").style.opacity = P(t, c.unspent - 0.2) * blink;
+    // The household's voice, with nowhere to go.
+    const v = P(t, c.voice - 0.2, 0.7), gone = P(t, c.before - 0.3, 0.5);
+    q(".main").style.opacity = lerp(1, 0.14, v) * (1 - gone);
+    q(".main").style.filter = `blur(${4 * v}px)`;
+    pop(q(".bubble"), P(t, c.voice, 0.7, E.lin)); q(".bubble").style.opacity = Math.min(q(".bubble").style.opacity, 1 - gone);
+    const msg = "“It has not reached us.”";
+    q(".q").textContent = msg.slice(0, Math.round(msg.length * P(t, c.reached - 0.3, 1.3, E.lin)));
+    q(".caret").style.opacity = t < c.reached + 1.2 ? (Math.floor(t * 2.5) % 2 ? 0.15 : 1) : 0;
+    rise(q(".bsub"), P(t, c.voice + 0.8));
+    q(".bsub").style.opacity = Math.min(q(".bsub").style.opacity, 1 - gone);
+    rise(q(".before"), P(t, c.before, 0.8), 50);
+    fade(q(".src"), P(t, 0.6) * (1 - gone));
+  });
+
+// ---- 1 · Problem: Hualien 2024 -------------------------------------------------------------------------------------
+def("hualien", "light", 31.3, { donated: 3.6, eleven: 8.1, sixteen: 10.0, committee: 13.5, after: 17.3, national: 21.7, twice: 24.1, people: 25.6, they: 28.0 }, () => html`
+  <div class="kicker">${icon("map-pin", "34px", 2)} Hualien, Taiwan · 2024 earthquake</div>
+  <div class="abs pa" style="left:160px;top:210px;width:1600px">
+    <div class="r1" style="display:flex;align-items:center;gap:40px;height:150px">
+      <div style="color:var(--accent)">${icon("hand-coins", "92px", 1.5)}</div>
+      <div class="num" style="font-size:110px;color:var(--accent);min-width:520px">NT$<span class="n">0</span>M</div>
+      <div style="font-size:46px">donated to the county</div></div>
+    <div class="r2" style="display:flex;align-items:center;gap:40px;height:170px">
+      <div style="color:var(--accent)">${icon("hourglass", "92px", 1.5)}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:44px"><span>paid out after 11 months</span><b class="num pct" style="font-size:100px;color:var(--accent)">0%</b></div>
+        <div style="height:30px;border-radius:15px;background:#e9e5de;margin-top:12px;overflow:hidden"><div class="fill" style="height:100%;width:0;background:var(--accent);border-radius:15px"></div></div>
+      </div></div>
+    <div class="r3" style="display:flex;align-items:center;gap:40px;height:150px">
+      <div style="color:var(--accent)">${icon("users", "92px", 1.5)}</div>
+      <div class="num zero" style="font-size:110px;color:var(--bad);min-width:110px">0</div>
+      <div style="font-size:46px">affected households on its committee</div></div>
+  </div>
+  <div class="abs pb" style="left:160px;top:200px;width:1600px">
+    ${[["Hualien County", "NT$792M", 792, "b1"], ["National relief foundation", "NT$1.65bn", 1650, "b2"]].map(([l, v, n, k]) => `
+    <div style="display:flex;align-items:center;gap:30px;height:120px">
+      <div style="width:470px;font-size:40px;font-weight:600">${l}</div>
+      <div class="${k}" style="height:76px;border-radius:14px;background:${k === "b1" ? "#b9c7d6" : "var(--accent)"};width:${(n / 1650) * 900}px;transform-origin:left;display:flex;align-items:center;justify-content:flex-end;padding-right:22px">
+        <span class="num" style="font-size:38px;color:${k === "b1" ? "var(--ink)" : "#fff"};font-weight:700">${v}</span></div>
+      ${k === "b2" ? `<div class="x2 num" style="font-size:72px;color:var(--orange)">≈ 2×</div>` : ""}
+    </div>`).join("")}
+    <h1 style="margin-top:70px;font-size:80px"><div class="t1">People did not stop giving.</div><div class="t2">They stopped <span style="position:relative;color:var(--accent)">trusting<span class="ul" style="position:absolute;left:0;right:0;bottom:-4px;height:8px;border-radius:4px;background:var(--orange);transform-origin:left"></span></span> where it goes.</div></h1>
+  </div>
+  <div class="src s1">Hualien County committee report, appendix B (27 February 2025) · PTS, 31 March 2025</div>
+  <div class="src s2">NT$1.65bn to the national relief foundation, NT$792M to the county; attributed to disputes over 2018 donations · LTN, 30 March 2025</div>`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.1));
+    const out = P(t, c.after - 0.4, 0.6);
+    q(".pa").style.opacity = 1 - out; q(".pa").style.transform = `translateY(${-40 * out}px)`;
+    rise(q(".r1"), P(t, c.donated - 0.6)); q(".r1 .n").textContent = fmt(792 * P(t, c.donated - 0.3, 1.4));
+    rise(q(".r2"), P(t, c.eleven - 0.4));
+    const f = P(t, c.sixteen - 0.2, 1.1); q(".fill").style.width = `${16 * f}%`; q(".pct").textContent = `${Math.round(16 * f)}%`;
+    rise(q(".r3"), P(t, c.committee - 0.4)); pop(q(".zero"), P(t, c.committee + 0.9, 0.6, E.lin));
+    fade(q(".s1"), P(t, 0.6) * (1 - out)); fade(q(".s2"), P(t, c.after));
+    q(".pb").style.opacity = P(t, c.after - 0.1, 0.5);
+    q(".b1").style.transform = `scaleX(${P(t, c.after, 0.9, E.io)})`;
+    q(".b2").style.transform = `scaleX(${P(t, c.national - 0.3, 1.3, E.io)})`;
+    q(".b1 span").style.opacity = P(t, c.after + 0.6); q(".b2 span").style.opacity = P(t, c.national + 0.8);
+    pop(q(".x2"), P(t, c.twice - 0.2, 0.6, E.lin));
+    rise(q(".t1"), P(t, c.people - 0.3)); rise(q(".t2"), P(t, c.they - 0.3));
+    q(".ul").style.transform = `scaleX(${P(t, c.they + 0.6, 0.7)})`;
+  });
+
+// ---- 1 · Problem: the foundation's own disclosures -----------------------------------------------------------------
+def("foundation", "light", 42.4, { publishes: 2.2, paid: 6.3, prealloc: 9.8, ministry: 13.2, eleven: 16.0, eight: 18.0, notone: 18.6, normal: 25.0, after: 32.2, households: 36.4 }, () => html`
+  <div class="kicker">${icon("file-check", "34px", 2)} Guangfu 2025 · the foundation's own disclosures <span class="pill" style="background:#e3efe8;color:var(--ok);letter-spacing:0;text-transform:none;margin-left:10px">● Real data</span></div>
+  <div class="abs pa" style="left:160px;top:200px;width:1600px;height:620px">
+    <svg class="abs" style="left:0;top:20px" width="500" height="500" viewBox="0 0 500 500">
+      <circle cx="250" cy="250" r="200" fill="none" stroke="#e9e5de" stroke-width="44"/>
+      <circle class="arc" cx="250" cy="250" r="200" fill="none" stroke="#c4955a" stroke-width="44" stroke-dasharray="1256.6" stroke-dashoffset="1256.6" transform="rotate(-90 250 250)"/>
+    </svg>
+    <div class="abs" style="left:0;top:20px;width:500px;height:500px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+      <div style="font-size:30px;color:var(--muted)">paid out</div>
+      <div class="num paid" style="font-size:70px">NT$0.00bn</div>
+      <div class="tr" style="font-size:26px;color:var(--muted);text-align:center;line-height:1.3">48 transfers,<br>each published</div>
+    </div>
+    <div class="abs pre" style="left:0;top:545px;width:500px;text-align:center;font-size:30px"><b class="num" style="color:#9a6b2f;font-size:40px">98.8%</b> pre-allocated, to be reconciled later</div>
+    <div class="abs mins" style="left:640px;top:70px;width:960px">
+      <div style="font-size:30px;color:var(--muted);margin-bottom:26px">Who received it</div>
+      ${[["Ministry of Health and Welfare", 93.3, "#9a5b0c"], ["NGOs (9 organisations)", 4.6, "var(--accent)"], ["Other recipients", 2.1, "var(--accent)"]].map(([l, v, col], i) => `
+      <div class="m m${i}" style="margin-bottom:34px">
+        <div style="display:flex;justify-content:space-between;font-size:${i ? 34 : 42}px;font-weight:${i ? 500 : 700}"><span>${l}</span><span class="num v" data-v="${v}">0%</span></div>
+        <div style="height:${i ? 18 : 30}px;border-radius:15px;background:#e9e5de;margin-top:12px;overflow:hidden"><div class="f" style="height:100%;width:0;background:${col}"></div></div></div>`).join("")}
+    </div>
+  </div>
+  <div class="abs pbx" style="left:160px;top:230px;width:1600px;height:600px">
+    <div style="font-size:42px;font-weight:600">Eleven monthly disclosures: how much was reported as reconciled</div>
+    <div class="abs" style="left:0;right:0;top:300px;height:4px;background:var(--line)"></div>
+    ${Array.from({ length: 11 }, (_, i) => `<div class="abs doc d${i}" style="left:${i * 152 + 6}px;top:226px;width:140px;text-align:center">
+      <div class="dot" style="margin:0 auto;width:136px;height:136px;border-radius:24px;background:#fff;border:3px solid var(--line);display:grid;place-items:center;color:var(--accent)">${icon("file-text", "64px", 1.5)}</div>
+      <div class="num" style="font-size:28px;margin-top:12px;color:var(--muted)">#${i + 1}</div></div>`).join("")}
+    <div class="abs br" style="left:${152 + 6}px;width:${152 * 8 + 140}px;top:150px;height:50px;border:4px solid var(--orange);border-bottom:none;border-radius:14px 14px 0 0"></div>
+    <div class="abs brl" style="left:${152 + 6}px;width:${152 * 8 + 140}px;top:84px;text-align:center;font-size:36px;font-weight:700;color:#c2502f">8 months: no pre-allocated dollar newly reported as reconciled</div>
+    <div class="abs last" style="left:980px;top:470px;width:620px;text-align:right;font-size:32px"><b class="num" style="font-size:44px">#11: NT$49.1M</b><br><span style="color:var(--muted)">reconciled, 4.1% of what was paid out, a year after</span></div>
+  </div>
+  <div class="abs pc" style="left:160px;top:200px;width:1600px">
+    <div style="font-size:60px;font-weight:700;letter-spacing:-.01em">One hand visible, then nothing</div>
+    <div class="norm" style="font-size:34px;color:var(--muted);margin-top:10px">Pre-allocating is normal in an emergency. The gap is what comes next.</div>
+    <div style="position:relative;height:420px;margin-top:40px">
+      ${[["users", "Donors"], ["heart-handshake", "Foundation"], ["landmark", "48 recipients"], ["house", "Households"]].map(([ic, l], i) => `
+      <div class="abs node n${i}" style="left:${i * 500}px;top:40px;width:200px;text-align:center">
+        <div style="width:150px;height:150px;margin:0 auto;border-radius:50%;background:#fff;border:3px solid var(--line);display:grid;place-items:center;color:var(--ink)">${icon(ic, "70px", 1.5)}</div>
+        <div style="font-size:32px;font-weight:600;margin-top:16px">${l}</div></div>`).join("")}
+      ${[["Visible", "var(--ok)", "#e3efe8", "solid"], ["Visible", "var(--ok)", "#e3efe8", "solid"], ["Totals only", "var(--amber)", "#f6ead8", "dashed"]].map(([l, col, bg, st], i) => `
+      <div class="abs link k${i}" style="left:${i * 500 + 185}px;top:113px;width:330px;height:0;border-top:6px ${st} ${col};transform-origin:left"></div>
+      <div class="abs lab l${i}" style="left:${i * 500 + 250}px;top:160px;width:200px;text-align:center"><span class="pill" style="background:${bg};color:${col}">${l}</span></div>`).join("")}
+      <div class="abs nopub" style="left:1400px;top:270px;width:400px;display:flex;justify-content:center"><span class="pill" style="background:#f7e3e0;color:var(--bad);text-align:center;border-radius:20px;padding:12px 24px">“It reached me”:<br>no public record</span></div>
+    </div>
+  </div>
+  <div class="src">Disaster Relief Foundation, 11th public disclosure for the 0923 barrier-lake appeal (as of 25 September 2026), transcribed by hand; institution-level data only</div>`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.1)); fade(q(".src"), P(t, 0.6));
+    const outA = P(t, c.eleven - 0.5, 0.5), outB = P(t, c.normal - 0.5, 0.5);
+    q(".pa").style.opacity = P(t, 0.3) * (1 - outA);
+    q(".arc").style.strokeDashoffset = 1256.6 * (1 - 0.988 * P(t, c.prealloc - 0.2, 1.4, E.io));
+    q(".paid").textContent = `NT$${(1.21 * P(t, c.paid - 0.6, 1.4)).toFixed(2)}bn`;
+    rise(q(".tr"), P(t, c.publishes)); rise(q(".pre"), P(t, c.prealloc + 0.6));
+    qa(".m").forEach((m, i) => {
+      const p = P(t, c.ministry - 0.4 + i * 0.35, 1.2, E.io); rise(m, P(t, c.ministry - 0.6 + i * 0.35));
+      const v = Number(m.querySelector(".v").dataset.v);
+      m.querySelector(".f").style.width = `${v * p}%`; m.querySelector(".v").textContent = `${(v * p).toFixed(1)}%`;
+    });
+    q(".pbx").style.opacity = P(t, c.eleven - 0.3, 0.4) * (1 - outB);
+    qa(".doc").forEach((d, i) => {
+      pop(d, P(t, c.eleven - 0.2 + i * 0.13, 0.5, E.lin));
+      const dim = i >= 1 && i <= 9 ? P(t, c.notone, 0.6) : 0;
+      d.querySelector(".dot").style.opacity = 1 - 0.55 * dim;
+      if (i === 10) { const on = P(t, c.notone + 2.0, 0.5); d.querySelector(".dot").style.borderColor = on > 0.5 ? "var(--orange)" : "var(--line)"; d.querySelector(".dot").style.color = on > 0.5 ? "var(--orange)" : "var(--accent)"; }
+    });
+    const br = P(t, c.eight - 0.2, 0.6); q(".br").style.opacity = br; q(".br").style.clipPath = `inset(0 ${100 - 100 * br}% 0 0)`;
+    rise(q(".brl"), P(t, c.eight + 0.2)); rise(q(".last"), P(t, c.notone + 2.1));
+    q(".pc").style.opacity = P(t, c.normal - 0.2, 0.5);
+    rise(q(".norm"), P(t, c.normal));
+    const nodeAt = [c.normal + 0.6, c.normal + 1.0, c.normal + 1.4, c.after + 1.4];
+    qa(".node").forEach((n, i) => pop(n, P(t, nodeAt[i], 0.6, E.lin)));
+    const linkAt = [c.normal + 1.8, c.normal + 3.0, c.after - 0.2];
+    qa(".link").forEach((l, i) => { l.style.transform = `scaleX(${P(t, linkAt[i], 0.8, E.io)})`; });
+    qa(".lab").forEach((l, i) => pop(l, P(t, linkAt[i] + 0.6, 0.5, E.lin)));
+    pop(q(".nopub"), P(t, c.households, 0.6, E.lin));
+  });
+
+// ---- 2 · Solution: every hand on the record ------------------------------------------------------------------------
+const HANDS = [["heart-handshake", "Relief foundation"], ["landmark", "Ministry"], ["building-2", "County or NGO"], ["house", "Household"]];
+def("chain", "dark", 9.4, { voice: 2.7, hand: 4.3 }, () => html`
+  <div class="kicker">${icon("link", "34px", 2)} Every hand signs for what it receives</div>
+  <div class="abs" style="left:160px;top:250px;width:1600px;height:260px">
+    <div class="abs" style="left:100px;right:100px;top:90px;height:4px;background:var(--dline)"></div>
+    <div class="abs prog" style="left:100px;width:1400px;top:89px;height:6px;background:var(--orange);transform-origin:left"></div>
+    ${HANDS.map(([ic, l], i) => `<div class="abs node n${i}" style="left:${i * 466.7}px;top:0;width:200px;text-align:center">
+      <div class="disc" style="width:184px;height:184px;margin:0 auto;border-radius:50%;background:var(--card2);border:3px solid var(--dline);display:grid;place-items:center">${icon(ic, "84px", 1.4)}</div>
+      <div style="font-size:32px;font-weight:600;margin-top:16px;white-space:nowrap">${l}</div>
+      <div class="stamp" style="margin-top:12px"><span class="pill" style="background:rgba(143,208,168,.14);color:var(--okd)">${icon("circle-check", "26px", 2)} ${i === 3 ? "received" : i ? "acknowledged" : "sent"}</span></div></div>`).join("")}
+    <div class="abs token" style="left:0;top:40px;width:100px;height:100px;border-radius:50%;background:var(--orange);color:var(--navy);display:grid;place-items:center;box-shadow:0 0 50px rgba(254,112,78,.6)">${icon("coins", "54px", 2)}</div>
+    <div class="abs voice" style="left:1340px;top:-110px;width:320px;display:flex;justify-content:center"><span class="pill" style="background:var(--cream);color:var(--navy);font-size:28px">${icon("megaphone", "30px", 2)} a public voice</span></div>
+  </div>
+  <div class="abs ledger card" style="left:360px;top:630px;width:1200px;padding:24px 34px">
+    <div style="font-size:24px;letter-spacing:.08em;text-transform:uppercase;color:var(--dmuted);display:flex;gap:12px;align-items:center">${icon("file-check", "28px", 2)} Public record</div>
+    ${["Foundation → Ministry", "Ministry → County or NGO", "County → household's own line"].map((l, i) => `<div class="row r${i}" style="display:flex;justify-content:space-between;font-size:30px;margin-top:12px"><span class="mono">${l}</span><span style="color:var(--okd)">${i === 2 ? "received ✓" : "acknowledged ✓"}</span></div>`).join("")}
+  </div>`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.1));
+    qa(".node").forEach((n, i) => pop(n, P(t, 0.3 + i * 0.25, 0.6, E.lin)));
+    const seg = Math.max(0.6, (D - 1.2 - c.hand) / 3);
+    const arrive = [c.hand, c.hand + seg, c.hand + 2 * seg, c.hand + 3 * seg];
+    let x = 0;
+    for (let i = 0; i < 3; i++) x += P(t, arrive[i], seg * 0.85, E.io);
+    q(".token").style.transform = `translateX(${50 + x * 466.7}px)`;
+    q(".token").style.opacity = P(t, c.hand - 0.6, 0.4);
+    q(".prog").style.transform = `scaleX(${x / 3})`;
+    qa(".stamp").forEach((s, i) => pop(s, P(t, i ? arrive[i] - seg * 0.1 : c.hand - 0.2, 0.5, E.lin)));
+    qa(".disc").forEach((d, i) => { const lit = i === 3 ? P(t, c.voice - 0.2, 0.5) : P(t, (i ? arrive[i] - seg * 0.1 : c.hand - 0.2), 0.4); d.style.borderColor = lit > 0.5 ? "var(--orange)" : "var(--dline)"; d.style.color = lit > 0.5 ? "var(--orange)" : "var(--cream)"; });
+    const v = P(t, c.voice - 0.1, 0.6, E.lin); pop(q(".voice"), v);
+    q(".n3 .disc").style.boxShadow = `0 0 ${60 * P(t, c.voice, 0.5)}px rgba(254,112,78,${0.25 + 0.2 * Math.sin(t * 3)})`;
+    rise(q(".ledger"), P(t, c.hand - 0.5));
+    qa(".row").forEach((r, i) => rise(r, P(t, arrive[i + 1] - seg * 0.1, 0.4), 16));
+  });
+
+// ---- 2 · Solution: the random sample -------------------------------------------------------------------------------
+const GHOSTS = [9, 31, 52], SAMPLE = [3, 17, 31, 40, 58, 66];
+def("audit", "dark", 12.7, { fake: 2.7, confirm: 4.2, sample: 7.0, visit: 10.1 }, () => html`
+  <div class="kicker">${icon("boxes", "34px", 2)} One payment batch</div>
+  <div class="abs" style="left:250px;top:190px;width:1420px;display:grid;grid-template-columns:repeat(14,1fr);row-gap:22px">
+    ${Array.from({ length: 70 }, (_, i) => `<div class="cell c${i}" style="position:relative;width:86px;height:86px;border-radius:20px;display:grid;place-items:center;color:var(--cream)">
+      <div class="h" style="grid-area:1/1">${icon("house", "50px", 1.5)}</div><div class="g" style="grid-area:1/1;opacity:0;color:#7f8b98">${icon("ghost", "50px", 1.5)}</div>
+      <div class="ok" style="position:absolute;right:-2px;bottom:-2px;color:var(--okd);opacity:0">${icon("circle-check", "28px", 2.2)}</div>
+      <div class="ring" style="position:absolute;inset:-6px;border-radius:24px;border:5px solid var(--orange);opacity:0"></div></div>`).join("")}
+  </div>
+  <div class="abs caught" style="left:0;top:0"><span class="pill" style="background:#f2937f;color:var(--navy);font-size:26px;white-space:nowrap">${icon("search", "28px", 2.2)} visit: nobody there</span></div>
+  <div class="abs caps" style="left:160px;right:160px;top:770px;height:60px;text-align:center;font-size:40px;font-weight:600">
+    ${["Each line: an address and an amount", "Officials could register fake households…", "…and confirm them. Every line looks fine.", "The contract draws a random sample from every batch", "An independent visit catches it"].map((s, i) => `<div class="abs cap k${i}" style="left:0;right:0">${s}</div>`).join("")}
+  </div>`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.1));
+    const cells = qa(".cell");
+    cells.forEach((el, i) => {
+      pop(el, P(t, 0.1 + (i % 14) * 0.03 + Math.floor(i / 14) * 0.06, 0.5, E.lin));
+      const ghost = GHOSTS.includes(i), gp = ghost ? P(t, c.fake - 0.2 + GHOSTS.indexOf(i) * 0.2, 0.5) : 0;
+      el.querySelector(".h").style.opacity = 1 - gp; el.querySelector(".g").style.opacity = gp;
+      el.style.border = ghost && gp > 0.5 ? "3px dashed #4b6283" : "3px solid transparent";
+      pop(el.querySelector(".ok"), P(t, c.confirm - 0.2 + ((i * 7) % 70) / 70 * 0.9, 0.4, E.lin));
+      const si = SAMPLE.indexOf(i);
+      const r = el.querySelector(".ring");
+      if (si >= 0) {
+        const sp = P(t, c.sample + si * 0.28, 0.4, E.lin);
+        r.style.opacity = clamp(sp * 2); r.style.transform = `scale(${lerp(1.6, 1, E.out(sp))})`;
+        const done = P(t, c.visit + (i === 31 ? 0 : 0.5), 0.4);
+        r.style.borderColor = done > 0.5 ? (i === 31 ? "var(--badd)" : "var(--okd)") : "var(--orange)";
+        if (i === 31) el.style.background = `rgba(242,147,127,${0.25 * done})`;
+      } else el.style.opacity = Math.min(el.style.opacity, 1 - 0.55 * P(t, c.sample, 0.6));
+    });
+    const g = q(".c31").getBoundingClientRect();
+    const cp = q(".caught"); cp.style.left = `${g.left + g.width / 2 - 150}px`; cp.style.top = `${g.top - 70}px`;
+    pop(cp, P(t, c.visit + 0.1, 0.6, E.lin));
+    const caps = [0.2, c.fake - 0.3, c.confirm - 0.1, c.sample - 0.2, c.visit - 0.2, 1e9];
+    qa(".cap").forEach((el, i) => { const a = P(t, caps[i], 0.4), b = P(t, caps[i + 1], 0.3); el.style.opacity = a * (1 - b); el.style.transform = `translateY(${(1 - a) * 20 - b * 20}px)`; el.style.color = i === 4 ? "var(--badd)" : ""; });
+  });
+
+// ---- 3 · Technical architecture ------------------------------------------------------------------------------------
+const CONTRACTS = ["KeptFactory", "ReliefFund", "CustodyLedger", "EligibilityRegistry", "VoiceModule", "AidPrograms"];
+def("arch", "dark", 37.6, { phone: 2.9, identity: 5.6, receipt: 7.3, zk: 8.6, signed: 11.5, relayer: 13.4, gas: 14.9, server: 19.4, realuse: 22.7, base: 26.1, six: 27.3, charter: 30.5, ownkey: 33.3, twosig: 34.2 }, () => html`
+  <div class="kicker">${icon("boxes", "34px", 2)} Architecture: what runs where</div>
+  <div class="abs col c0" style="left:110px;top:190px;width:560px;height:650px">
+    <div class="hd" style="font-size:26px;letter-spacing:.08em;text-transform:uppercase;color:var(--dmuted);text-align:center"><b style="color:var(--orange)">1</b> · On the phone</div>
+    <div style="position:relative;margin:18px auto 0;width:400px;height:590px;border-radius:56px;border:4px solid #4b6283;background:var(--card);padding:56px 26px 26px">
+      <div style="position:absolute;top:20px;left:50%;margin-left:-40px;width:80px;height:10px;border-radius:5px;background:#4b6283"></div>
+      ${[["fingerprint", "Anonymous identity", "Semaphore"], ["key-round", "Receipt key", "never leaves the phone"], ["shield-check", "Zero-knowledge proof", ""], ["file-check", "Answer signed", "EIP-712 · “not received”"]].map(([ic, l, s], i) => `
+      <div class="pi p${i}" style="display:flex;gap:16px;align-items:center;background:var(--card2);border-radius:18px;padding:16px 18px;margin-bottom:14px">
+        <div style="color:var(--orange)">${icon(ic, "44px", 1.6)}</div>
+        <div style="flex:1"><div style="font-size:26px;font-weight:600">${l}</div><div class="s" style="font-size:20px;color:var(--dmuted)">${s}</div>
+        ${i === 2 ? `<div style="height:10px;border-radius:5px;background:#2b405c;margin-top:8px;overflow:hidden"><div class="zk" style="height:100%;width:0;background:var(--orange)"></div></div>` : ""}</div></div>`).join("")}
+    </div>
+  </div>
+  <div class="abs col c1" style="left:790px;top:190px;width:440px;height:650px">
+    <div class="hd" style="font-size:26px;letter-spacing:.08em;text-transform:uppercase;color:var(--dmuted);text-align:center"><b style="color:var(--orange)">2</b> · Relayer</div>
+    <div style="margin-top:18px">
+    ${[["server", "/api/tx", "allow-listed calls only"], ["fuel", "Pays the gas", "households need no crypto"], ["key-round", "Institution keys", "<span class='inst'></span>"]].map(([ic, l, s], i) => `
+      <div class="card ri r${i}" style="display:flex;gap:18px;align-items:center;padding:24px 24px;margin-bottom:22px">
+        <div style="color:var(--orange)">${icon(ic, "50px", 1.6)}</div>
+        <div><div style="font-size:30px;font-weight:600" class="${i === 0 ? "mono" : ""}">${l}</div><div style="font-size:22px;color:var(--dmuted);margin-top:4px">${s}</div></div></div>`).join("")}
+    </div>
+    <div class="demo" style="text-align:center"><span class="pill" style="background:rgba(242,147,127,.16);color:var(--badd)">demo only: my server signs for the institutions</span></div>
+  </div>
+  <div class="abs col c2" style="left:1350px;top:190px;width:460px;height:650px">
+    <div class="hd" style="font-size:26px;letter-spacing:.08em;text-transform:uppercase;color:var(--dmuted);text-align:center"><b style="color:var(--orange)">3</b> · Base Sepolia</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px">
+      ${CONTRACTS.map((n, i) => `<div class="ch k${i}" style="background:var(--card2);border:2px solid var(--dline);border-radius:14px;padding:16px 12px;font-size:22px;font-weight:600;text-align:center;white-space:nowrap">${n}</div>`).join("")}
+    </div>
+    <div style="margin-top:26px">
+      ${[["The fund's charter", 1], ["Answers only from the household's own key", 2], ["Two signatures for every household", 3]].map(([l], i) => `<div class="rule u${i}" style="display:flex;gap:14px;align-items:center;font-size:26px;margin-bottom:16px"><span style="color:var(--okd)">${icon("circle-check", "34px", 2)}</span>${l}</div>`).join("")}
+    </div>
+    <div class="ev" style="margin-top:6px"><span class="pill mono" style="background:var(--card2);color:var(--okd);font-size:22px">event LineConfirmed(received: false)</span></div>
+  </div>
+  <svg class="abs" style="left:0;top:0;width:1920px;height:1080px;pointer-events:none" viewBox="0 0 1920 1080">
+    <path class="a0" d="M672 520 L782 520" stroke="#4b6283" stroke-width="4" stroke-dasharray="10 8" fill="none"/>
+    <path class="a1" d="M1234 520 L1342 520" stroke="#4b6283" stroke-width="4" stroke-dasharray="10 8" fill="none"/>
+  </svg>
+  <div class="abs pk" style="width:40px;height:40px;border-radius:50%;background:var(--orange);box-shadow:0 0 40px 10px rgba(254,112,78,.55)"></div>`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.1));
+    const intro = [0.3, 0.6, 0.9];
+    // One column in focus at a time, the others dimmed; each switch blends over half a second.
+    const sw = [[-1e9, -1], [c.phone, 0], [c.relayer - 0.3, 1], [c.base - 0.3, 2], [c.twosig + 1.5, -1]];
+    const k = sw.filter((s) => s[0] <= t).length - 1, m = k ? P(t, sw[k][0], 0.5) : 1;
+    const wOf = (f, i) => (f < 0 || f === i ? 1 : 0.28);
+    qa(".col").forEach((el, i) => {
+      rise(el, P(t, intro[i]), 40);
+      el.style.opacity = P(t, intro[i]) * lerp(wOf(k ? sw[k - 1][1] : -1, i), wOf(sw[k][1], i), m);
+    });
+    const pAt = [c.identity - 0.3, c.receipt - 0.3, c.zk - 0.3, c.signed - 0.3];
+    qa(".pi").forEach((el, i) => rise(el, P(t, pAt[i]), 20));
+    q(".zk").style.width = `${100 * P(t, c.zk, 2.0, E.io)}%`;
+    q(".p2 .s").textContent = t < c.zk + 2.0 ? "generating on the phone…" : "made on the phone ✓";
+    const rAt = [c.relayer - 0.2, c.gas - 0.2, c.server - 0.3];
+    qa(".ri").forEach((el, i) => rise(el, P(t, rAt[i]), 20));
+    q(".inst").textContent = t < c.realuse ? "the demo server signs as the foundation, ministry, county, NGO" : "real use: each institution signs with its own wallet";
+    q(".inst").style.color = t < c.realuse ? "" : "var(--okd)";
+    rise(q(".demo"), P(t, c.server + 0.4)); q(".demo").style.opacity *= 1 - 0.6 * P(t, c.realuse, 0.4);
+    qa(".ch").forEach((el, i) => pop(el, P(t, c.six - 0.4 + i * 0.22, 0.5, E.lin)));
+    const ruleAt = [c.charter - 0.3, c.ownkey - 0.3, c.twosig - 0.2], hit = [1, 2, 3];
+    qa(".rule").forEach((el, i) => rise(el, P(t, ruleAt[i]), 16));
+    qa(".ch").forEach((el, i) => { const on = ruleAt.some((a, k) => hit[k] === i && t >= a && t < (ruleAt[k + 1] ?? a + 2.2)); el.style.borderColor = on ? "var(--orange)" : "var(--dline)"; el.style.color = on ? "var(--orange)" : ""; });
+    rise(q(".ev"), P(t, c.relayer + 1.9));
+    // A household's signed answer travels phone → relayer → chain.
+    const a = P(t, c.signed + 0.2, 1.1, E.io), b = P(t, c.relayer + 0.5, 1.1, E.io);
+    const x = b > 0 ? lerp(1234, 1342, b) : lerp(672, 782, a);
+    const pk = q(".pk"); pk.style.left = `${x - 20}px`; pk.style.top = "500px";
+    pk.style.opacity = (a > 0 && a < 1) || (b > 0 && b < 1) ? 1 : 0;
+    q(".a0").setAttribute("stroke", a > 0 && t < c.relayer + 2 ? "#fe704e" : "#4b6283");
+    q(".a1").setAttribute("stroke", b > 0 && t < c.relayer + 3 ? "#fe704e" : "#4b6283");
+    q(".a0").setAttribute("stroke-dashoffset", -t * 30); q(".a1").setAttribute("stroke-dashoffset", -t * 30);
+  });
+
+// ---- 4 · Prototype: the answer on the block explorer ---------------------------------------------------------------
+def("explorer", "light", 10.9, { zoom: 3.8, received: 8.9 }, (o) => html`
+  <div class="abs wrap" style="left:0;top:0;width:1920px;height:1080px;transform-origin:0 0">
+    <img src="${o.img || "round2/blockscout-logs.png"}" style="width:1920px;height:1080px;display:block">
+    <div class="abs hl" style="left:636px;top:708px;width:480px;height:52px;border:4px solid var(--orange);border-radius:12px;box-shadow:0 0 0 6px rgba(254,112,78,.18)"></div>
+    <div class="abs tag" style="left:1126px;top:718px"><span class="pill" style="background:var(--orange);color:#fff;font-size:17px;padding:5px 12px">not received</span></div>
+  </div>`,
+  (t, c) => {
+    const p = P(t, c.zoom, 2.2, E.io), s = lerp(1 + 0.03 * clamp(t / c.zoom), 1.96, p);
+    const cx = lerp(960, 840, p), cy = lerp(540, 660, p);
+    q(".wrap").style.transform = `translate(${960 - cx * s}px, ${540 - cy * s}px) scale(${s})`;
+    pop(q(".hl"), P(t, c.received - 0.3, 0.6, E.lin)); rise(q(".tag"), P(t, c.received + 0.3), 10);
+  });
+
+def("try", "dark", 11.5, { verified: 1.2, github: 3.6, url: 7.0, wallet: 10.2 }, (o) => html`
+  <div class="kicker">${icon("badge-check", "34px", 2)} Check it yourself</div>
+  <div class="abs" style="left:160px;top:230px;width:640px">
+    ${[["link", "Real transactions", "Base Sepolia testnet"], ["badge-check", "Source-verified", "exact match · Sourcify and Blockscout"], ["circle-check", "Tests on GitHub", "74 unit · 4 invariants · 17 end-to-end"]].map(([ic, l, s], i) => `
+    <div class="card b b${i}" style="display:flex;gap:22px;align-items:center;padding:26px 30px;margin-bottom:24px">
+      <div style="color:var(--orange)">${icon(ic, "56px", 1.6)}</div>
+      <div><div style="font-size:36px;font-weight:700">${l}</div><div style="font-size:24px;color:var(--dmuted);margin-top:4px">${s}</div></div></div>`).join("")}
+  </div>
+  <div class="abs br" style="left:880px;top:220px;width:880px;border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 30px 80px rgba(0,0,0,.45)">
+    <div style="height:64px;background:#e9e7e2;display:flex;align-items:center;gap:12px;padding:0 20px">
+      <span style="width:16px;height:16px;border-radius:50%;background:#f2937f"></span><span style="width:16px;height:16px;border-radius:50%;background:#e8c46a"></span><span style="width:16px;height:16px;border-radius:50%;background:#8fd0a8"></span>
+      <div style="flex:1;margin-left:16px;height:40px;border-radius:20px;background:#fff;display:flex;align-items:center;padding:0 20px;font-size:24px;color:#1b1f24"><span class="url mono"></span><span class="caret" style="width:3px;height:26px;background:#1b1f24;margin-left:2px"></span></div>
+    </div>
+    <img src="${o.shot || ""}" style="width:880px;height:495px;display:block;object-fit:cover;object-position:top">
+  </div>
+  <div class="abs nw" style="left:880px;top:810px;width:880px;text-align:center"><span class="pill" style="background:var(--cream);color:var(--navy);font-size:30px">${icon("circle-check", "32px", 2)} No wallet needed</span></div>`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.05));
+    const at = [0.1, c.verified - 0.3, c.github - 0.3]; qa(".b").forEach((el, i) => rise(el, P(t, at[i]), 24));
+    rise(q(".br"), P(t, c.url - 1.6, 0.7), 60);
+    const u = "kept-lilac.vercel.app"; q(".url").textContent = u.slice(0, Math.round(u.length * P(t, c.url - 0.4, 1.6, E.lin)));
+    q(".caret").style.opacity = Math.floor(t * 2.5) % 2 ? 0.1 : 1;
+    q(".br img").style.opacity = P(t, c.url + 1.4, 0.5);
+    pop(q(".nw"), P(t, c.wallet - 0.3, 0.6, E.lin));
+  });
+
+// ---- 5 · Innovation & impact ---------------------------------------------------------------------------------------
+def("why", "light", 25.1, { because: 1.9, ledger: 4.8, several: 6.1, shared: 9.8, names: 11.5, law: 16.7, costs: 19.9, fifty: 21.0, fifteen: 22.4 }, () => html`
+  <div class="kicker">${icon("scale", "34px", 2)} Why a blockchain, and is it practical?</div>
+  ${[["boxes", "No custodian keeps the only ledger"], ["lock", "No personal data on-chain"], ["scale", "Phase 1 works under today's law"], ["coins", `≈ US$<span class="lo">0</span><span class="hw">–<span class="hi">0</span></span> per disaster`]].map(([ic, l], i) => `
+  <div class="abs row w${i}" style="left:160px;top:${210 + i * 152}px;width:1600px;height:130px;display:flex;align-items:center;gap:40px">
+    <div style="width:110px;height:110px;border-radius:50%;background:#e7eef5;color:var(--accent);display:grid;place-items:center">${icon(ic, "56px", 1.6)}</div>
+    <div style="font-size:46px;font-weight:600;flex:1;white-space:nowrap">${l}${i === 3 ? `<div style="font-size:28px;font-weight:400;color:var(--muted);margin-top:4px">gas measured on-chain, prices assumed</div>` : ""}</div>
+    <div class="viz" style="width:560px;height:130px;position:relative;flex:none"></div>
+  </div>`).join("")}`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.1));
+    const at = [Math.min(c.because, c.ledger - 0.6), c.names - 0.4, c.law - 0.4, c.costs - 0.3];
+    qa(".row").forEach((el, i) => rise(el, P(t, at[i]), 30));
+    // Row 1: several custodians write to one shared record.
+    const v0 = q(".w0 .viz");
+    if (!v0.innerHTML) v0.innerHTML = `<svg width="560" height="130" viewBox="0 0 560 130">${[20, 65, 110].map((y, i) => `<line class="ln" x1="60" y1="${y}" x2="430" y2="65" stroke="#245b8a" stroke-width="3" stroke-dasharray="380" stroke-dashoffset="380"/><g transform="translate(20 ${y - 20})" color="#245b8a"><circle cx="20" cy="20" r="24" fill="#fff" stroke="#245b8a" stroke-width="2"/><svg x="6" y="6" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">${ICONS["landmark"]}</svg></g>`).join("")}<g class="book" transform="translate(410 25)"><rect width="110" height="80" rx="14" fill="#245b8a"/><svg x="31" y="16" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8">${ICONS["file-check"]}</svg></g></svg>`;
+    qa(".w0 .ln").forEach((l, i) => l.setAttribute("stroke-dashoffset", 380 * (1 - P(t, c.several + i * 0.3, 0.9))));
+    q(".w0 .book").style.opacity = P(t, c.shared - 0.4);
+    // Row 2: personal data stays off-chain.
+    const v1 = q(".w1 .viz");
+    if (!v1.innerHTML) v1.innerHTML = `<div style="display:flex;gap:14px;height:130px;align-items:center">${["Name", "ID", "Bank account"].map((s) => `<span class="chip" style="position:relative;font-size:28px;padding:10px 20px;border-radius:12px;background:#f7e3e0;color:var(--bad);white-space:nowrap">${s}<span class="x" style="position:absolute;left:10px;right:10px;top:50%;height:4px;background:var(--bad);transform-origin:left"></span></span>`).join("")}</div>`;
+    qa(".w1 .chip").forEach((ch, i) => pop(ch, P(t, c.names + i * 0.3, 0.5, E.lin)));
+    qa(".w1 .x").forEach((x, i) => (x.style.transform = `scaleX(${P(t, c.names + 1.4 + i * 0.25, 0.4)})`));
+    // Row 4: the cost range counts up.
+    q(".lo").textContent = fmt(150 * P(t, c.fifty - 0.3, 0.8)); q(".hi").textContent = fmt(1500 * P(t, c.fifteen - 0.3, 1.0));
+    q(".hw").style.opacity = P(t, c.fifteen - 0.4, 0.3);
+  });
+
+def("sim", "light", 23.0, { letting: 2.2, simulation: 6.4, fake: 9.4, chance: 13.6, audit: 14.8, seventy: 16.9, honest: 22.3 }, () => html`
+  <div class="kicker">${icon("dice-5", "34px", 2)} What is new · I tested my own first design</div>
+  <h1 class="abs h" style="left:160px;top:180px">Letting people report is not enough.</h1>
+  <div class="abs card bx b0" style="left:160px;top:340px;width:760px;height:470px;padding:40px 44px">
+    <div style="font-size:30px;color:var(--muted)">Officials register fake households.<br>Households' own answers catch it:</div>
+    <div style="display:flex;align-items:center;gap:36px;margin-top:50px">
+      <div class="dice" style="color:var(--muted)">${icon("dice-5", "150px", 1.3)}</div>
+      <div class="num chance" style="font-size:100px;color:var(--muted)">≈ chance</div></div>
+    <div class="why" style="font-size:28px;color:var(--muted);margin-top:40px">The same officials can confirm the fakes.</div>
+  </div>
+  <div class="abs card bx b1" style="left:1000px;top:340px;width:760px;height:470px;padding:40px 44px;border:3px solid var(--accent)">
+    <div style="font-size:30px;color:var(--muted)">Add a random audit of every batch.<br>Runs in which it catches them:</div>
+    <div style="position:absolute;left:80px;right:80px;bottom:44px;height:260px;display:flex;align-items:flex-end;justify-content:space-around">
+      ${[[28, "1% fake"], [73, "2% fake"], [100, "5% fake"]].map(([v, l], i) => `<div class="bar bar${i}" style="width:150px;text-align:center">
+        <div class="num v" style="font-size:44px;color:var(--accent)">${v}%</div>
+        <div class="f" style="height:${v * 1.6}px;background:var(--accent);border-radius:12px 12px 4px 4px;transform-origin:bottom;margin-top:8px"></div>
+        <div style="font-size:26px;color:var(--muted);margin-top:12px">${l}</div></div>`).join("")}
+    </div>
+  </div>
+  <div class="src">Simulation at Guangfu's scale: 4,039 households, 4,000 runs per case; <span class="hon">assumes an honest auditor</span>. web/scripts/fraud-sim.mjs</div>`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.1)); rise(q(".h"), P(t, c.letting - 0.4));
+    rise(q(".b0"), P(t, c.simulation - 0.3), 40); rise(q(".b1"), P(t, c.audit - 0.8), 40); fade(q(".src"), P(t, c.simulation));
+    const roll = t < c.chance ? Math.sin(t * 9) * 14 : 0; q(".dice").style.transform = `rotate(${roll}deg)`;
+    fade(q(".chance"), P(t, c.chance - 0.3)); fade(q(".why"), P(t, c.chance + 0.6));
+    qa(".bar").forEach((b, i) => {
+      const p = P(t, c.audit + i * 0.35, 0.9, E.io); b.querySelector(".f").style.transform = `scaleY(${p})`; b.querySelector(".v").style.opacity = P(t, c.audit + i * 0.35 + 0.6);
+      const hi = i === 1 ? 1 : 1 - 0.55 * P(t, c.seventy - 0.2, 0.4); b.style.opacity = hi;
+      b.querySelector(".f").style.background = i === 1 && t > c.seventy - 0.2 ? "var(--orange)" : "var(--accent)";
+      b.querySelector(".v").style.color = i === 1 && t > c.seventy - 0.2 ? "var(--orange)" : "var(--accent)";
+    });
+    const h = P(t, c.honest - 0.5, 0.4); q(".hon").style.color = h > 0.5 ? "var(--ink)" : ""; q(".hon").style.fontWeight = h > 0.5 ? 700 : 400; q(".hon").style.background = `rgba(254,112,78,${0.18 * h})`;
+  });
+
+def("backtest", "light", 21.2, { backtest: 4.6, records: 6.8, alert: 8.9, six: 9.7, news: 11.6, next: 15.3 }, () => html`
+  <div class="kicker">${icon("hourglass", "34px", 2)} Backtest on real records · Hualien County, 2024 earthquake donations</div>
+  <h1 class="abs h" style="left:160px;top:180px">The data was there. Nobody was watching.</h1>
+  <div class="abs perm" style="left:0;right:0;top:330px;text-align:center">
+    <div style="color:var(--accent)">${icon("file-text", "110px", 1.4)}</div>
+    <div style="font-size:64px;font-weight:700;margin-top:24px;letter-spacing:-.01em">Step one needs no one's permission</div>
+    <div style="font-size:38px;color:var(--muted);margin-top:14px">Replay the alert on the county's own public records</div></div>
+  <div class="abs tlw" style="left:260px;top:330px;width:1400px;height:330px">
+    <div class="abs bar" style="left:0;right:0;top:150px;height:10px;border-radius:5px;background:var(--line);transform-origin:left"></div>
+    <div class="abs span" style="left:0;right:0;top:142px;height:26px;border-radius:13px;background:var(--orange);opacity:.35;transform-origin:left"></div>
+    <div class="abs days num" style="left:400px;width:600px;top:40px;text-align:center;font-size:70px;color:var(--orange)"><span class="n">0</span> days</div>
+    ${[[0, "bell-ring", "16 Jul 2024", "Kept's alert fires on the county's<br>own public records", "var(--orange)"], [1400, "file-text", "17 Jan 2025", "First news story on<br>the unspent balance", "var(--ink)"]].map(([x, ic, d, l, col], i) => `
+    <div class="abs pt p${i}" style="left:${x - 50}px;top:105px;width:100px;height:100px;border-radius:50%;background:${col};color:#fff;display:grid;place-items:center">${icon(ic, "50px", 1.8)}</div>
+    <div class="abs lab l${i}" style="left:${x - 280}px;top:230px;width:560px;text-align:center;font-size:30px;line-height:1.3"><b style="display:block;font-size:38px">${d}</b>${l}</div>`).join("")}
+  </div>
+  <div class="abs nx card" style="left:560px;top:700px;width:800px;padding:20px 30px;display:flex;align-items:center;gap:20px;font-size:38px;font-weight:600;border-color:var(--accent)"><span style="color:var(--accent)">${icon("flag", "44px", 1.8)}</span>Next: a pilot with one custodian and one village</div>
+  <div class="src" style="bottom:200px">Rule: donations held over 90 days without being paid out. An alert is a reason to look, not a finding of wrongdoing.</div>`,
+  (t, c) => {
+    rise(q(".kicker"), P(t, 0.1)); rise(q(".h"), P(t, c.news + 0.6));
+    const perm = P(t, c.backtest - 0.6, 0.5);
+    rise(q(".perm"), P(t, 0.2, 0.7)); q(".perm").style.opacity *= 1 - perm; q(".tlw").style.opacity = perm;
+    q(".bar").style.transform = `scaleX(${P(t, c.backtest - 0.3, 1.4, E.io)})`; fade(q(".src"), P(t, c.backtest));
+    pop(q(".p0"), P(t, c.alert - 0.3, 0.6, E.lin)); rise(q(".l0"), P(t, c.alert));
+    const sp = P(t, c.six - 0.3, c.news - c.six + 0.3, E.io);
+    q(".span").style.transform = `scaleX(${sp})`; q(".span").style.opacity = 0.35 * (sp > 0 ? 1 : 0);
+    fade(q(".days"), P(t, c.six - 0.3, 0.3)); q(".days .n").textContent = Math.round(185 * sp);
+    pop(q(".p1"), P(t, c.news - 0.2, 0.6, E.lin)); rise(q(".l1"), P(t, c.news + 0.1));
+    const ring = t > c.alert ? 0.5 + 0.5 * Math.sin((t - c.alert) * 4) : 0; q(".p0").style.boxShadow = `0 0 0 ${10 + 8 * ring}px rgba(254,112,78,${0.18 * (1 - P(t, c.news, 0.5))})`;
+    rise(q(".nx"), P(t, c.next - 0.4), 40);
+  });
+
+// ---- Close ---------------------------------------------------------------------------------------------------------
+def("close", "dark", 12.1, { money: 2.2, leftout: 3.9, kept: 5.9, record: 7.3 }, () => html`
+  <div class="abs pr" style="left:0;right:0;top:0;height:1080px">
+    ${[["coins", "How the money is used"], ["users", "That no one is left out"]].map(([ic, l], i) => `
+    <div class="abs card pm m${i}" style="left:${i ? 980 : 300}px;top:400px;width:640px;white-space:nowrap;padding:36px 40px;display:flex;align-items:center;gap:26px">
+      <div style="color:var(--orange)">${icon(ic, "64px", 1.6)}</div><div><div style="font-size:24px;letter-spacing:.08em;text-transform:uppercase;color:var(--dmuted)">Promise ${i + 1}</div><div style="font-size:40px;font-weight:700;margin-top:4px">${l}</div></div></div>`).join("")}
+  </div>
+  <div class="abs logo" style="left:850px;top:300px">${LOGO(220)}</div>
+  <div class="abs tt" style="left:0;right:0;top:560px;text-align:center"><div style="font-size:96px;font-weight:700;letter-spacing:-.02em">Kept</div>
+    <div class="tag" style="font-size:44px;color:#d7dde3;margin-top:10px">Disaster-relief promises you can verify</div>
+    <div class="links mono" style="font-size:30px;color:#8f9aa6;margin-top:30px;line-height:1.6">kept-lilac.vercel.app · github.com/ZhenYan1214/kept</div></div>`,
+  (t, c) => {
+    const k = P(t, c.kept - 0.4, 0.9, E.io);
+    qa(".pm").forEach((m, i) => {
+      const p = P(t, i ? c.leftout - 0.5 : 0.2, 0.6);
+      m.style.opacity = p;
+      m.style.transform = `translateY(${(1 - p) * 40 - k * 320}px) scale(${lerp(1, 0.75, k)})`;
+      m.style.transformOrigin = i ? "left center" : "right center";
+    });
+    const l1 = P(t, c.kept - 0.2, 0.6), l2 = P(t, c.kept + 0.1, 0.6), l3 = P(t, c.kept + 0.4, 0.7, E.lin);
+    q(".logo").style.opacity = P(t, c.kept - 0.3, 0.3);
+    q(".k1").style.transform = `translateY(${(1 - E.out(l1)) * -160}px)`; q(".k1").style.opacity = l1;
+    q(".k2").style.transform = `translate(${(1 - E.out(l2)) * 200}px, ${(1 - E.out(l2)) * -200}px)`; q(".k2").style.opacity = l2;
+    q(".k3").style.transformOrigin = "560px 800px"; q(".k3").style.transform = `scale(${lerp(0.2, 1, E.back(l3))})`; q(".k3").style.opacity = clamp(l3 * 3);
+    q(".logo svg").style.transform = `scale(${1 + 0.04 * Math.sin(clamp(t - c.kept - 1.2, 0, 99) * 1.6) * P(t, c.kept + 1.2, 0.6)})`;
+    rise(q(".tt > div"), P(t, c.kept + 0.6)); rise(q(".tag"), P(t, c.record - 0.2)); rise(q(".links"), P(t, c.record + 1.2));
+  });
+
+// ---- Preview: motion-round2.html#name plays a scene in real time with its default cues ----------------------------
+stage = document.getElementById("stage");
+const name = decodeURIComponent(location.hash.slice(1));
+if (name && S[name]) {
+  window.load(name).then(() => { const t0 = performance.now(); const tick = () => { const t = ((performance.now() - t0) / 1000) % (D + 1); window.seek(t); requestAnimationFrame(tick); }; tick(); });
+}
+</script>
+</body>
+</html>
