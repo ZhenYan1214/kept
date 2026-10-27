@@ -83,7 +83,7 @@ window.SCENES = S;
 const PHOTO = (src, cls = "") => `<img class="photo ${cls}" src="photos/${src}">`;
 const SHADE = (cls = "shade") => `<div class="abs ${cls}" style="inset:0;background:linear-gradient(90deg,rgba(14,29,49,.95) 0%,rgba(14,29,49,.82) 45%,rgba(14,29,49,.55) 100%),linear-gradient(0deg,rgba(14,29,49,.92) 0%,transparent 40%)"></div>`;
 const CREDIT = (s) => `<div class="credit">${s}</div>`;
-const FORESTRY = "Forestry and Nature Conservation Agency, MOA (open government data)";
+const FORESTRY = "Forestry and Nature Conservation Agency, MOA (government open information)";
 
 def("mataian", "dark", 9.4, { burst: 4.2, toll: 8.1 }, () => html`
   ${PHOTO("mataian-lake.jpg", "before")}${PHOTO("guangfu-after.jpg", "after")}${SHADE()}
@@ -108,18 +108,18 @@ def("mataian", "dark", 9.4, { burst: 4.2, toll: 8.1 }, () => html`
 def("shortfall", "dark", 26.4, { fridge: 4.0, washer: 8.5, money: 11.6, unspent: 14.7, voice: 18.0, reached: 20.6, before: 23.5 }, () => html`
   ${PHOTO("guangfu-after.jpg", "bg")}<div class="abs" style="inset:0;background:rgba(14,29,49,.72)"></div>${SHADE()}${PHOTO("hualien-uranus.jpg", "next")}
   <div class="cr1">${CREDIT(`Guangfu, 26 September 2025: ${FORESTRY}`)}</div>
-  <div class="cr2">${CREDIT("Hualien City, April 2024. Photo: Shufu Liu, Office of the President (CC BY 2.0)")}</div>
+  <div class="cr2">${CREDIT("Hualien City, 3 April 2024. Photo: Shufu Liu, Office of the President (CC BY 2.0)")}</div>
   <div class="main">
-    <div class="kicker">${icon("file-text", "34px", 2)} Six months later · the Guangfu township's own list</div>
+    <div class="kicker">${icon("file-text", "34px", 2)} Six months later · the Guangfu township's needs list</div>
     <div class="abs" style="left:160px;top:200px;display:grid;grid-template-columns:repeat(3,500px);gap:50px">
-      ${[["refrigerator", "households still<br>without a fridge", 319], ["washing-machine", "without a<br>washing machine", 111], ["cooking-pot", "without a<br>gas stove", 41]].map(([ic, l, n], i) => `
+      ${[["refrigerator", "households still<br>waiting for a fridge", 319], ["washing-machine", "still waiting for a<br>washing machine", 111], ["cooking-pot", "still waiting for a<br>gas stove", 41]].map(([ic, l, n], i) => `
       <div class="card c${i}" style="padding:36px 40px;min-height:340px">
         <div style="color:var(--orange)">${icon(ic, "84px", 1.5)}</div>
         <div class="num n" data-n="${n}" style="font-size:120px;line-height:1.05;margin-top:14px">0</div>
         <div style="font-size:28px;color:var(--dmuted);margin-top:6px;line-height:1.3">${l}</div></div>`).join("")}
     </div>
     <div class="abs budget" style="left:160px;top:590px;width:1600px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:32px;color:var(--dmuted)"><span>Set aside to buy them</span><b class="num" style="font-size:44px;color:var(--cream)">NT$7.86M</b></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:32px;color:var(--dmuted)"><span>Set aside for these large appliances</span><b class="num" style="font-size:44px;color:var(--cream)">NT$7.86M</b></div>
       <div style="position:relative;height:30px;margin-top:16px">
         <div class="track" style="position:absolute;inset:0;border:3px dashed #3a5374;border-radius:15px;transform-origin:left"></div>
         <div class="stub" style="position:absolute;left:0;top:-10px;width:10px;height:50px;border-radius:5px;background:var(--orange)"></div>
@@ -170,7 +170,7 @@ def("shortfall", "dark", 26.4, { fridge: 4.0, washer: 8.5, money: 11.6, unspent:
 // ---- 1 · Problem: Hualien 2024 -------------------------------------------------------------------------------------
 def("hualien", "dark", 31.3, { donated: 3.6, eleven: 8.1, sixteen: 10.0, committee: 13.5, after: 17.3, national: 21.7, twice: 24.1, people: 25.6, they: 28.0 }, () => html`
   ${PHOTO("hualien-uranus.jpg")}${SHADE()}
-  ${CREDIT("Hualien City, April 2024. Photo: Shufu Liu, Office of the President (CC BY 2.0)")}
+  ${CREDIT("Hualien City, 3 April 2024. Photo: Shufu Liu, Office of the President (CC BY 2.0)")}
   <div class="kicker">${icon("map-pin", "34px", 2)} Hualien, Taiwan · 2024 earthquake</div>
   <div class="abs pa" style="left:160px;top:210px;width:1600px">
     <div class="r1" style="display:flex;align-items:center;gap:40px;height:150px">
@@ -198,7 +198,7 @@ def("hualien", "dark", 31.3, { donated: 3.6, eleven: 8.1, sixteen: 10.0, committ
     </div>`).join("")}
     <h1 style="margin-top:70px;font-size:80px"><div class="t1">People did not stop giving.</div><div class="t2">They stopped <span style="position:relative;color:var(--accent)">trusting<span class="ul" style="position:absolute;left:0;right:0;bottom:-4px;height:8px;border-radius:4px;background:var(--orange);transform-origin:left"></span></span> where it goes.</div></h1>
   </div>
-  <div class="src s1">Hualien County committee report, appendix B (27 February 2025) · PTS, 31 March 2025</div>
+  <div class="src s1">Hualien County donation committee, papers for its 24 March 2025 meeting, appendix B (figures to 27 February 2025) · PTS, 31 March 2025</div>
   <div class="src s2">NT$1.65bn to the national relief foundation, NT$792M to the county; attributed to disputes over 2018 donations · LTN, 30 March 2025</div>`,
   (t, c) => {
     rise(q(".kicker"), P(t, 0.1));
@@ -237,7 +237,7 @@ def("foundation", "dark", 42.4, { publishes: 2.2, paid: 6.3, prealloc: 9.8, mini
     <div class="abs pre" style="left:0;top:545px;width:500px;text-align:center;font-size:30px"><b class="num" style="color:#e0b07a;font-size:40px">98.8%</b> pre-allocated, to be reconciled later</div>
     <div class="abs mins" style="left:640px;top:70px;width:960px">
       <div style="font-size:30px;color:var(--muted);margin-bottom:26px">Who received it</div>
-      ${[["Ministry of Health and Welfare", 93.3, "#c4955a"], ["NGOs (9 organisations)", 4.6, "var(--accent)"], ["Other recipients", 2.1, "var(--accent)"]].map(([l, v, col], i) => `
+      ${[["Ministry of Health and Welfare", 93.3, "#c4955a"], ["NGOs (9 organisations)", 4.6, "var(--accent)"], ["Other recipients", 2.0, "var(--accent)"]].map(([l, v, col], i) => `
       <div class="m m${i}" style="margin-bottom:34px">
         <div style="display:flex;justify-content:space-between;font-size:${i ? 34 : 42}px;font-weight:${i ? 500 : 700}"><span>${l}</span><span class="num v" data-v="${v}">0%</span></div>
         <div style="height:${i ? 18 : 30}px;border-radius:15px;background:var(--track);margin-top:12px;overflow:hidden"><div class="f" style="height:100%;width:0;background:${col}"></div></div></div>`).join("")}
@@ -254,10 +254,10 @@ def("foundation", "dark", 42.4, { publishes: 2.2, paid: 6.3, prealloc: 9.8, mini
     <div class="abs last" style="left:980px;top:470px;width:620px;text-align:right;font-size:32px"><b class="num" style="font-size:44px">#11: NT$49.1M</b><br><span style="color:var(--muted)">reconciled, 4.1% of what was paid out, a year after</span></div>
   </div>
   <div class="abs pc" style="left:160px;top:200px;width:1600px">
-    <div style="font-size:60px;font-weight:700;letter-spacing:-.01em">One hand visible, then nothing</div>
+    <div style="font-size:60px;font-weight:700;letter-spacing:-.01em">One hand visible, then only totals</div>
     <div class="norm" style="font-size:34px;color:var(--muted);margin-top:10px">Pre-allocating is normal in an emergency. The gap is what comes next.</div>
     <div style="position:relative;height:420px;margin-top:40px">
-      ${[["users", "Donors"], ["heart-handshake", "Foundation"], ["landmark", "48 recipients"], ["house", "Households"]].map(([ic, l], i) => `
+      ${[["users", "Donors"], ["heart-handshake", "Foundation"], ["landmark", "14 recipients"], ["house", "Households"]].map(([ic, l], i) => `
       <div class="abs node n${i}" style="left:${i * 500}px;top:40px;width:200px;text-align:center">
         <div style="width:150px;height:150px;margin:0 auto;border-radius:50%;background:var(--surface);border:3px solid var(--line);display:grid;place-items:center;color:var(--ink)">${icon(ic, "70px", 1.5)}</div>
         <div style="font-size:32px;font-weight:600;margin-top:16px">${l}</div></div>`).join("")}
@@ -267,7 +267,7 @@ def("foundation", "dark", 42.4, { publishes: 2.2, paid: 6.3, prealloc: 9.8, mini
       <div class="abs nopub" style="left:1400px;top:270px;width:400px;display:flex;justify-content:center"><span class="pill" style="background:var(--badbg);color:var(--badfg);text-align:center;border-radius:20px;padding:12px 24px">“It reached me”:<br>no public record</span></div>
     </div>
   </div>
-  <div class="src">Disaster Relief Foundation, 11th public disclosure for the 0923 barrier-lake appeal (as of 25 September 2026), transcribed by hand; institution-level data only</div>`,
+  <div class="src">Disaster Relief Foundation, public disclosures #1–#11, 0923 barrier-lake appeal (Nov 2025 to Sep 2026), transcribed by hand</div>`,
   (t, c) => {
     rise(q(".kicker"), P(t, 0.1)); fade(q(".src"), P(t, 0.6));
     const outA = P(t, c.eleven - 0.5, 0.5), outB = P(t, c.normal - 0.5, 0.5);
@@ -336,7 +336,7 @@ def("chain", "dark", 9.4, { voice: 2.7, hand: 4.3 }, () => html`
   });
 
 // ---- 2 · Solution: the random sample -------------------------------------------------------------------------------
-const GHOSTS = [9, 31, 52], SAMPLE = [3, 17, 31, 40, 58, 66];
+const GHOSTS = [9, 31, 52], SAMPLE = [3, 7, 17, 22, 26, 31, 35, 40, 44, 49, 58, 61, 66, 69]; // auditSampleSize(70) = 14
 def("audit", "dark", 12.7, { fake: 2.7, confirm: 4.2, sample: 7.0, visit: 10.1 }, () => html`
   <div class="kicker">${icon("boxes", "34px", 2)} One payment batch</div>
   <div class="abs" style="left:250px;top:190px;width:1420px;display:grid;grid-template-columns:repeat(14,1fr);row-gap:22px">
@@ -347,7 +347,7 @@ def("audit", "dark", 12.7, { fake: 2.7, confirm: 4.2, sample: 7.0, visit: 10.1 }
   </div>
   <div class="abs caught" style="left:0;top:0"><span class="pill" style="background:#f2937f;color:var(--navy);font-size:26px;white-space:nowrap">${icon("search", "28px", 2.2)} visit: nobody there</span></div>
   <div class="abs caps" style="left:160px;right:160px;top:770px;height:60px;text-align:center;font-size:40px;font-weight:600">
-    ${["Each line: an address and an amount", "Officials could register fake households…", "…and confirm them. Every line looks fine.", "The contract draws a random sample from every batch", "An independent visit catches it"].map((s, i) => `<div class="abs cap k${i}" style="left:0;right:0">${s}</div>`).join("")}
+    ${["Each line: an address and an amount", "Officials could register fake households…", "…and confirm them. Every line looks fine.", "A random sample of every batch: 1 line in 5", "An independent visit catches it"].map((s, i) => `<div class="abs cap k${i}" style="left:0;right:0">${s}</div>`).join("")}
   </div>`,
   (t, c) => {
     rise(q(".kicker"), P(t, 0.1));
@@ -361,7 +361,7 @@ def("audit", "dark", 12.7, { fake: 2.7, confirm: 4.2, sample: 7.0, visit: 10.1 }
       const si = SAMPLE.indexOf(i);
       const r = el.querySelector(".ring");
       if (si >= 0) {
-        const sp = P(t, c.sample + si * 0.28, 0.4, E.lin);
+        const sp = P(t, c.sample + si * 0.17, 0.4, E.lin);
         r.style.opacity = clamp(sp * 2); r.style.transform = `scale(${lerp(1.6, 1, E.out(sp))})`;
         const done = P(t, c.visit + (i === 31 ? 0 : 0.5), 0.4);
         r.style.borderColor = done > 0.5 ? (i === 31 ? "var(--badd)" : "var(--okd)") : "var(--orange)";
@@ -383,7 +383,7 @@ def("arch", "dark", 37.6, { phone: 2.9, identity: 5.6, receipt: 7.3, zk: 8.6, si
     <div class="hd" style="font-size:26px;letter-spacing:.08em;text-transform:uppercase;color:var(--dmuted);text-align:center"><b style="color:var(--orange)">1</b> · On the phone</div>
     <div style="position:relative;margin:18px auto 0;width:400px;height:590px;border-radius:56px;border:4px solid #4b6283;background:var(--card);padding:56px 26px 26px">
       <div style="position:absolute;top:20px;left:50%;margin-left:-40px;width:80px;height:10px;border-radius:5px;background:#4b6283"></div>
-      ${[["fingerprint", "Anonymous identity", "Semaphore"], ["key-round", "Receipt key", "never leaves the phone"], ["shield-check", "Zero-knowledge proof", ""], ["file-check", "Answer signed", "EIP-712 · “not received”"]].map(([ic, l, s], i) => `
+      ${[["fingerprint", "Anonymous identity", "Semaphore"], ["key-round", "Receipt key", "kept by the household; only its address is shared"], ["shield-check", "Zero-knowledge proof", ""], ["file-check", "Answer signed", "EIP-712 · “not received”"]].map(([ic, l, s], i) => `
       <div class="pi p${i}" style="display:flex;gap:16px;align-items:center;background:var(--card2);border-radius:18px;padding:16px 18px;margin-bottom:14px">
         <div style="color:var(--orange)">${icon(ic, "44px", 1.6)}</div>
         <div style="flex:1"><div style="font-size:26px;font-weight:600">${l}</div><div class="s" style="font-size:20px;color:var(--dmuted)">${s}</div>
@@ -406,7 +406,7 @@ def("arch", "dark", 37.6, { phone: 2.9, identity: 5.6, receipt: 7.3, zk: 8.6, si
       ${CONTRACTS.map((n, i) => `<div class="ch k${i}" style="background:var(--card2);border:2px solid var(--dline);border-radius:14px;padding:16px 12px;font-size:22px;font-weight:600;text-align:center;white-space:nowrap">${n}</div>`).join("")}
     </div>
     <div style="margin-top:26px">
-      ${[["The fund's charter", 1], ["Answers only from the household's own key", 2], ["Two signatures for every household", 3]].map(([l], i) => `<div class="rule u${i}" style="display:flex;gap:14px;align-items:center;font-size:26px;margin-bottom:16px"><span style="color:var(--okd)">${icon("circle-check", "34px", 2)}</span>${l}</div>`).join("")}
+      ${[["The fund's charter", 1], ["Answers only from the household's key (or its village social worker)", 2], ["Two signatures for every household", 3]].map(([l], i) => `<div class="rule u${i}" style="display:flex;gap:14px;align-items:center;font-size:26px;margin-bottom:16px"><span style="color:var(--okd)">${icon("circle-check", "34px", 2)}</span>${l}</div>`).join("")}
     </div>
     <div class="ev" style="margin-top:6px"><span class="pill mono" style="background:var(--card2);color:var(--okd);font-size:22px">event LineConfirmed(received: false)</span></div>
   </div>
@@ -432,7 +432,7 @@ def("arch", "dark", 37.6, { phone: 2.9, identity: 5.6, receipt: 7.3, zk: 8.6, si
     q(".p2 .s").textContent = t < c.zk + 2.0 ? "generating on the phone…" : "made on the phone ✓";
     const rAt = [c.relayer - 0.2, c.gas - 0.2, c.server - 0.3];
     qa(".ri").forEach((el, i) => rise(el, P(t, rAt[i]), 20));
-    q(".inst").textContent = t < c.realuse ? "the demo server signs as the foundation, ministry, county, NGO" : "real use: each institution signs with its own wallet";
+    q(".inst").textContent = t < c.realuse ? "the demo server signs for every institution: chiefs, township, committee, custodians, auditor" : "real use: each institution signs with its own wallet";
     q(".inst").style.color = t < c.realuse ? "" : "var(--okd)";
     rise(q(".demo"), P(t, c.server + 0.4)); q(".demo").style.opacity *= 1 - 0.6 * P(t, c.realuse, 0.4);
     qa(".ch").forEach((el, i) => pop(el, P(t, c.six - 0.4 + i * 0.22, 0.5, E.lin)));
@@ -493,10 +493,10 @@ def("try", "dark", 11.5, { verified: 1.2, github: 3.6, url: 7.0, wallet: 10.2 },
 // ---- 5 · Innovation & impact ---------------------------------------------------------------------------------------
 def("why", "dark", 25.1, { because: 1.9, ledger: 4.8, several: 6.1, shared: 9.8, names: 11.5, law: 16.7, costs: 19.9, fifty: 21.0, fifteen: 22.4 }, () => html`
   <div class="kicker">${icon("scale", "34px", 2)} Why a blockchain, and is it practical?</div>
-  ${[["boxes", "No custodian keeps the only ledger"], ["lock", "No personal data on-chain"], ["scale", "Phase 1 works under today's law"], ["coins", `≈ US$<span class="lo">0</span><span class="hw">–<span class="hi">0</span></span> per disaster`]].map(([ic, l], i) => `
+  ${[["boxes", "No custodian keeps the only ledger"], ["lock", "No names, IDs or bank accounts on-chain"], ["scale", "Phase 1 works under today's law"], ["coins", `≈ US$<span class="lo">0</span><span class="hw">–<span class="hi">0</span></span> per disaster`]].map(([ic, l], i) => `
   <div class="abs row w${i}" style="left:160px;top:${210 + i * 152}px;width:1600px;height:130px;display:flex;align-items:center;gap:40px">
     <div style="width:110px;height:110px;border-radius:50%;background:rgba(141,182,224,.14);color:var(--accent);display:grid;place-items:center">${icon(ic, "56px", 1.6)}</div>
-    <div style="font-size:46px;font-weight:600;flex:1;white-space:nowrap">${l}${i === 3 ? `<div style="font-size:28px;font-weight:400;color:var(--muted);margin-top:4px">gas measured on-chain, prices assumed</div>` : ""}</div>
+    <div style="font-size:42px;font-weight:600;flex:1;white-space:nowrap">${l}${i === 3 ? `<div style="font-size:28px;font-weight:400;color:var(--muted);margin-top:4px">gas measured with the real verifier, prices assumed</div>` : ""}</div>
     <div class="viz" style="width:560px;height:130px;position:relative;flex:none"></div>
   </div>`).join("")}`,
   (t, c) => {
@@ -554,7 +554,7 @@ def("sim", "dark", 23.0, { letting: 2.2, simulation: 6.4, fake: 9.4, chance: 13.
 
 def("backtest", "dark", 21.2, { backtest: 4.6, records: 6.8, alert: 8.9, six: 9.7, news: 11.6, next: 15.3 }, () => html`
   ${PHOTO("hualien-uranus.jpg")}<div class="abs" style="inset:0;background:rgba(14,29,49,.82)"></div>${SHADE()}
-  ${CREDIT("Hualien City, April 2024. Photo: Shufu Liu, Office of the President (CC BY 2.0)")}
+  ${CREDIT("Hualien City, 3 April 2024. Photo: Shufu Liu, Office of the President (CC BY 2.0)")}
   <div class="kicker">${icon("hourglass", "34px", 2)} Backtest on real records · Hualien County, 2024 earthquake donations</div>
   <h1 class="abs h" style="left:160px;top:180px">The data was there. Nobody was watching.</h1>
   <div class="abs perm" style="left:0;right:0;top:330px;text-align:center">
@@ -565,12 +565,12 @@ def("backtest", "dark", 21.2, { backtest: 4.6, records: 6.8, alert: 8.9, six: 9.
     <div class="abs bar" style="left:0;right:0;top:150px;height:10px;border-radius:5px;background:var(--line);transform-origin:left"></div>
     <div class="abs span" style="left:0;right:0;top:142px;height:26px;border-radius:13px;background:var(--orange);opacity:.35;transform-origin:left"></div>
     <div class="abs days num" style="left:400px;width:600px;top:40px;text-align:center;font-size:70px;color:var(--orange)"><span class="n">0</span> days</div>
-    ${[[0, "bell-ring", "16 Jul 2024", "Kept's alert fires on the county's<br>own public records", "var(--orange)"], [1400, "file-text", "17 Jan 2025", "First news story on<br>the unspent balance", "var(--cream)"]].map(([x, ic, d, l, col], i) => `
+    ${[[0, "bell-ring", "16 Jul 2024", "Kept's alert fires on the county's<br>own public records", "var(--orange)"], [1400, "file-text", "17 Jan 2025", "First news story I found<br>on the unspent balance", "var(--cream)"]].map(([x, ic, d, l, col], i) => `
     <div class="abs pt p${i}" style="left:${x - 50}px;top:105px;width:100px;height:100px;border-radius:50%;background:${col};color:var(--navy);display:grid;place-items:center">${icon(ic, "50px", 1.8)}</div>
     <div class="abs lab l${i}" style="left:${x - 280}px;top:230px;width:560px;text-align:center;font-size:30px;line-height:1.3"><b style="display:block;font-size:38px">${d}</b>${l}</div>`).join("")}
   </div>
   <div class="abs nx card" style="left:560px;top:700px;width:800px;padding:20px 30px;display:flex;align-items:center;gap:20px;font-size:38px;font-weight:600;border-color:var(--accent)"><span style="color:var(--accent)">${icon("flag", "44px", 1.8)}</span>Next: a pilot with one custodian and one village</div>
-  <div class="src" style="bottom:200px">Rule: donations held over 90 days without being paid out. An alert is a reason to look, not a finding of wrongdoing.</div>`,
+  <div class="src" style="bottom:200px">Rule: donations held over 90 days with no published payment report. An alert is a reason to look, not a finding of wrongdoing.</div>`,
   (t, c) => {
     rise(q(".kicker"), P(t, 0.1)); rise(q(".h"), P(t, c.news + 0.6));
     const perm = P(t, c.backtest - 0.6, 0.5);

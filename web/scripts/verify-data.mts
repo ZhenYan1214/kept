@@ -77,6 +77,11 @@ const lead = (id: string) => {
   return c.publicLearned ? days(c.keptFlags, c.publicLearned) : null;
 };
 check(lead("0403-held") === 199, "2024 earthquake: 199 days earlier", `${lead("0403-held")}`);
+// Public records alone: the last report before the alert (minutes uploaded 2024-05-07) shows NT$352.7M received by
+// 17 Apr 2024 and nothing paid; counting a missing payment report as unpaid, the rule fires 90 days later.
+const publicFlag = "2024-07-16";
+check(days("2024-04-17", publicFlag) === 90, "public-records alert fires 90 days after the 17 Apr 2024 receipts");
+check(days(publicFlag, BACKTEST.find((x) => x.id === "0403-held")!.publicLearned!) === 185, "public records alone: 185 days earlier", `${days(publicFlag, "2025-01-17")}`);
 check(lead("0403-loans") === 104, "approved loans: 104 days earlier", `${lead("0403-loans")}`);
 check(lead("0923-children") === null, "children's fund: never in the news (no public date)");
 check(days("2025-09-26", "2026-08-31") === 339, "children's fund: 339 days unpaid");

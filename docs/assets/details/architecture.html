@@ -81,7 +81,7 @@
       </div>
       <div class="item">
         <h3>Institution keys</h3>
-        <p>In the demo, the server signs as the foundation, ministry, county, NGO and committee.</p>
+        <p>In the demo, the server signs as every institution: village chiefs, township office, committee, foundation, ministry, county, NGO and auditor.</p>
       </div>
       <div class="item">
         <h3>Relayer</h3>
@@ -115,12 +115,12 @@
         <div class="item">
           <h3>VoiceModule</h3>
           <p>Anonymous votes and vetoes, one per household.</p>
-          <div class="uses">uses EligibilityRegistry</div>
+          <div class="uses">uses EligibilityRegistry, Semaphore</div>
         </div>
         <div class="item">
           <h3>AidPrograms</h3>
           <p>NGO programmes; one claim per household per programme.</p>
-          <div class="uses">uses EligibilityRegistry, CustodyLedger</div>
+          <div class="uses">uses EligibilityRegistry, CustodyLedger, Semaphore</div>
         </div>
         <div class="item">
           <h3>Semaphore v4</h3>

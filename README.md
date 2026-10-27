@@ -72,7 +72,7 @@ Kept starts where the public trail stops: **after the first hand**. Each custodi
 - **Eligibility.** A household is verified only after two signatures: the village chief and the township office. Registration rides on the door-to-door visits the government already makes after a disaster. Getting paid never requires anything from the household; confirming is optional. NGOs check eligibility on the spot with a zero-knowledge proof and never receive the roster. `EligibilityRegistry` `AidPrograms`
 - **Voice.** The same credential gives each household one anonymous vote on changes (Semaphore), a public appeal when it is left out, and a weekly anonymous *"still waiting"* report that does not depend on any custodian recording anything. `VoiceModule`
 - **Commitment.** Purposes, caps and the surplus purpose are fixed when money is raised. Cap changes, extensions and uses of the surplus wait through a public period and go ahead unless households veto them; after a veto the same kind of change is blocked for four waiting periods. Emergencies may only move cap between purposes and are reviewed afterwards. `ReliefFund` `KeptFactory`
-- **Sample audit.** Many households will never answer, and a village chief and township office who collude could register households that do not exist and confirm their lines themselves. So for each payment batch the contract draws a random sample of lines (a fifth, at least 5, at most 59), seeded by a block fixed when the batch was published. An independent auditor visits those households: each signs the visit with its own key, or the auditor records under its own address that nobody lives there. From the visits anyone can compute an upper bound on how much of the batch could be undelivered (95% confidence). `CustodyLedger`
+- **Sample audit.** Many households will never answer, and a village chief and township office who collude could register households that do not exist and confirm their lines themselves. So for each payment batch the contract draws a random sample of lines (a fifth, at least 5, at most 59), seeded by a block hash just after the batch was published (anyone can trigger the draw; a draw made more than 256 blocks later uses a later block, recorded publicly). An independent auditor visits those households: each signs the visit with its own key, or the auditor records under its own address that nobody lives there. From the visits anyone can compute an upper bound on how much of the batch could be undelivered (95% confidence). `CustodyLedger`
 - **Accountability alerts.** Published rules over the public record flag where to look: unacknowledged tranches, money held for months, unregistered lines, disputes, slow appeals, households waiting while the township reports nothing.
 
 **Never on-chain:** names, ID numbers, bank accounts. Payment rosters appear only as pseudonymous lines; a household's confirmation would reveal the same line anyway. Eligibility is still decided by people; Kept makes their decisions attributable.
@@ -131,7 +131,7 @@ sequenceDiagram
   L->>L: Add up the total, count lines that are not registered households
   H->>L: Find its own line, no one has to send it
   H->>L: Sign "received" or "not received" (relayed, no gas)
-  L->>L: Draw the audit sample from a block fixed at publication
+  L->>L: Draw the audit sample from a block hash after publication
   H->>L: Sampled households sign the auditor's visit in person
   L-->>P: Totals, confirmations, disputes, unregistered lines, audit bound, alerts
 ```
@@ -194,7 +194,7 @@ npm run e2e                # optional: 17 end-to-end checks with real Semaphore 
 
 cd ../web && npm install
 npm run dev                # http://localhost:3000, then Setup → Set up scenario
-npm run verify:data        # 70 checks: recomputes every real-data figure we publish and compares it with the docs (Node 22.18+)
+npm run verify:data        # 72 checks: recomputes the disclosure, backtest, cost and simulation figures and checks the docs quote them (Node 22.18+)
 ```
 
 The dashboard has a 7-step guided demo. Institutional keys are held by the demo server and a relayer pays gas for households; in production each institution signs with its own wallet.

@@ -82,7 +82,7 @@
         <div class="panel">
           <div class="label" style="margin-bottom:12px"><span class="num">3</span>Sample audit</div>
           <h3>For those who never answer</h3>
-          <p>The contract draws a random sample of each batch, seeded by a block fixed at publication. An independent auditor visits; the household signs the visit with its own key, or the auditor records "nobody there" under its own address.</p>
+          <p>Anyone can make the contract draw a random sample of each batch (1 line in 5), seeded by a block hash just after publication; a later draw uses a later block, recorded publicly. An independent auditor visits; the household signs the visit with its own key, or the auditor records "nobody there" under its own address.</p>
           <p style="margin-top:14px">Anyone can compute how much of the batch could be undelivered (95% upper bound).</p>
         </div>
       </div>
@@ -95,7 +95,7 @@
       </div>
       <div class="panel">
         <div class="label" style="margin-bottom:12px"><span class="num">4</span>The charter</div>
-        <p>Purposes and caps are fixed when the money is raised. Spending outside them reverts. Changes wait in public, and households can veto them anonymously (Semaphore, one vote per household).</p>
+        <p>Purposes and caps are fixed when the money is raised. Spending outside them reverts. Changes wait in public (an emergency move between purposes applies at once and is reviewed afterwards), and households can veto them anonymously (Semaphore, one vote per household).</p>
       </div>
       <div class="panel off">
         <div class="label" style="margin-bottom:12px">Never on-chain</div>

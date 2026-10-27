@@ -11,6 +11,9 @@
 > - N4 leads with what only Kept has: the test that disproved its own first design, and the backtest stated with its premise and "on the unspent balance".
 > - Flow (v2.1): N0 ends with a bridge to the 2024 row; N1 says "families like these"; N1 now shows the still-waiting report and the alert it raises, so what is said is also shown.
 - Row 7's "Kept makes both verifiable" overclaims (an unregistered household is invisible to Kept); N5 replaces it.
+>
+> v2.2 (2026-10-27): a fact check of every on-screen figure against the notes, the code and the chain. On-screen text fixed: "Other recipients" 2.0% (not 2.1%); 14 recipients (48 is the transfer count); "then only totals"; households "still waiting for" an appliance (the roster lists what they had not received); committee papers of 24 Mar 2025 (27 Feb is the figures' cut-off); disclosures #1–#11; the backtest rule counts a missing payment report as unpaid, and the news story is the first one found; 14 of 70 lines sampled; the receipt key is kept by the household (a printed card holds it too); the demo server signs for every institution, chiefs and auditor included; a village social worker can also answer; ID hash, not "no personal data".
+> Spoken words that stay slightly loose (fixing them needs re-recording): N0 "burst" (the ministry calls it an overflow) and "without a fridge"; row 1 "most people gave" (most of the money); N2 "answers only from the household's own key" (or its social worker); N3 "every step … is a real transaction" (credential creation is local); N4 "the first news story on the unspent donations" (the first one found; PTS reported on 17 May 2024 that it had not yet been paid out); row 6 "dollars" (US dollars).
 
 | # | Part (label on screen) | Audio | On screen | Narration |
 |---|---|---|---|---|

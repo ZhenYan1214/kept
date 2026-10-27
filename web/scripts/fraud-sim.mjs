@@ -7,7 +7,7 @@
 import { writeFileSync } from "node:fs";
 
 const ASSUMPTIONS = {
-  households: 4039, // the relief foundation's revised count of affected households (11th disclosure)
+  households: 4039, // recipients of the foundation's clean-up support programme (transfer #30), used for scale
   batchSize: 500, // CustodyLedger.MAX_LINES
   responseRate: 0.3, // share of households that answer by themselves (no data: see the sensitivity rows)
   answerMeanDays: 21, // mean delay of a household's own answer (exponential)

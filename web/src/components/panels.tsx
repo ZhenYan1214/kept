@@ -227,7 +227,7 @@ export function HopTree({ snap }: { snap: Snapshot }) {
 }
 
 /**
- * Sample audits: for each published batch a random sample, seeded by a block fixed at publication, is
+ * Sample audits: for each published batch a random sample, seeded by a block hash just after publication, is
  * visited in person by an independent auditor. Every sampled line not confirmed in person counts as bad.
  */
 export function AuditPanel({ snap }: { snap: Snapshot }) {
