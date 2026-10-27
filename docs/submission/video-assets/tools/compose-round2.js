@@ -13,7 +13,7 @@ const ASSETS = path.resolve(__dirname, "..");
 const R2 = path.join(ASSETS, "round2");
 const OLD = process.env.OLD, NEW = process.env.NEW, CLIPS = process.env.CLIPS, MUSIC = process.env.MUSIC;
 // Kevin MacLeod (incompetech.com), CC BY 3.0, from Wikimedia Commons; gain and ducking leave the bed at about -29 LUFS, 12 dB under the voice.
-const MUSIC_TRACKS = [{ file: "winter-reflections.ogg", gain: -7 }, { file: "silver-blue-light.ogg", gain: -4 }];
+const MUSIC_TRACKS = [{ file: "bathed-in-the-light.ogg", gain: -6.7 }, { file: "inspired.mp3", gain: -10.2 }];
 const MUSIC_SWITCH = 3; // the second track starts with this segment (2 · Solution)
 const OUT = path.resolve(process.argv[2] || "kept-round2.mp4");
 const BUILD = path.join(path.dirname(OUT), "build-round2");

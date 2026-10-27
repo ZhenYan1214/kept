@@ -15,11 +15,11 @@ Resized for the video; colours darkened in the video for legibility.
 
 ## Music
 
-In `../music/`, from Wikimedia Commons:
+In `music/`, from Wikimedia Commons:
 
 | File | Track | Author | Licence | Source |
 |---|---|---|---|---|
-| `winter-reflections.ogg` | “Winter Reflections” | Kevin MacLeod (incompetech.com) | CC BY 3.0 | [Commons](https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Winter_Reflections.ogg) |
-| `silver-blue-light.ogg` | “Silver Blue Light” | Kevin MacLeod (incompetech.com) | CC BY 3.0 | [Commons](https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Silver_Blue_Light.ogg) |
+| `bathed-in-the-light.ogg` | “Bathed in the Light” | Kevin MacLeod (incompetech.com) | CC BY 3.0 | [Commons](https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Bathed_in_the_Light.ogg) |
+| `inspired.mp3` | “Inspired” | Kevin MacLeod (incompetech.com) | CC BY 3.0 | [Commons](https://commons.wikimedia.org/wiki/File:Inspired_(ISRC_USUAN1600022).mp3) |
 
 In the video, the first track runs under the problem and the second from the solution on. Both are trimmed, faded and lowered under the voice.
