@@ -1,6 +1,7 @@
 // Builds the Round 2 presentation video (presentation-script.md): recorded narration rows, some trimmed by word timings,
 // new rows N0–N5, stills and screen clips fitted to the narration, a part label in the corner, burned-in captions.
 // Animated scenes (motion-round2.html) are rendered by render-motion.js with cues taken from the narration's word timings.
+// Optional MUSIC=<dir> lays a bed under the voice: one track for the problem, another from the solution on (see MUSIC_TRACKS).
 // Usage: OLD=<voice dir with rowN.wav/json> NEW=<voice dir for N0–N5> CLIPS=<record.js clips dir> node compose-round2.js <out.mp4>
 const fs = require("fs");
 const path = require("path");
@@ -10,7 +11,10 @@ const { openMotion } = require("./render-motion");
 
 const ASSETS = path.resolve(__dirname, "..");
 const R2 = path.join(ASSETS, "round2");
-const OLD = process.env.OLD, NEW = process.env.NEW, CLIPS = process.env.CLIPS;
+const OLD = process.env.OLD, NEW = process.env.NEW, CLIPS = process.env.CLIPS, MUSIC = process.env.MUSIC;
+// Kevin MacLeod (incompetech.com), CC BY 3.0, from Wikimedia Commons; gain and ducking leave the bed at about -29 LUFS, 12 dB under the voice.
+const MUSIC_TRACKS = [{ file: "winter-reflections.ogg", gain: -7 }, { file: "silver-blue-light.ogg", gain: -4 }];
+const MUSIC_SWITCH = 3; // the second track starts with this segment (2 · Solution)
 const OUT = path.resolve(process.argv[2] || "kept-round2.mp4");
 const BUILD = path.join(path.dirname(OUT), "build-round2");
 fs.mkdirSync(BUILD, { recursive: true });
@@ -116,16 +120,17 @@ const segments = [
   { label: "5 · Innovation & impact", audio: () => cutAudio("a09", neu(4), [[0, neu(4).words.length - 1]]),
     vis: (at, w) => [M("sim", at(/^And$/, w(/^honest$/)) - 0.3, { letting: at(/^Letting$/), simulation: at(/^simulation$/), fake: at(/^fake$/), chance: at(/^chance$/), audit: at(/^random$/), seventy: at(/^seventy-three$/), honest: at(/^honest$/) }),
       M("backtest", undefined, { backtest: at(/^backtest$/), records: at(/^records$/), alert: at(/^alert$/), six: at(/^six$/), news: at(/^news$/), next: at(/^Next$/) })] },
-  { label: "", audio: () => cutAudio("a10", neu(5), [[0, neu(5).words.length - 1]]),
+  { label: "", want: 14.5, audio: () => cutAudio("a10", neu(5), [[0, neu(5).words.length - 1]]),
     vis: (at) => [M("close", undefined, { money: at(/^money$/), leftout: at(/^no$/), kept: at(/^Kept$/), record: at(/^record$/) })] },
 ];
 
 // ---- Build ---------------------------------------------------------------------------------------------------------
-const pieces = [], cues = [], labels = [], audios = [];
+const pieces = [], cues = [], labels = [], audios = [], starts = [];
 let t = 0;
 (async () => {
 const motion = await openMotion();
 for (const [i, seg] of segments.entries()) {
+  starts.push(t);
   const au = seg.audio();
   const dur = Math.max(seg.want || 0, LEAD + au.spoken + 0.9);
   const w = (re, from = 0) => find(au.words, re, from);
@@ -182,6 +187,20 @@ const ins = audios.flatMap((a) => ["-i", a.wav]);
 const delays = audios.map((a, i) => `[${i}]adelay=${Math.round(a.at * 1000)}:all=1[a${i}]`).join(";");
 ff([...ins, "-filter_complex", `${delays};${audios.map((_, i) => `[a${i}]`).join("")}amix=inputs=${audios.length}:normalize=0,apad,atrim=0:${total.toFixed(3)},loudnorm=I=-16:TP=-1.5:LRA=11[a]`, "-map", "[a]", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "voice.m4a"]);
 
+// Music bed: crossfade into the second track at the solution, duck under the voice, fade out at the end.
+let track = "voice.m4a";
+if (MUSIC) {
+  const sw = starts[MUSIC_SWITCH], X = 2.5;
+  const [a, b] = MUSIC_TRACKS;
+  ff(["-i", path.join(MUSIC, a.file), "-i", path.join(MUSIC, b.file), "-i", "voice.m4a", "-filter_complex",
+    `[0]atrim=0:${(sw + X).toFixed(3)},asetpts=PTS-STARTPTS,volume=${a.gain}dB,afade=t=in:d=1.5,afade=t=out:st=${(sw - X / 2).toFixed(3)}:d=${X}[a];` +
+    `[1]atrim=0:${(total - sw + X).toFixed(3)},asetpts=PTS-STARTPTS,volume=${b.gain}dB,afade=t=in:d=${X},afade=t=out:st=${(total - sw + X / 2 - 4).toFixed(3)}:d=4,adelay=${Math.round((sw - X / 2) * 1000)}:all=1[b];` +
+    `[a][b]amix=inputs=2:normalize=0,apad,atrim=0:${total.toFixed(3)},aresample=48000[m];[2]aresample=48000,asplit[v][sc];` +
+    `[m][sc]sidechaincompress=threshold=0.06:ratio=2.5:attack=60:release=700:makeup=1[duck];[v][duck]amix=inputs=2:normalize=0,alimiter=limit=0.95[out]`,
+    "-map", "[out]", "-ar", "48000", "-c:a", "aac", "-b:a", "192k", "mix.m4a"]);
+  track = "mix.m4a";
+}
+
 const stamp = (s) => { const ms = Math.round(s * 1000); return `${String(Math.floor(ms / 3.6e6)).padStart(2, "0")}:${String(Math.floor(ms / 6e4) % 60).padStart(2, "0")}:${String(Math.floor(ms / 1000) % 60).padStart(2, "0")},${String(ms % 1000).padStart(3, "0")}`; };
 const srt = cues.map((c, k) => `${k + 1}\n${stamp(c.start)} --> ${stamp(c.end)}\n${c.text}\n`).join("\n");
 fs.writeFileSync(path.join(BUILD, "captions.srt"), srt);
@@ -190,6 +209,6 @@ fs.writeFileSync(OUT.replace(/\.mp4$/, ".srt"), srt);
 fs.copyFileSync(process.env.FONT || "C:/Windows/Fonts/arial.ttf", path.join(BUILD, "arial.ttf"));
 const style = "FontName=Arial,FontSize=11,PrimaryColour=&H00FFFFFF,OutlineColour=&H50000000,BorderStyle=3,Outline=5,Shadow=0,MarginV=36,MarginL=40,MarginR=40";
 const draw = labels.map((l) => `drawtext=fontfile=arial.ttf:text='${l.text}':fontsize=28:fontcolor=white:box=1:boxcolor=${NAVY}@0.88:boxborderw=14:x=w-tw-46:y=h-th-40:enable='between(t,${l.a.toFixed(2)},${l.b.toFixed(2)})'`).join(",");
-ff(["-i", "video.mp4", "-i", "voice.m4a", "-vf", `${draw},subtitles=captions.srt:fontsdir=.:force_style='${style}'`, "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "copy", "-movflags", "+faststart", OUT]);
+ff(["-i", "video.mp4", "-i", track, "-vf", `${draw},subtitles=captions.srt:fontsdir=.:force_style='${style}'`, "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p", "-c:a", "copy", "-movflags", "+faststart", OUT]);
 console.log("wrote", OUT, `${cues.length} cues`);
 })();

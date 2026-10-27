@@ -30,12 +30,12 @@ If the UI changes, re-record (step 2) and re-run step 4. The selectors in `recor
 
 ## Round 2 presentation video
 
-`kept-round2-v3.mp4` (presentation-script.md v2.1) uses the same voice rows, plus animated scenes instead of stills. The scenes share the logo's navy theme; real photos from Wikimedia Commons sit behind the Guangfu and Hualien scenes (`../photos/`, credits in `photos/CREDITS.md` and on screen).
+`kept-round2-v3.mp4` (presentation-script.md v2.1) uses the same voice rows, plus animated scenes instead of stills. The scenes share the logo's navy theme; real photos from Wikimedia Commons sit behind the Guangfu and Hualien scenes (`../photos/`, music in `../music/`, credits in `../CREDITS.md` and on screen).
 
 - **Scenes** live in `../motion-round2.html`, with the Lucide line icons in `../icons.js`. Each scene is a pure function of time. Open `motion-round2.html#arch` in Chrome to watch one play with its default timings.
 - **Rendering**: `render-motion.js` renders a scene frame by frame (`load(name, cues, D)`, then `seek(t)`) and pipes the frames to ffmpeg.
   - `node render-motion.js sheet [scene…]` writes contact sheets to `../round2/sheet-<scene>.jpg`.
   - `node render-motion.js mp4 <scene>` renders a single scene.
-- **Compose**: `OLD=<old voice dir> NEW=<N0–N5 voice dir> CLIPS=<record.js clips> node compose-round2.js <out.mp4>`.
+- **Compose**: `OLD=<old voice dir> NEW=<N0–N5 voice dir> CLIPS=<record.js clips> MUSIC=../music node compose-round2.js <out.mp4>`. Without `MUSIC` the video has voice only.
   - Scene cues come from the narration's word timings, so numbers count up and icons appear when the word is spoken.
   - Rendering takes about 1.2× real time.

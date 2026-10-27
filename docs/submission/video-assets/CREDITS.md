@@ -1,4 +1,6 @@
-# Photo credits (Round 2 video)
+# Credits (Round 2 video)
+
+## Photos
 
 All photos are from Wikimedia Commons and are used with attribution, as their licences require.
 
@@ -10,3 +12,14 @@ All photos are from Wikimedia Commons and are used with attribution, as their li
 | `hualien-uranus.jpg` | The Uranus Building, Hualien City, after the 3 April 2024 earthquake | Shufu Liu, Office of the President (總統府); perspective corrected by Basile Morin | CC BY 2.0 | [Commons](https://commons.wikimedia.org/wiki/File:Rescue_workers_near_the_semi-collapsed_ten-story_Uranus_Building_on_Xuanyuan_Road_after_the_2024_Hualien_earthquake.jpg) |
 
 Resized for the video; colours darkened in the video for legibility.
+
+## Music
+
+In `../music/`, from Wikimedia Commons:
+
+| File | Track | Author | Licence | Source |
+|---|---|---|---|---|
+| `winter-reflections.ogg` | “Winter Reflections” | Kevin MacLeod (incompetech.com) | CC BY 3.0 | [Commons](https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Winter_Reflections.ogg) |
+| `silver-blue-light.ogg` | “Silver Blue Light” | Kevin MacLeod (incompetech.com) | CC BY 3.0 | [Commons](https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Silver_Blue_Light.ogg) |
+
+In the video, the first track runs under the problem and the second from the solution on. Both are trimmed, faded and lowered under the voice.
