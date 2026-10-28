@@ -30,7 +30,7 @@ Aid trackers record what custodians say they did. Kept lets the people the money
 
 **Why on-chain:** the custodians being checked should not keep the only ledger. **Who runs it:** custodians record as they pay; phase 0 needs no one's permission, since volunteers can already turn published disclosures into open data, as the real-data page does.
 
-**→ [Real data](https://kept-lilac.vercel.app/replay) · [Live demo](https://kept-lilac.vercel.app) · [Video (3:36)](https://youtu.be/1wSICTfZONE) · [Why Kept](https://kept-lilac.vercel.app/why) · [Draft county ordinance](docs/policy/ordinance-summary-en.md)**
+**→ [Real data](https://kept-lilac.vercel.app/replay) · [Live demo](https://kept-lilac.vercel.app) · [Video (5:44)](https://youtu.be/xQsi2FCJgGY) · [Why Kept](https://kept-lilac.vercel.app/why) · [Draft county ordinance](docs/policy/ordinance-summary-en.md)**
 
 **Try it in 2 minutes, no wallet:** (1) read-only, the same for everyone: the [real-data page](https://kept-lilac.vercel.app/replay). (2) Interactive, screens under *Try a role*: *Household* → Create credential → Simulate: chief scans this code; *Village & township* → Propose registration, act as the township office, Approve; *Custodians* → tick your household → Publish payment lines; *Household* → I did not receive it; then *Show code at the counter* and verify it on the *NGO counter* (a second try is rejected). The demo is shared, so others' data may be there; your credential stays in your browser. Fund changes wait a real 5-minute public period.
 
