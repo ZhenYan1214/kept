@@ -12,9 +12,9 @@ const ROWS: { who: string; icon: (p: { className?: string }) => React.ReactNode;
     kept: { label: "Receipted", tone: "ok", note: "Every donation gets a receipt number on-chain." },
   },
   {
-    who: "Foundation → 48 recipients",
+    who: "Foundation → 14 recipients",
     icon: Icon.Building,
-    today: { label: "Visible", tone: "ok", note: "Every transfer: date, item, amount." },
+    today: { label: "Visible", tone: "ok", note: "All 48 transfers: date, item, amount." },
     kept: { label: "Acknowledged", tone: "ok", note: "Each recipient signs for what it received." },
   },
   {
