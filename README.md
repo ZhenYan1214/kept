@@ -39,6 +39,9 @@ Aid trackers record what custodians say they did. Kept lets the people the money
 
 ## The problem
 
+<img src="docs/assets/details/guangfu-reconciliation.png" alt="Guangfu 2025, from the foundation's own disclosures: cumulative payouts rise to NT$1.21bn within months, while the reconciled line stays near zero for eight months" />
+
+
 A disaster fund makes two promises: **to donors**, about how the money will be used; **to affected households**, that no one will be left out. Both are hard to check, and the same loop repeats across countries: money is raised before a plan exists, the custodian keeps every record, the people affected have no say, money sits unspent or arrives late, and trust moves elsewhere.
 
 | Where | What happened | Source |
@@ -68,6 +71,9 @@ Kept starts where the public trail stops: **after the first hand**. Each custodi
 
 ## How it works
 
+<img src="docs/assets/details/kept-flow.png" alt="How Kept works: custody chain, pseudonymous payment lines that households answer, a random sample audit, and a charter households can veto" />
+
+
 - **Custody.** Each tranche is recorded by the sender and acknowledged by the receiver. Payment batches are published as lines; the contract adds them up itself and counts any line whose receipt address is not a household registered with two signatures. Only that household, or a social worker designated for its village, can sign for its line, and the household's own answer always wins. `CustodyLedger`
 - **Eligibility.** A household is verified only after two signatures: the village chief and the township office. Registration rides on the door-to-door visits the government already makes after a disaster. Getting paid never requires anything from the household; confirming is optional. NGOs check eligibility on the spot with a zero-knowledge proof and never receive the roster. `EligibilityRegistry` `AidPrograms`
 - **Voice.** The same credential gives each household one anonymous vote on changes (Semaphore), a public appeal when it is left out, and a weekly anonymous *"still waiting"* report that does not depend on any custodian recording anything. `VoiceModule`
@@ -81,6 +87,9 @@ Kept starts where the public trail stops: **after the first hand**. Each custodi
 > In phase 1, while donations stay in bank accounts, the contracts bind the **public record**, not the bank account: nothing outside the charter can be recorded as an allocation, and the record cannot be rewritten, but an off-record bank payment is still possible. Kept makes it harder to hide, not impossible.
 
 ## Architecture
+
+<img src="docs/assets/details/kept-architecture.png" alt="Architecture: the browser holds each household's identity and makes the proofs; a demo server signs as the institutions and relays gas; six source-verified contracts on Base Sepolia" />
+
 
 ```mermaid
 flowchart TB
