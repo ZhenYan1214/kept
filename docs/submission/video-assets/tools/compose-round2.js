@@ -18,7 +18,7 @@ const MUSIC_SWITCH = 3; // the second track starts with this segment (2 · Solut
 const OUT = path.resolve(process.argv[2] || "kept-round2.mp4");
 const BUILD = path.join(path.dirname(OUT), "build-round2");
 fs.mkdirSync(BUILD, { recursive: true });
-const LEAD = 0.5, CAP = 0.7, NAVY = "0x0e1d31";
+const LEAD = 0.5, CAP = 0.7, NAVY = "0x16222d";
 const ff = (args) => execFileSync("ffmpeg", ["-loglevel", "error", "-y", ...args], { cwd: BUILD, stdio: ["ignore", "inherit", "inherit"] });
 const probe = (f) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f], { encoding: "utf8" }));
 const bare = (w) => w.replace(/[^A-Za-z0-9-]/g, "");

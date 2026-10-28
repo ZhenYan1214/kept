@@ -9,14 +9,14 @@
      load(name, cues, D) then seek(t) for each frame, so cues land on the narration's word timings. Open
      motion-round2.html#shortfall to preview a scene in real time with its default cues. Palette follows the logo. */
   :root { --paper:#f6f5f2; --ink:#1b1f24; --muted:#646a73; --line:#e4e1db; --accent:#245b8a;
-          --navy:#0e1d31; --card:#16263b; --card2:#1d3049; --dline:#2b405c; --cream:#f3efe6; --dmuted:#a9b0b8;
-          --orange:#fe704e; --ok:#2c7350; --okd:#8fd0a8; --bad:#b03a2e; --badd:#f2937f; --amber:#9a5b0c; }
+          --navy:#16222d; --card:#1f2e3b; --card2:#263746; --dline:#3a4a58; --cream:#f8f4ee; --dmuted:#b4bbc2;
+          --orange:#f16646; --ok:#2c7350; --okd:#8fd0a8; --bad:#b03a2e; --badd:#ff7a86; --amber:#9a5b0c; }
   * { box-sizing: border-box; margin: 0; }
   html, body { width: 1920px; height: 1080px; overflow: hidden; background: #000; }
   body { font-family: "Public Sans", "Segoe UI", system-ui, sans-serif; }
   #stage { position: absolute; inset: 0; overflow: hidden; }
-  .dark { background: var(--navy); color: var(--cream); --accent:#8db6e0; --ink:var(--cream); --muted:#a9b0b8; --line:#2b405c;
-          --surface:rgba(18,33,54,.74); --track:#2b405c; --okbg:rgba(143,208,168,.14); --okfg:#8fd0a8; --badbg:rgba(242,147,127,.16); --badfg:#f2937f;
+  .dark { background: var(--navy); color: var(--cream); --accent:#f4a58c; --ink:var(--cream); --muted:#b4bbc2; --line:#3a4a58;
+          --surface:rgba(27,41,53,.76); --track:#3a4a58; --okbg:rgba(143,208,168,.14); --okfg:#8fd0a8; --badbg:rgba(255,122,134,.16); --badfg:#ff7a86;
           --ambbg:rgba(232,196,106,.16); --ambfg:#e8c46a; }
   .light { background: var(--paper); color: var(--ink); }
   .abs { position: absolute; }
@@ -25,13 +25,13 @@
   .kicker { position: absolute; left: 160px; top: 110px; display: flex; align-items: center; gap: 16px; font-size: 30px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
   .dark .kicker { color: var(--orange); }
   .src { position: absolute; left: 160px; right: 160px; bottom: 196px; font-size: 22px; color: var(--muted); }
-  .dark .src { color: #7f8b98; }
+  .dark .src { color: #8a949e; }
   h1 { font-size: 84px; line-height: 1.08; font-weight: 700; letter-spacing: -.02em; }
   .num { font-variant-numeric: tabular-nums; font-weight: 800; letter-spacing: -.03em; }
   .pill { display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px; border-radius: 999px; font-size: 24px; font-weight: 600; }
   .card { background: var(--surface); border: 2px solid rgba(255,255,255,.08); border-radius: 26px; backdrop-filter: blur(14px); }
   .photo { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
-  .credit { position: absolute; right: 44px; top: 40px; font-size: 18px; color: rgba(243,239,230,.55); }
+  .credit { position: absolute; right: 44px; top: 40px; font-size: 18px; color: rgba(248,244,238,.55); }
   .mono { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; }
 </style>
 </head>
@@ -51,7 +51,7 @@ const E = {
 const P = (t, t0, d = 0.6, e = E.out) => e(clamp((t - t0) / d));
 const fmt = (n) => Math.round(n).toLocaleString("en-US");
 const icon = (n, size = "1em", sw = 1.7) => `<svg class="ic" style="width:${size};height:${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
-const LOGO = (size) => `<svg viewBox="134 110 1020 1020" style="width:${size}px;height:${size}px"><rect x="134" y="110" width="1020" height="1020" rx="230" fill="#0e1d31" stroke="#2b405c" stroke-width="14"/><g fill="#fe704e"><path class="k1" d="M505 302H401Q326 302 326 377V863Q326 938 401 938H505Z"/><path class="k2" d="M740 352H930L614 647L548 581Q530 550 548 518L705 366Q720 352 740 352Z"/><path class="k3" d="M537 614L684 757L826 625Q860 595 895 627L962 691L712 925Q684 950 655 925L555 825Q537 805 537 780Z"/></g></svg>`;
+const LOGO = (size) => `<svg viewBox="157 172 940 940" style="width:${size}px;height:${size}px"><rect x="157" y="172" width="940" height="940" rx="210" fill="#f8f4ee"/><g class="k1" fill="#f16646"><path fill-rule="evenodd" d="M600 280L300 448L312 520V825C312 888 357 937 418 937H780Q805 937 825 952L895 1003Q918 1018 931 993L907 927Q904 913 915 903Q941 876 941 840V520L953 448L655 280Q627 266 600 280ZM627 355L385 490V828Q385 865 422 865H830Q869 865 869 828V490Z"/><circle cx="309" cy="484" r="37"/><circle cx="945" cy="484" r="37"/></g><g fill="#1b2935"><rect class="k2" x="427" y="571" width="363" height="73" rx="36.5"/><rect class="k3" x="427" y="680" width="283" height="73" rx="36.5"/></g></svg>`;
 let stage, S = {}, cur, C, D, O;
 const q = (s) => stage.querySelector(s), qa = (s) => [...stage.querySelectorAll(s)];
 // Entrance helpers: p in 0..1.
@@ -66,7 +66,7 @@ function ambient(t) {
   const g = q(".glow");
   if (!g) return;
   const x1 = 30 + 8 * Math.sin(t * 0.21), y1 = 30 + 6 * Math.cos(t * 0.17), x2 = 75 + 7 * Math.cos(t * 0.13), y2 = 70 + 8 * Math.sin(t * 0.19);
-  g.style.background = `radial-gradient(900px 700px at ${x1}% ${y1}%, rgba(36,91,138,.28), transparent 70%), radial-gradient(800px 600px at ${x2}% ${y2}%, rgba(254,112,78,.10), transparent 70%)`;
+  g.style.background = `radial-gradient(900px 700px at ${x1}% ${y1}%, rgba(74,92,108,.30), transparent 70%), radial-gradient(800px 600px at ${x2}% ${y2}%, rgba(241,102,70,.10), transparent 70%)`;
 }
 window.load = (name, cues = {}, dur, opts = {}) => {
   cur = S[name]; C = { ...cur.cues, ...cues }; D = dur || cur.D; O = opts;
@@ -81,14 +81,14 @@ window.SCENES = S;
 // ---- 1 · Problem: what happened ------------------------------------------------------------------------------------
 // A full-bleed photo (pushed in slowly by seek), a shade that keeps type legible, and the photo credit.
 const PHOTO = (src, cls = "") => `<img class="photo ${cls}" src="photos/${src}">`;
-const SHADE = (cls = "shade") => `<div class="abs ${cls}" style="inset:0;background:linear-gradient(90deg,rgba(14,29,49,.95) 0%,rgba(14,29,49,.82) 45%,rgba(14,29,49,.55) 100%),linear-gradient(0deg,rgba(14,29,49,.92) 0%,transparent 40%)"></div>`;
+const SHADE = (cls = "shade") => `<div class="abs ${cls}" style="inset:0;background:linear-gradient(90deg,rgba(22,34,45,.95) 0%,rgba(22,34,45,.82) 45%,rgba(22,34,45,.55) 100%),linear-gradient(0deg,rgba(22,34,45,.92) 0%,transparent 40%)"></div>`;
 const CREDIT = (s) => `<div class="credit">${s}</div>`;
 const FORESTRY = "Forestry and Nature Conservation Agency, MOA (government open information)";
 
 def("mataian", "dark", 9.4, { burst: 4.2, toll: 8.1 }, () => html`
   ${PHOTO("mataian-lake.jpg", "before")}${PHOTO("guangfu-after.jpg", "after")}${SHADE()}
   ${CREDIT(`Aerial photos, 6 and 26 September 2025: ${FORESTRY}`)}
-  <div class="abs stamp" style="right:160px;top:600px;width:520px;height:50px"><span class="pill d1" style="position:absolute;right:0;top:0;white-space:nowrap;background:rgba(14,29,49,.75);color:var(--cream)">6 Sep 2025 · the barrier lake</span><span class="pill d2" style="position:absolute;right:0;top:0;white-space:nowrap;background:var(--orange);color:var(--navy)">26 Sep 2025 · Guangfu, after</span></div>
+  <div class="abs stamp" style="right:160px;top:600px;width:520px;height:50px"><span class="pill d1" style="position:absolute;right:0;top:0;white-space:nowrap;background:rgba(22,34,45,.75);color:var(--cream)">6 Sep 2025 · the barrier lake</span><span class="pill d2" style="position:absolute;right:0;top:0;white-space:nowrap;background:var(--orange);color:var(--navy)">26 Sep 2025 · Guangfu, after</span></div>
   <div class="kicker">${icon("map-pin", "34px", 2)} Guangfu, Hualien, Taiwan · 23 September 2025</div>
   <h1 class="abs" style="left:160px;top:200px"><div class="l1">The Mataian barrier lake</div><div class="l2">burst into Guangfu.</div></h1>
   <div class="abs toll num" style="left:160px;top:440px;font-size:220px;line-height:1"><span class="n">0</span><span style="font-size:110px;font-weight:700;letter-spacing:-.01em"> dead</span></div>
@@ -106,7 +106,7 @@ def("mataian", "dark", 9.4, { burst: 4.2, toll: 8.1 }, () => html`
 
 // ---- 1 · Problem: still waiting ------------------------------------------------------------------------------------
 def("shortfall", "dark", 26.4, { fridge: 4.0, washer: 8.5, money: 11.6, unspent: 14.7, voice: 18.0, reached: 20.6, before: 23.5 }, () => html`
-  ${PHOTO("guangfu-after.jpg", "bg")}<div class="abs" style="inset:0;background:rgba(14,29,49,.72)"></div>${SHADE()}${PHOTO("hualien-uranus.jpg", "next")}
+  ${PHOTO("guangfu-after.jpg", "bg")}<div class="abs" style="inset:0;background:rgba(22,34,45,.72)"></div>${SHADE()}${PHOTO("hualien-uranus.jpg", "next")}
   <div class="cr1">${CREDIT(`Guangfu, 26 September 2025: ${FORESTRY}`)}</div>
   <div class="cr2">${CREDIT("Hualien City, 3 April 2024. Photo: Shufu Liu, Office of the President (CC BY 2.0)")}</div>
   <div class="main">
@@ -121,7 +121,7 @@ def("shortfall", "dark", 26.4, { fridge: 4.0, washer: 8.5, money: 11.6, unspent:
     <div class="abs budget" style="left:160px;top:590px;width:1600px">
       <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:32px;color:var(--dmuted)"><span>Set aside for these large appliances</span><b class="num" style="font-size:44px;color:var(--cream)">NT$7.86M</b></div>
       <div style="position:relative;height:30px;margin-top:16px">
-        <div class="track" style="position:absolute;inset:0;border:3px dashed #3a5374;border-radius:15px;transform-origin:left"></div>
+        <div class="track" style="position:absolute;inset:0;border:3px dashed #4a5a68;border-radius:15px;transform-origin:left"></div>
         <div class="stub" style="position:absolute;left:0;top:-10px;width:10px;height:50px;border-radius:5px;background:var(--orange)"></div>
       </div>
       <div class="spent" style="margin-top:18px;font-size:34px">Spent by 31 August 2026: <b class="num" style="color:var(--orange);font-size:48px">NT$0</b></div>
@@ -192,7 +192,7 @@ def("hualien", "dark", 31.3, { donated: 3.6, eleven: 8.1, sixteen: 10.0, committ
     ${[["Hualien County", "NT$792M", 792, "b1"], ["National relief foundation", "NT$1.65bn", 1650, "b2"]].map(([l, v, n, k]) => `
     <div style="display:flex;align-items:center;gap:30px;height:120px">
       <div style="width:470px;font-size:40px;font-weight:600">${l}</div>
-      <div class="${k}" style="height:76px;border-radius:14px;background:${k === "b1" ? "#4b6283" : "var(--accent)"};width:${(n / 1650) * 900}px;transform-origin:left;display:flex;align-items:center;justify-content:flex-end;padding-right:22px">
+      <div class="${k}" style="height:76px;border-radius:14px;background:${k === "b1" ? "#56636f" : "var(--accent)"};width:${(n / 1650) * 900}px;transform-origin:left;display:flex;align-items:center;justify-content:flex-end;padding-right:22px">
         <span class="num" style="font-size:38px;color:${k === "b1" ? "var(--cream)" : "var(--navy)"};font-weight:700">${v}</span></div>
       ${k === "b2" ? `<div class="x2 num" style="font-size:72px;color:var(--orange)">≈ 2×</div>` : ""}
     </div>`).join("")}
@@ -221,12 +221,12 @@ def("hualien", "dark", 31.3, { donated: 3.6, eleven: 8.1, sixteen: 10.0, committ
 
 // ---- 1 · Problem: the foundation's own disclosures -----------------------------------------------------------------
 def("foundation", "dark", 42.4, { publishes: 2.2, paid: 6.3, prealloc: 9.8, ministry: 13.2, eleven: 16.0, eight: 18.0, notone: 18.6, normal: 25.0, after: 32.2, households: 36.4 }, () => html`
-  ${PHOTO("guangfu-levee.jpg")}<div class="abs" style="inset:0;background:rgba(14,29,49,.8)"></div>${SHADE()}
+  ${PHOTO("guangfu-levee.jpg")}<div class="abs" style="inset:0;background:rgba(22,34,45,.8)"></div>${SHADE()}
   ${CREDIT(`Mataian Creek, 26 September 2025: ${FORESTRY}`)}
   <div class="kicker">${icon("file-check", "34px", 2)} Guangfu 2025 · the foundation's own disclosures <span class="pill" style="background:var(--okbg);color:var(--okfg);letter-spacing:0;text-transform:none;margin-left:10px">● Real data</span></div>
   <div class="abs pa" style="left:160px;top:200px;width:1600px;height:620px">
     <svg class="abs" style="left:0;top:20px" width="500" height="500" viewBox="0 0 500 500">
-      <circle cx="250" cy="250" r="200" fill="none" stroke="#2b405c" stroke-width="44"/>
+      <circle cx="250" cy="250" r="200" fill="none" stroke="#3a4a58" stroke-width="44"/>
       <circle class="arc" cx="250" cy="250" r="200" fill="none" stroke="#c4955a" stroke-width="44" stroke-dasharray="1256.6" stroke-dashoffset="1256.6" transform="rotate(-90 250 250)"/>
     </svg>
     <div class="abs" style="left:0;top:20px;width:500px;height:500px;display:flex;flex-direction:column;align-items:center;justify-content:center">
@@ -310,7 +310,7 @@ def("chain", "dark", 9.4, { voice: 2.7, hand: 4.3 }, () => html`
       <div class="disc" style="width:184px;height:184px;margin:0 auto;border-radius:50%;background:var(--card2);border:3px solid var(--dline);display:grid;place-items:center">${icon(ic, "84px", 1.4)}</div>
       <div style="font-size:32px;font-weight:600;margin-top:16px;white-space:nowrap">${l}</div>
       <div class="stamp" style="margin-top:12px"><span class="pill" style="background:rgba(143,208,168,.14);color:var(--okd)">${icon("circle-check", "26px", 2)} ${i === 3 ? "received" : i ? "acknowledged" : "sent"}</span></div></div>`).join("")}
-    <div class="abs token" style="left:0;top:40px;width:100px;height:100px;border-radius:50%;background:var(--orange);color:var(--navy);display:grid;place-items:center;box-shadow:0 0 50px rgba(254,112,78,.6)">${icon("coins", "54px", 2)}</div>
+    <div class="abs token" style="left:0;top:40px;width:100px;height:100px;border-radius:50%;background:var(--orange);color:var(--navy);display:grid;place-items:center;box-shadow:0 0 50px rgba(241,102,70,.6)">${icon("coins", "54px", 2)}</div>
     <div class="abs voice" style="left:1340px;top:-110px;width:320px;display:flex;justify-content:center"><span class="pill" style="background:var(--cream);color:var(--navy);font-size:28px">${icon("megaphone", "30px", 2)} a public voice</span></div>
   </div>
   <div class="abs ledger card" style="left:360px;top:630px;width:1200px;padding:24px 34px">
@@ -330,7 +330,7 @@ def("chain", "dark", 9.4, { voice: 2.7, hand: 4.3 }, () => html`
     qa(".stamp").forEach((s, i) => pop(s, P(t, i ? arrive[i] - seg * 0.1 : c.hand - 0.2, 0.5, E.lin)));
     qa(".disc").forEach((d, i) => { const lit = i === 3 ? P(t, c.voice - 0.2, 0.5) : P(t, (i ? arrive[i] - seg * 0.1 : c.hand - 0.2), 0.4); d.style.borderColor = lit > 0.5 ? "var(--orange)" : "var(--dline)"; d.style.color = lit > 0.5 ? "var(--orange)" : "var(--cream)"; });
     const v = P(t, c.voice - 0.1, 0.6, E.lin); pop(q(".voice"), v);
-    q(".n3 .disc").style.boxShadow = `0 0 ${60 * P(t, c.voice, 0.5)}px rgba(254,112,78,${0.25 + 0.2 * Math.sin(t * 3)})`;
+    q(".n3 .disc").style.boxShadow = `0 0 ${60 * P(t, c.voice, 0.5)}px rgba(241,102,70,${0.25 + 0.2 * Math.sin(t * 3)})`;
     rise(q(".ledger"), P(t, c.hand - 0.5));
     qa(".row").forEach((r, i) => rise(r, P(t, arrive[i + 1] - seg * 0.1, 0.4), 16));
   });
@@ -341,11 +341,11 @@ def("audit", "dark", 12.7, { fake: 2.7, confirm: 4.2, sample: 7.0, visit: 10.1 }
   <div class="kicker">${icon("boxes", "34px", 2)} One payment batch</div>
   <div class="abs" style="left:250px;top:190px;width:1420px;display:grid;grid-template-columns:repeat(14,1fr);row-gap:22px">
     ${Array.from({ length: 70 }, (_, i) => `<div class="cell c${i}" style="position:relative;width:86px;height:86px;border-radius:20px;display:grid;place-items:center;color:var(--cream)">
-      <div class="h" style="grid-area:1/1">${icon("house", "50px", 1.5)}</div><div class="g" style="grid-area:1/1;opacity:0;color:#7f8b98">${icon("ghost", "50px", 1.5)}</div>
+      <div class="h" style="grid-area:1/1">${icon("house", "50px", 1.5)}</div><div class="g" style="grid-area:1/1;opacity:0;color:#8a949e">${icon("ghost", "50px", 1.5)}</div>
       <div class="ok" style="position:absolute;right:-2px;bottom:-2px;color:var(--okd);opacity:0">${icon("circle-check", "28px", 2.2)}</div>
       <div class="ring" style="position:absolute;inset:-6px;border-radius:24px;border:5px solid var(--orange);opacity:0"></div></div>`).join("")}
   </div>
-  <div class="abs caught" style="left:0;top:0"><span class="pill" style="background:#f2937f;color:var(--navy);font-size:26px;white-space:nowrap">${icon("search", "28px", 2.2)} visit: nobody there</span></div>
+  <div class="abs caught" style="left:0;top:0"><span class="pill" style="background:#ff7a86;color:var(--navy);font-size:26px;white-space:nowrap">${icon("search", "28px", 2.2)} visit: nobody there</span></div>
   <div class="abs caps" style="left:160px;right:160px;top:770px;height:60px;text-align:center;font-size:40px;font-weight:600">
     ${["Each line: an address and an amount", "Officials could register fake households…", "…and confirm them. Every line looks fine.", "A random sample of every batch: 1 line in 5", "An independent visit catches it"].map((s, i) => `<div class="abs cap k${i}" style="left:0;right:0">${s}</div>`).join("")}
   </div>`,
@@ -356,7 +356,7 @@ def("audit", "dark", 12.7, { fake: 2.7, confirm: 4.2, sample: 7.0, visit: 10.1 }
       pop(el, P(t, 0.1 + (i % 14) * 0.03 + Math.floor(i / 14) * 0.06, 0.5, E.lin));
       const ghost = GHOSTS.includes(i), gp = ghost ? P(t, c.fake - 0.2 + GHOSTS.indexOf(i) * 0.2, 0.5) : 0;
       el.querySelector(".h").style.opacity = 1 - gp; el.querySelector(".g").style.opacity = gp;
-      el.style.border = ghost && gp > 0.5 ? "3px dashed #4b6283" : "3px solid transparent";
+      el.style.border = ghost && gp > 0.5 ? "3px dashed #56636f" : "3px solid transparent";
       pop(el.querySelector(".ok"), P(t, c.confirm - 0.2 + ((i * 7) % 70) / 70 * 0.9, 0.4, E.lin));
       const si = SAMPLE.indexOf(i);
       const r = el.querySelector(".ring");
@@ -365,7 +365,7 @@ def("audit", "dark", 12.7, { fake: 2.7, confirm: 4.2, sample: 7.0, visit: 10.1 }
         r.style.opacity = clamp(sp * 2); r.style.transform = `scale(${lerp(1.6, 1, E.out(sp))})`;
         const done = P(t, c.visit + (i === 31 ? 0 : 0.5), 0.4);
         r.style.borderColor = done > 0.5 ? (i === 31 ? "var(--badd)" : "var(--okd)") : "var(--orange)";
-        if (i === 31) el.style.background = `rgba(242,147,127,${0.25 * done})`;
+        if (i === 31) el.style.background = `rgba(255,122,134,${0.25 * done})`;
       } else el.style.opacity = Math.min(el.style.opacity, 1 - 0.55 * P(t, c.sample, 0.6));
     });
     const g = q(".c31").getBoundingClientRect();
@@ -381,13 +381,13 @@ def("arch", "dark", 37.6, { phone: 2.9, identity: 5.6, receipt: 7.3, zk: 8.6, si
   <div class="kicker">${icon("boxes", "34px", 2)} Architecture: what runs where</div>
   <div class="abs col c0" style="left:110px;top:190px;width:560px;height:650px">
     <div class="hd" style="font-size:26px;letter-spacing:.08em;text-transform:uppercase;color:var(--dmuted);text-align:center"><b style="color:var(--orange)">1</b> · On the phone</div>
-    <div style="position:relative;margin:18px auto 0;width:400px;height:590px;border-radius:56px;border:4px solid #4b6283;background:var(--card);padding:56px 26px 26px">
-      <div style="position:absolute;top:20px;left:50%;margin-left:-40px;width:80px;height:10px;border-radius:5px;background:#4b6283"></div>
+    <div style="position:relative;margin:18px auto 0;width:400px;height:590px;border-radius:56px;border:4px solid #56636f;background:var(--card);padding:56px 26px 26px">
+      <div style="position:absolute;top:20px;left:50%;margin-left:-40px;width:80px;height:10px;border-radius:5px;background:#56636f"></div>
       ${[["fingerprint", "Anonymous identity", "Semaphore"], ["key-round", "Receipt key", "kept by the household; only its address is shared"], ["shield-check", "Zero-knowledge proof", ""], ["file-check", "Answer signed", "EIP-712 · “not received”"]].map(([ic, l, s], i) => `
       <div class="pi p${i}" style="display:flex;gap:16px;align-items:center;background:var(--card2);border-radius:18px;padding:16px 18px;margin-bottom:14px">
         <div style="color:var(--orange)">${icon(ic, "44px", 1.6)}</div>
         <div style="flex:1"><div style="font-size:26px;font-weight:600">${l}</div><div class="s" style="font-size:20px;color:var(--dmuted)">${s}</div>
-        ${i === 2 ? `<div style="height:10px;border-radius:5px;background:#2b405c;margin-top:8px;overflow:hidden"><div class="zk" style="height:100%;width:0;background:var(--orange)"></div></div>` : ""}</div></div>`).join("")}
+        ${i === 2 ? `<div style="height:10px;border-radius:5px;background:#3a4a58;margin-top:8px;overflow:hidden"><div class="zk" style="height:100%;width:0;background:var(--orange)"></div></div>` : ""}</div></div>`).join("")}
     </div>
   </div>
   <div class="abs col c1" style="left:790px;top:190px;width:440px;height:650px">
@@ -398,7 +398,7 @@ def("arch", "dark", 37.6, { phone: 2.9, identity: 5.6, receipt: 7.3, zk: 8.6, si
         <div style="color:var(--orange)">${icon(ic, "50px", 1.6)}</div>
         <div><div style="font-size:30px;font-weight:600" class="${i === 0 ? "mono" : ""}">${l}</div><div style="font-size:22px;color:var(--dmuted);margin-top:4px">${s}</div></div></div>`).join("")}
     </div>
-    <div class="demo" style="text-align:center"><span class="pill" style="background:rgba(242,147,127,.16);color:var(--badd)">demo only: my server signs for the institutions</span></div>
+    <div class="demo" style="text-align:center"><span class="pill" style="background:rgba(255,122,134,.16);color:var(--badd)">demo only: my server signs for the institutions</span></div>
   </div>
   <div class="abs col c2" style="left:1350px;top:190px;width:460px;height:650px">
     <div class="hd" style="font-size:26px;letter-spacing:.08em;text-transform:uppercase;color:var(--dmuted);text-align:center"><b style="color:var(--orange)">3</b> · Base Sepolia</div>
@@ -411,10 +411,10 @@ def("arch", "dark", 37.6, { phone: 2.9, identity: 5.6, receipt: 7.3, zk: 8.6, si
     <div class="ev" style="margin-top:6px"><span class="pill mono" style="background:var(--card2);color:var(--okd);font-size:22px">event LineConfirmed(received: false)</span></div>
   </div>
   <svg class="abs" style="left:0;top:0;width:1920px;height:1080px;pointer-events:none" viewBox="0 0 1920 1080">
-    <path class="a0" d="M672 520 L782 520" stroke="#4b6283" stroke-width="4" stroke-dasharray="10 8" fill="none"/>
-    <path class="a1" d="M1234 520 L1342 520" stroke="#4b6283" stroke-width="4" stroke-dasharray="10 8" fill="none"/>
+    <path class="a0" d="M672 520 L782 520" stroke="#56636f" stroke-width="4" stroke-dasharray="10 8" fill="none"/>
+    <path class="a1" d="M1234 520 L1342 520" stroke="#56636f" stroke-width="4" stroke-dasharray="10 8" fill="none"/>
   </svg>
-  <div class="abs pk" style="width:40px;height:40px;border-radius:50%;background:var(--orange);box-shadow:0 0 40px 10px rgba(254,112,78,.55)"></div>`,
+  <div class="abs pk" style="width:40px;height:40px;border-radius:50%;background:var(--orange);box-shadow:0 0 40px 10px rgba(241,102,70,.55)"></div>`,
   (t, c) => {
     rise(q(".kicker"), P(t, 0.1));
     const intro = [0.3, 0.6, 0.9];
@@ -445,8 +445,8 @@ def("arch", "dark", 37.6, { phone: 2.9, identity: 5.6, receipt: 7.3, zk: 8.6, si
     const x = b > 0 ? lerp(1234, 1342, b) : lerp(672, 782, a);
     const pk = q(".pk"); pk.style.left = `${x - 20}px`; pk.style.top = "500px";
     pk.style.opacity = (a > 0 && a < 1) || (b > 0 && b < 1) ? 1 : 0;
-    q(".a0").setAttribute("stroke", a > 0 && t < c.relayer + 2 ? "#fe704e" : "#4b6283");
-    q(".a1").setAttribute("stroke", b > 0 && t < c.relayer + 3 ? "#fe704e" : "#4b6283");
+    q(".a0").setAttribute("stroke", a > 0 && t < c.relayer + 2 ? "#f16646" : "#56636f");
+    q(".a1").setAttribute("stroke", b > 0 && t < c.relayer + 3 ? "#f16646" : "#56636f");
     q(".a0").setAttribute("stroke-dashoffset", -t * 30); q(".a1").setAttribute("stroke-dashoffset", -t * 30);
   });
 
@@ -454,7 +454,7 @@ def("arch", "dark", 37.6, { phone: 2.9, identity: 5.6, receipt: 7.3, zk: 8.6, si
 def("explorer", "light", 10.9, { zoom: 3.8, received: 8.9 }, (o) => html`
   <div class="abs wrap" style="left:0;top:0;width:1920px;height:1080px;transform-origin:0 0">
     <img src="${o.img || "round2/blockscout-logs.png"}" style="width:1920px;height:1080px;display:block">
-    <div class="abs hl" style="left:636px;top:708px;width:480px;height:52px;border:4px solid var(--orange);border-radius:12px;box-shadow:0 0 0 6px rgba(254,112,78,.18)"></div>
+    <div class="abs hl" style="left:636px;top:708px;width:480px;height:52px;border:4px solid var(--orange);border-radius:12px;box-shadow:0 0 0 6px rgba(241,102,70,.18)"></div>
     <div class="abs tag" style="left:1126px;top:718px"><span class="pill" style="background:var(--orange);color:#fff;font-size:17px;padding:5px 12px">not received</span></div>
   </div>`,
   (t, c) => {
@@ -474,7 +474,7 @@ def("try", "dark", 11.5, { verified: 1.2, github: 3.6, url: 7.0, wallet: 10.2 },
   </div>
   <div class="abs br" style="left:880px;top:220px;width:880px;border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 30px 80px rgba(0,0,0,.45)">
     <div style="height:64px;background:#e9e7e2;display:flex;align-items:center;gap:12px;padding:0 20px">
-      <span style="width:16px;height:16px;border-radius:50%;background:#f2937f"></span><span style="width:16px;height:16px;border-radius:50%;background:#e8c46a"></span><span style="width:16px;height:16px;border-radius:50%;background:#8fd0a8"></span>
+      <span style="width:16px;height:16px;border-radius:50%;background:#ff7a86"></span><span style="width:16px;height:16px;border-radius:50%;background:#e8c46a"></span><span style="width:16px;height:16px;border-radius:50%;background:#8fd0a8"></span>
       <div style="flex:1;margin-left:16px;height:40px;border-radius:20px;background:#fff;display:flex;align-items:center;padding:0 20px;font-size:24px;color:#1b1f24"><span class="url mono"></span><span class="caret" style="width:3px;height:26px;background:#1b1f24;margin-left:2px"></span></div>
     </div>
     <img src="${o.shot || ""}" style="width:880px;height:495px;display:block;object-fit:cover;object-position:top">
@@ -495,7 +495,7 @@ def("why", "dark", 25.1, { because: 1.9, ledger: 4.8, several: 6.1, shared: 9.8,
   <div class="kicker">${icon("scale", "34px", 2)} Why a blockchain, and is it practical?</div>
   ${[["boxes", "No custodian keeps the only ledger"], ["lock", "No names, IDs or bank accounts on-chain"], ["scale", "Phase 1 works under today's law"], ["coins", `≈ US$<span class="lo">0</span><span class="hw">–<span class="hi">0</span></span> per disaster`]].map(([ic, l], i) => `
   <div class="abs row w${i}" style="left:160px;top:${210 + i * 152}px;width:1600px;height:130px;display:flex;align-items:center;gap:40px">
-    <div style="width:110px;height:110px;border-radius:50%;background:rgba(141,182,224,.14);color:var(--accent);display:grid;place-items:center">${icon(ic, "56px", 1.6)}</div>
+    <div style="width:110px;height:110px;border-radius:50%;background:rgba(244,165,140,.14);color:var(--accent);display:grid;place-items:center">${icon(ic, "56px", 1.6)}</div>
     <div style="font-size:42px;font-weight:600;flex:1;white-space:nowrap">${l}${i === 3 ? `<div style="font-size:28px;font-weight:400;color:var(--muted);margin-top:4px">gas measured with the real verifier, prices assumed</div>` : ""}</div>
     <div class="viz" style="width:560px;height:130px;position:relative;flex:none"></div>
   </div>`).join("")}`,
@@ -505,7 +505,7 @@ def("why", "dark", 25.1, { because: 1.9, ledger: 4.8, several: 6.1, shared: 9.8,
     qa(".row").forEach((el, i) => rise(el, P(t, at[i]), 30));
     // Row 1: several custodians write to one shared record.
     const v0 = q(".w0 .viz");
-    if (!v0.innerHTML) v0.innerHTML = `<svg width="560" height="130" viewBox="0 0 560 130">${[20, 65, 110].map((y, i) => `<line class="ln" x1="60" y1="${y}" x2="430" y2="65" stroke="#8db6e0" stroke-width="3" stroke-dasharray="380" stroke-dashoffset="380"/><g transform="translate(20 ${y - 20})" color="#8db6e0"><circle cx="20" cy="20" r="24" fill="#0e1d31" stroke="#8db6e0" stroke-width="2"/><svg x="6" y="6" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">${ICONS["landmark"]}</svg></g>`).join("")}<g class="book" transform="translate(410 25)"><rect width="110" height="80" rx="14" fill="#fe704e"/><svg x="31" y="16" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#0e1d31" stroke-width="1.8">${ICONS["file-check"]}</svg></g></svg>`;
+    if (!v0.innerHTML) v0.innerHTML = `<svg width="560" height="130" viewBox="0 0 560 130">${[20, 65, 110].map((y, i) => `<line class="ln" x1="60" y1="${y}" x2="430" y2="65" stroke="#f4a58c" stroke-width="3" stroke-dasharray="380" stroke-dashoffset="380"/><g transform="translate(20 ${y - 20})" color="#f4a58c"><circle cx="20" cy="20" r="24" fill="#16222d" stroke="#f4a58c" stroke-width="2"/><svg x="6" y="6" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">${ICONS["landmark"]}</svg></g>`).join("")}<g class="book" transform="translate(410 25)"><rect width="110" height="80" rx="14" fill="#f16646"/><svg x="31" y="16" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#16222d" stroke-width="1.8">${ICONS["file-check"]}</svg></g></svg>`;
     qa(".w0 .ln").forEach((l, i) => l.setAttribute("stroke-dashoffset", 380 * (1 - P(t, c.several + i * 0.3, 0.9))));
     q(".w0 .book").style.opacity = P(t, c.shared - 0.4);
     // Row 2: personal data stays off-chain.
@@ -549,11 +549,11 @@ def("sim", "dark", 23.0, { letting: 2.2, simulation: 6.4, fake: 9.4, chance: 13.
       b.querySelector(".f").style.background = i === 1 && t > c.seventy - 0.2 ? "var(--orange)" : "var(--accent)";
       b.querySelector(".v").style.color = i === 1 && t > c.seventy - 0.2 ? "var(--orange)" : "var(--accent)";
     });
-    const h = P(t, c.honest - 0.5, 0.4); q(".hon").style.color = h > 0.5 ? "var(--ink)" : ""; q(".hon").style.fontWeight = h > 0.5 ? 700 : 400; q(".hon").style.background = `rgba(254,112,78,${0.18 * h})`;
+    const h = P(t, c.honest - 0.5, 0.4); q(".hon").style.color = h > 0.5 ? "var(--ink)" : ""; q(".hon").style.fontWeight = h > 0.5 ? 700 : 400; q(".hon").style.background = `rgba(241,102,70,${0.18 * h})`;
   });
 
 def("backtest", "dark", 21.2, { backtest: 4.6, records: 6.8, alert: 8.9, six: 9.7, news: 11.6, next: 15.3 }, () => html`
-  ${PHOTO("hualien-uranus.jpg")}<div class="abs" style="inset:0;background:rgba(14,29,49,.82)"></div>${SHADE()}
+  ${PHOTO("hualien-uranus.jpg")}<div class="abs" style="inset:0;background:rgba(22,34,45,.82)"></div>${SHADE()}
   ${CREDIT("Hualien City, 3 April 2024. Photo: Shufu Liu, Office of the President (CC BY 2.0)")}
   <div class="kicker">${icon("hourglass", "34px", 2)} Backtest on real records · Hualien County, 2024 earthquake donations</div>
   <h1 class="abs h" style="left:160px;top:180px">The data was there. Nobody was watching.</h1>
@@ -581,7 +581,7 @@ def("backtest", "dark", 21.2, { backtest: 4.6, records: 6.8, alert: 8.9, six: 9.
     q(".span").style.transform = `scaleX(${sp})`; q(".span").style.opacity = 0.35 * (sp > 0 ? 1 : 0);
     fade(q(".days"), P(t, c.six - 0.3, 0.3)); q(".days .n").textContent = Math.round(185 * sp);
     pop(q(".p1"), P(t, c.news - 0.2, 0.6, E.lin)); rise(q(".l1"), P(t, c.news + 0.1));
-    const ring = t > c.alert ? 0.5 + 0.5 * Math.sin((t - c.alert) * 4) : 0; q(".p0").style.boxShadow = `0 0 0 ${10 + 8 * ring}px rgba(254,112,78,${0.18 * (1 - P(t, c.news, 0.5))})`;
+    const ring = t > c.alert ? 0.5 + 0.5 * Math.sin((t - c.alert) * 4) : 0; q(".p0").style.boxShadow = `0 0 0 ${10 + 8 * ring}px rgba(241,102,70,${0.18 * (1 - P(t, c.news, 0.5))})`;
     rise(q(".nx"), P(t, c.next - 0.4), 40);
   });
 
@@ -596,7 +596,7 @@ def("close", "dark", 12.1, { money: 2.2, leftout: 3.9, kept: 5.9, record: 7.3 },
   <div class="abs tt" style="left:0;right:0;top:560px;text-align:center"><div style="font-size:96px;font-weight:700;letter-spacing:-.02em">Kept</div>
     <div class="tag" style="font-size:44px;color:#d7dde3;margin-top:10px">Disaster-relief promises you can verify</div>
     <div class="links mono" style="font-size:30px;color:#8f9aa6;margin-top:30px;line-height:1.6">kept-lilac.vercel.app · github.com/ZhenYan1214/kept</div></div>
-  <div class="abs mus" style="left:0;right:0;top:860px;text-align:center;font-size:20px;color:#7f8b98">Music: “Bathed in the Light” and “Inspired” by Kevin MacLeod (incompetech.com), CC BY 3.0 · Photo credits on screen and in the repository</div>`,
+  <div class="abs mus" style="left:0;right:0;top:860px;text-align:center;font-size:20px;color:#8a949e">Music: “Bathed in the Light” and “Inspired” by Kevin MacLeod (incompetech.com), CC BY 3.0 · Photo credits on screen and in the repository</div>`,
   (t, c) => {
     const k = P(t, c.kept - 0.4, 0.9, E.io);
     qa(".pm").forEach((m, i) => {
@@ -608,8 +608,8 @@ def("close", "dark", 12.1, { money: 2.2, leftout: 3.9, kept: 5.9, record: 7.3 },
     const l1 = P(t, c.kept - 0.2, 0.6), l2 = P(t, c.kept + 0.1, 0.6), l3 = P(t, c.kept + 0.4, 0.7, E.lin);
     q(".logo").style.opacity = P(t, c.kept - 0.3, 0.3);
     q(".k1").style.transform = `translateY(${(1 - E.out(l1)) * -160}px)`; q(".k1").style.opacity = l1;
-    q(".k2").style.transform = `translate(${(1 - E.out(l2)) * 200}px, ${(1 - E.out(l2)) * -200}px)`; q(".k2").style.opacity = l2;
-    q(".k3").style.transformOrigin = "560px 800px"; q(".k3").style.transform = `scale(${lerp(0.2, 1, E.back(l3))})`; q(".k3").style.opacity = clamp(l3 * 3);
+    q(".k2").style.transformBox = "fill-box"; q(".k2").style.transformOrigin = "left center"; q(".k2").style.transform = `scaleX(${E.out(l2)})`; q(".k2").style.opacity = clamp(l2 * 4);
+    q(".k3").style.transformBox = "fill-box"; q(".k3").style.transformOrigin = "left center"; q(".k3").style.transform = `scaleX(${E.out(l3)})`; q(".k3").style.opacity = clamp(l3 * 4);
     q(".logo svg").style.transform = `scale(${1 + 0.04 * Math.sin(clamp(t - c.kept - 1.2, 0, 99) * 1.6) * P(t, c.kept + 1.2, 0.6)})`;
     rise(q(".tt > div"), P(t, c.kept + 0.6)); rise(q(".tag"), P(t, c.record - 0.2)); rise(q(".links"), P(t, c.record + 1.2)); fade(q(".mus"), P(t, c.record + 2.2));
   });

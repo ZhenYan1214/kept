@@ -23,32 +23,40 @@ function Svg({ className, title, children }: P & { children: React.ReactNode }) 
   );
 }
 
-/** The mark: a K whose lower arm is a check, for a household's "received". Traced from the logo artwork. */
-const K_PATHS = [
-  "M505 302H401Q326 302 326 377V863Q326 938 401 938H505Z",
-  "M740 352H930L614 647L548 581Q530 550 548 518L705 366Q720 352 740 352Z",
-  "M537 614L684 757L826 625Q860 595 895 627L962 691L712 925Q684 950 655 925L555 825Q537 805 537 780Z",
-];
+/** The mark: a house that is also a speech bubble, with the record inside: a household's own say. Traced from the logo artwork. */
+const HOUSE =
+  "M600 280L300 448L312 520V825C312 888 357 937 418 937H780Q805 937 825 952L895 1003Q918 1018 931 993L907 927Q904 913 915 903Q941 876 941 840V520L953 448L655 280Q627 266 600 280ZM627 355L385 490V828Q385 865 422 865H830Q869 865 869 828V490Z";
+
+function HouseShapes({ house, lines }: { house: string; lines: string }) {
+  return (
+    <>
+      <g fill={house}>
+        <path fillRule="evenodd" d={HOUSE} />
+        <circle cx="309" cy="484" r="37" />
+        <circle cx="945" cy="484" r="37" />
+      </g>
+      <g fill={lines}>
+        <rect x="427" y="571" width="363" height="73" rx="36.5" />
+        <rect x="427" y="680" width="283" height="73" rx="36.5" />
+      </g>
+    </>
+  );
+}
 
 export function KeptMark({ className, seal = true }: { className?: string; seal?: boolean }) {
-  // seal: the full logo on its navy tile. Without it, the bare K in the text colour (e.g. on the credential card).
+  // seal: the full logo on its cream tile, so the navy lines read in either theme. Without it, the mark in the
+  // text colour (e.g. on the credential card).
   if (!seal) {
     return (
-      <svg viewBox="326 302 636 636" className={className ?? "h-8 w-8"} fill="currentColor" aria-hidden>
-        {K_PATHS.map((d) => (
-          <path key={d} d={d} />
-        ))}
+      <svg viewBox="237 252 780 780" className={className ?? "h-8 w-8"} aria-hidden>
+        <HouseShapes house="currentColor" lines="currentColor" />
       </svg>
     );
   }
   return (
-    <svg viewBox="134 110 1020 1020" className={className ?? "h-8 w-8"} aria-hidden>
-      <rect x="134" y="110" width="1020" height="1020" rx="230" fill="#0e1d31" />
-      <g fill="#fe704e">
-        {K_PATHS.map((d) => (
-          <path key={d} d={d} />
-        ))}
-      </g>
+    <svg viewBox="157 172 940 940" className={className ?? "h-8 w-8"} aria-hidden>
+      <rect x="157" y="172" width="940" height="940" rx="210" fill="#f8f4ee" />
+      <HouseShapes house="#f16646" lines="#1b2935" />
     </svg>
   );
 }
