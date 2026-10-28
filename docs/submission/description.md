@@ -48,7 +48,7 @@ After the 2025 Guangfu flood in Taiwan, the public could see NT$1.21bn leave the
    - **Household:** *I did not receive it*. The public dashboard counts the dispute.
    - **NGO counter:** on the Household screen press *Show code at the counter*, then *Verify & record hand-over* on the NGO counter. A second try with the same household is rejected.
 
-The demo is public, so other visitors may have added households or proposals. Your credential lives in your own browser, so the steps above work regardless. Changes to the fund (Fund committee) wait through a real 5-minute public period that cannot be skipped on the testnet. The 3-minute video shows the full flow, including a household veto.
+The demo is public, so other visitors may have added households or proposals. Your credential lives in your own browser, so the steps above work regardless. Changes to the fund (Fund committee) wait through a real 5-minute public period that cannot be skipped on the testnet. The presentation video (5:44) shows the full flow, including a household veto.
 
 ### The problem: trust stops at the first hand
 
@@ -151,7 +151,7 @@ We have not yet interviewed practitioners. Our evidence is public statements and
 
 ### Plan for the next rounds
 
-Official timeline: initial screening 26–31 Oct, presentation video 1–3 Nov, shortlist 4 Nov, refinement with mentors 5–25 Nov, final 26 Nov. During refinement:
+Official timeline: presentation videos reviewed 30 Oct–1 Nov, finalists announced by 1 Nov, refinement with mentors 2–25 Nov, final at SMU on 26 Nov. During refinement:
 
 - Validate with practitioners: ask mentors and partner NGOs to connect us with a relief custodian and a social worker; test the household screens with older users.
 - Accountant-signed balance attestations for custodian bank accounts, to compare money held with money recorded.
