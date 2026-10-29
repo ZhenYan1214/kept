@@ -101,7 +101,7 @@ Personal data and bank payments stay off-chain. At Guangfu's scale a disaster co
 
 - **During refinement (5–25 Nov):** ask mentors to connect me with a relief custodian and a social worker.
 - **Adoption:** the likeliest first custodian is the national relief foundation, which already publishes every transfer. To make county accounts join, I drafted a 39-article Hualien ordinance (a student draft) mapped to Kept: https://github.com/ZhenYan1214/kept/blob/main/docs/policy/ordinance-summary-en.md
-- **If Kept wins the incubation grant:** a professional security audit (the precondition for holding real funds) and a Traditional Chinese household interface tested with older users.
+- **If Kept wins the incubation grant:** a professional security audit (the precondition for holding real funds) and testing the large-type Traditional Chinese household screen (already in the demo) with older users.
 - **Deliberately not doing:** a token, real funds before a professional audit, or automatic verdicts. An alert is a reason to look, not a finding.
 
 ## About me

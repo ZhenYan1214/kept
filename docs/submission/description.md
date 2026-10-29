@@ -156,7 +156,7 @@ Official timeline: presentation videos reviewed 30 Oct–1 Nov, finalists announ
 - Validate with practitioners: ask mentors and partner NGOs to connect us with a relief custodian and a social worker; test the household screens with older users.
 - Accountant-signed balance attestations for custodian bank accounts, to compare money held with money recorded.
 - MACI-based voting, per-programme receipt keys, village data moved off-chain.
-- A Traditional Chinese household interface, vote notifications, and designed paper cards for elders.
+- Testing the large-type Traditional Chinese household screen (already in the demo) with older users, vote notifications, and designed paper cards for elders.
 - Open-data export aligned with IATI / Open Contracting, for platforms such as guangfu.tw.
 
 ### Ethics
