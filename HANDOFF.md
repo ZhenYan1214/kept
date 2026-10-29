@@ -1,7 +1,7 @@
 # Kept 專案交接文件（HANDOFF）
 
 > **給接手的 AI／自己：** 先完整讀完這份文件再動手。這份文件和 `docs/` 的研究資料都已在 repo 裡；只有 `kept/.env`（測試網私鑰與設定）**沒有**進 repo，要手動帶到新電腦。
-> 最後更新：2026-10-15（同日第二版：修正合約與文案不一致的五處、統一研究筆記的矛盾事實）。使用者以繁體中文溝通；產品、程式、提交內容一律英文。
+> 最後更新：2026-10-29（第二輪交件完成，最新狀態見 §0 和 §13；§1–§12 是 10/24 以前的紀錄，部分已過時）。使用者以繁體中文溝通；產品、程式、提交內容一律英文。
 
 ---
 
@@ -10,7 +10,7 @@
 | 項目 | 狀態 |
 |---|---|
 | 比賽 | DoraHacks「Web3 for Social Good Hackathon 2026」，**Tech Track，個人參賽**，已註冊 |
-| **初賽截止** | **2026/10/25 00:00（未標時區，目標 10/24 中午前送出）** |
+| **進度** | 10/24 送出（BUIDL https://dorahacks.io/build/50246）→ 10/26 **通過初審** → 10/29 第二輪簡報影片交件完成（v9，https://youtu.be/RRqUkdwZ5Lw）→ 10/30–11/1 評審看 → 約 11/1 公布決賽 10 隊（Tech 6、Idea 4）→ 11/26 SMU 現場決賽（只限現場，每隊 15 分鐘） |
 | 題目 | **Kept**：讓災難善款的兩個承諾都可驗證：對捐款人承諾錢怎麼用，對災民承諾不漏掉任何人 |
 | 程式碼 | https://github.com/ZhenYan1214/kept （`main` 分支） |
 | 合約 | 6 份，**74 個**單元測試＋**4 條不變量**全過；端對端腳本用**真實 Semaphore ZK 證明**跑通（17 項）。2026-10-16 監管鏈改為**公開匿名名冊明細**、否決後加冷卻期；2026-10-17 加入**抽樣稽核與獨立稽核員到場記錄**、Slither 檢查（`docs/security-review.md`） |
@@ -18,8 +18,8 @@
 | **測試網** | 2026-10-16 已部署 Base Sepolia（`contracts/deployments/84532.json`，factory `0xD2f8…13C0`、registry `0xB784…C016`、ledger `0x36e9…8072`（2026-10-17 第三次重新部署，含抽樣稽核）），seed 在本機對測試網執行（`npm run dev:testnet` 後 `POST localhost:3001/api/seed`） |
 | **RPC** | 官方 `sepolia.base.org` 的 `eth_getLogs` 只允許 200 個區塊範圍，所以前端改成**完全不讀 event log**：registry 新增 `issuerList`、`villageList`、`groupMembers`（Semaphore 葉子依序，撤銷為 0），基金新增 `donation(receiptNo)`。`.env` 的 RPC 改用 `https://base-sepolia-rpc.publicnode.com`。公開 RPC 由多個節點負載平衡，剛寫入的狀態可能讀不到：seed 的 simulate 會重試，帳戶用 viem `nonceManager` 本地管理 nonce |
 | **網站** | 2026-10-16 已部署 Vercel：**https://kept-lilac.vercel.app**（專案 `zhenyans-projects/kept`，從本機 `web/` 用 `npx vercel deploy --prod` 部署，未連 GitHub）。環境變數：`NEXT_PUBLIC_CHAIN_ID`、`NEXT_PUBLIC_RPC_URL`（publicnode）、`DEMO_TIMELOCK_SECONDS`、`DEMO_PRIVATE_KEY`（Secret，使用者自行加入）。已確認公開可讀、可寫（測試申訴 #4） |
-| **卡住的事** | 無；剩影片、提交表單與 push 到 GitHub |
-| 接下來 | 錄 Demo 影片（使用者配音）→ 填提案草稿的空白（影片連結、自我介紹）→ DoraHacks 送出。2026-10-17 起的優化見 §11 |
+| **卡住的事** | 無。**10/30–11/1 評審看的版本不要動**（網站、影片、Details） |
+| 接下來 | 等 11/1 決賽名單；入圍才照 `docs/final-plan.md` 開工（A 試著作弊 → B 沒核銷就停撥 → D 簡報 Q&A → C 真實轉帳匯入） |
 
 ---
 
@@ -471,3 +471,15 @@ cd ../web && npm install && npm run dev                          # http://localh
   - 7 個合約在 Sourcify 和 Blockscout 驗證完成，都是 exact match，交易事件能解碼。
   - 表單填寫包放在 `contest/submission_kit/`，在 repo 外：Logo、Vision、標籤、YouTube 說明、送出後檢查。
 - 待辦（舊）：使用者看過後確認或要求修改 → 上傳 YouTube（不公開）→ 在 `docs/submission/description.md` 填入影片連結和一句自我介紹 → 在 DoraHacks 送出（截止 2026-10-25 08:00 台灣時間，目標 10/24 中午）。
+
+## 13. 2026-10-26～29 第二輪（簡報影片）與網站改版
+- **10/26 通過初審**。第二輪要交簡報影片（Tech：問題與解法、技術架構、可運作的 Demo、創新與社會影響），10/29 截止。決賽 11/26 在 SMU，**只限現場**，每隊 15 分鐘，補助 US$500 住宿。
+- **簡報影片**：腳本 `docs/submission/presentation-script.md`（v2.2 列出六句口說較鬆的地方，決賽改用精確說法）。畫面是 `docs/submission/video-assets/motion-round2.html` 的 HTML 動畫，由 `tools/render-motion.js` 依逐字時間碼渲染；旁白是使用者本人；照片與音樂是 CC 授權（`video-assets/CREDITS.md`）。`tools/compose-round2.js` 合成。
+  - 版本：v6 `xQsi2FCJgGY` → v8 `jaPSnp_u3tg`（新 logo、淺色配色）→ **v9 `RRqUkdwZ5Lw`（5:54，現行）**。檔案在 `contest/video/kept-round2-v9.mp4`＋`.srt`，不在 git 裡。
+  - v9 的 Demo 段在改版後的正式網站重錄：`tools/record-round2.js`（`part1`／`part2`／`committee`；冷靜期 5 分鐘，`part2` 必須在提案的等待期內執行）。錄影寫入了模擬交易：新住戶、NT$50,000 明細回答「收到」、一次「還在等」、提案 #6（**留在等待期、未執行**）和 #7（被住戶否決）。
+  - 已知小瑕疵：Demo 的住戶回答「收到」，但後面區塊瀏覽器那一幕是另一筆 `received: false`（旁白說的是 a household's answer，內容沒錯）。
+- **新 logo**（10/28）：房子＋對話框、裡面兩條紀錄線；珊瑚 `#f16646`、深藍 `#1b2935`、米色 `#f8f4ee`。檔案在 `docs/assets/logo/`；封面與 banner 由 `docs/assets/brand/render.js` 輸出到 `contest/submission_kit/`（banner 上印著影片連結，換影片要重新產生並在 DoraHacks 重新上傳）。
+- **網站改版**（10/29）：首頁改成產品頁，Demo 改成 app 外框＋引導列（依實際進度打勾）；**住戶頁加繁中大字版**（localStorage `kept.household.view` = `zh`／`en`；大字版沒有投票卡）；鏈上狀態改成少數幾次批次讀取（總覽頁約 8 個 RPC 請求、4 秒左右）。已部署並在正式網站確認。
+- **提交內容**：Details（`docs/submission/details.md`）、description、README、banner 都已換成 v9 連結與 5:54；What's next 改成「測試已在 Demo 裡的繁中大字住戶畫面」。10/29 已在 DoraHacks 頁面逐項確認。
+- **決賽前計畫**：`docs/final-plan.md`（11/1 入圍才開工；10/30–11/1 不要動評審看的版本）。賽後點子：試著作弊面板、依證據分段撥款、光復真實轉帳上鏈重播。
+- 提醒：commit 前還原 `web/src/generated/contracts.ts`（本機重新部署會改到 31337 的位址）；`vercel deploy --prod` 由使用者自己執行。
