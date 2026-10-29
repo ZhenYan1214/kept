@@ -202,20 +202,21 @@ const n = (x: bigint | number) => Number(x);
  * filtered to that fund and its disaster.
  */
 async function pickFund(funds: readonly Address[], custodian?: Address): Promise<Address | undefined> {
-  for (let i = funds.length - 1; i >= 0; i--) {
-    if (!custodian) return funds[i];
-    const c = (await publicClient.readContract({ address: funds[i], abi: fundAbi, functionName: "custodian" })) as Address;
-    if (c.toLowerCase() === custodian.toLowerCase()) return funds[i];
-  }
+  if (!custodian) return funds.at(-1);
+  // One round trip for all of them, rather than one per fund.
+  const owners = await Promise.all(
+    funds.map((f) => publicClient.readContract({ address: f, abi: fundAbi, functionName: "custodian" }) as Promise<Address>),
+  );
+  for (let i = funds.length - 1; i >= 0; i--) if (owners[i].toLowerCase() === custodian.toLowerCase()) return funds[i];
   return undefined;
 }
 
 export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
   const d = getDeployment();
-  const head = await publicClient.getBlock();
-
-  // Everything is read with plain calls; nothing depends on event logs (public RPCs cap log ranges).
-  const [issuerCount, villageCount, regCount, appealCount, disasterCount, funds, hopCount, programCount] = await Promise.all([
+  // Everything is read with plain calls; nothing depends on event logs (public RPCs cap log ranges). Reads that do not
+  // depend on each other go out together, so a cold load costs a few round trips rather than one per layer.
+  const [head, issuerCount, villageCount, regCount, appealCount, disasterCount, funds, hopCount, programCount] = await Promise.all([
+    publicClient.getBlock(),
     publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "issuerCount" }),
     publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "villageCount" }),
     publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "registrationCount" }),
@@ -227,30 +228,111 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
   ]);
 
   const fundAddr = await pickFund(funds as readonly Address[], custodian);
-  const disasterId = fundAddr
-    ? ((await publicClient.readContract({ address: fundAddr, abi: fundAbi, functionName: "disasterId" })) as bigint)
-    : disasterCount;
-
-  const [issuerAddrs, villageList] = await Promise.all([
-    Promise.all(
-      Array.from({ length: n(issuerCount) }, (_, i) =>
-        publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "issuerList", args: [BigInt(i)] }),
-      ),
-    ),
-    Promise.all(
-      Array.from({ length: n(villageCount) }, async (_, i) => {
-        const code = await publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "villageList", args: [BigInt(i)] });
-        const township = await publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "townshipOf", args: [code] });
-        return [n(code), n(township)] as const;
-      }),
-    ),
+  const [registry, fund, hops, programs] = await Promise.all([
+    loadRegistry(fundAddr, disasterCount, n(issuerCount), n(villageCount), n(regCount), n(appealCount), n(head.timestamp)),
+    fundAddr ? loadFund(fundAddr) : Promise.resolve(null),
+    loadHops(n(hopCount)),
+    loadPrograms(n(programCount)),
   ]);
-  const villages = new Map<number, number>(villageList);
+  const { disasterId, disaster, villages, villageStats, issuers, registrations, appeals } = registry;
 
-  // --- registry ---
-  let disaster: Disaster | null = null;
-  if (disasterId > 0n) {
-    const [, tierCount, createdAt, verified, name] = await publicClient.readContract({
+  return {
+    block: head.number,
+    timestamp: n(head.timestamp),
+    seeded: !!fund,
+    disaster,
+    villages: [...villages.entries()].map(([code, township]) => ({ code, township })),
+    villageStats,
+    issuers,
+    registrations: registrations.filter((r) => r.disasterId === disasterId),
+    appeals: appeals.filter((a) => a.disasterId === disasterId),
+    fund,
+    hops: hops.filter((h) => fundAddr && h.fund.toLowerCase() === fundAddr.toLowerCase()),
+    programs: programs.filter((p) => p.disasterId === disasterId),
+  };
+}
+
+/** The registry side: the disaster and its tiers, villages, issuers, registrations, appeals, village figures. */
+async function loadRegistry(
+  fundAddr: Address | undefined,
+  latestDisaster: bigint,
+  issuerCount: number,
+  villageCount: number,
+  regCount: number,
+  appealCount: number,
+  now: number,
+) {
+  const d = getDeployment();
+  const read = publicClient.readContract;
+  const disasterIdP = fundAddr
+    ? (read({ address: fundAddr, abi: fundAbi, functionName: "disasterId" }) as Promise<bigint>)
+    : Promise.resolve(latestDisaster);
+
+  const issuersP = Promise.all(
+    Array.from({ length: issuerCount }, async (_, i) => {
+      const address = await read({ address: d.registry, abi: registryAbi, functionName: "issuerList", args: [BigInt(i)] });
+      const r = await read({ address: d.registry, abi: registryAbi, functionName: "issuers", args: [address] });
+      return {
+        address,
+        role: n(r[0]),
+        active: r[1],
+        region: n(r[2]),
+        proposed: n(r[3]),
+        approved: n(r[4]),
+        rejected: n(r[5]),
+        revoked: n(r[6]),
+        appealsResolved: n(r[7]),
+        name: r[8],
+      } satisfies Issuer;
+    }),
+  );
+
+  const villagesP = Promise.all(
+    Array.from({ length: villageCount }, async (_, i) => {
+      const code = await read({ address: d.registry, abi: registryAbi, functionName: "villageList", args: [BigInt(i)] });
+      const township = await read({ address: d.registry, abi: registryAbi, functionName: "townshipOf", args: [code] });
+      return [n(code), n(township)] as const;
+    }),
+  );
+
+  const registrationsP = Promise.all(
+    Array.from({ length: regCount }, async (_, id) => {
+      const r = await read({ address: d.registry, abi: registryAbi, functionName: "registrations", args: [BigInt(id)] });
+      return {
+        id,
+        disasterId: r[0],
+        commitment: r[1],
+        proposer: r[3],
+        decider: r[4],
+        proposedAt: n(r[5]),
+        decidedAt: n(r[6]),
+        village: n(r[7]),
+        tier: n(r[8]),
+        status: n(r[9]),
+      } satisfies Registration;
+    }),
+  );
+
+  const appealsP = Promise.all(
+    Array.from({ length: appealCount }, async (_, id) => {
+      const r = await read({ address: d.registry, abi: registryAbi, functionName: "appeals", args: [BigInt(id)] });
+      return {
+        id,
+        disasterId: r[0],
+        evidenceHash: r[1],
+        resolutionHash: r[2],
+        resolver: r[3],
+        filedAt: n(r[4]),
+        resolvedAt: n(r[5]),
+        village: n(r[6]),
+        status: n(r[7]),
+      } satisfies Appeal;
+    }),
+  );
+
+  const disasterP = disasterIdP.then(async (disasterId): Promise<Disaster | null> => {
+    if (disasterId === 0n) return null;
+    const [, tierCount, createdAt, verified, name] = await read({
       address: d.registry,
       abi: registryAbi,
       functionName: "disasters",
@@ -259,110 +341,56 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
     const tiers = await Promise.all(
       Array.from({ length: n(tierCount) }, async (_, tier) => {
         const [groupId, tierName] = await Promise.all([
-          publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "tierGroup", args: [disasterId, tier] }),
-          publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "tierName", args: [disasterId, tier] }),
+          read({ address: d.registry, abi: registryAbi, functionName: "tierGroup", args: [disasterId, tier] }),
+          read({ address: d.registry, abi: registryAbi, functionName: "tierName", args: [disasterId, tier] }),
         ]);
         return { tier, name: tierName, groupId } satisfies Tier;
       }),
     );
-    disaster = { id: disasterId, name, tierCount: n(tierCount), verified: n(verified), createdAt: n(createdAt), tiers };
-  }
+    return { id: disasterId, name, tierCount: n(tierCount), verified: n(verified), createdAt: n(createdAt), tiers };
+  });
 
-  const [issuers, registrations, appeals, villageStats] = await Promise.all([
-    Promise.all(
-      issuerAddrs.map(async (address) => {
-        const r = await publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "issuers", args: [address] });
-        return {
-          address,
-          role: n(r[0]),
-          active: r[1],
-          region: n(r[2]),
-          proposed: n(r[3]),
-          approved: n(r[4]),
-          rejected: n(r[5]),
-          revoked: n(r[6]),
-          appealsResolved: n(r[7]),
-          name: r[8],
-        } satisfies Issuer;
-      }),
-    ),
-    Promise.all(
-      Array.from({ length: n(regCount) }, async (_, id) => {
-        const r = await publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "registrations", args: [BigInt(id)] });
-        return {
-          id,
-          disasterId: r[0],
-          commitment: r[1],
-          proposer: r[3],
-          decider: r[4],
-          proposedAt: n(r[5]),
-          decidedAt: n(r[6]),
-          village: n(r[7]),
-          tier: n(r[8]),
-          status: n(r[9]),
-        } satisfies Registration;
-      }),
-    ),
-    Promise.all(
-      Array.from({ length: n(appealCount) }, async (_, id) => {
-        const r = await publicClient.readContract({ address: d.registry, abi: registryAbi, functionName: "appeals", args: [BigInt(id)] });
-        return {
-          id,
-          disasterId: r[0],
-          evidenceHash: r[1],
-          resolutionHash: r[2],
-          resolver: r[3],
-          filedAt: n(r[4]),
-          resolvedAt: n(r[5]),
-          village: n(r[6]),
-          status: n(r[7]),
-        } satisfies Appeal;
-      }),
-    ),
-    disaster
-      ? Promise.all(
-          [...villages.keys()].map(async (code) => {
-            const period = BigInt(Math.max(0, Math.floor((n(head.timestamp) - disaster!.createdAt) / (7 * 86400))));
-            const waiting = (p: bigint) =>
-              p < 0n
-                ? Promise.resolve(0)
-                : publicClient
-                    .readContract({ address: d.registry, abi: registryAbi, functionName: "waitingReports", args: [disaster!.id, p, code] })
-                    .then(n);
-            const [r, waitingNow, waitingLast] = await Promise.all([
-              publicClient.readContract({
-                address: d.registry,
-                abi: registryAbi,
-                functionName: "villageStats",
-                args: [disaster!.id, code],
-              }),
-              waiting(period),
-              waiting(period - 1n),
-            ]);
-            return {
-              code,
-              verified: n(r[0]),
-              appealsFiled: n(r[1]),
-              appealsPending: n(r[2]),
-              appealsAccepted: n(r[3]),
-              appealsRejected: n(r[4]),
-              unserved: n(r[5]),
-              resolutionSecondsTotal: n(r[6]),
-              coverageAsOf: n(r[7]),
-              waitingNow,
-              waitingLast,
-            } satisfies VillageStats;
-          }),
-        )
-      : Promise.resolve([] as VillageStats[]),
-  ]);
+  // Village figures need both the villages and the disaster; everything else above is already in flight.
+  const [disasterId, disaster, villageList] = await Promise.all([disasterIdP, disasterP, villagesP]);
+  const villages = new Map<number, number>(villageList);
+  const villageStatsP = disaster
+    ? Promise.all(
+        [...villages.keys()].map(async (code) => {
+          const period = BigInt(Math.max(0, Math.floor((now - disaster.createdAt) / (7 * 86400))));
+          const waiting = (p: bigint) =>
+            p < 0n
+              ? Promise.resolve(0)
+              : read({ address: d.registry, abi: registryAbi, functionName: "waitingReports", args: [disaster.id, p, code] }).then(n);
+          const [r, waitingNow, waitingLast] = await Promise.all([
+            read({ address: d.registry, abi: registryAbi, functionName: "villageStats", args: [disaster.id, code] }),
+            waiting(period),
+            waiting(period - 1n),
+          ]);
+          return {
+            code,
+            verified: n(r[0]),
+            appealsFiled: n(r[1]),
+            appealsPending: n(r[2]),
+            appealsAccepted: n(r[3]),
+            appealsRejected: n(r[4]),
+            unserved: n(r[5]),
+            resolutionSecondsTotal: n(r[6]),
+            coverageAsOf: n(r[7]),
+            waitingNow,
+            waitingLast,
+          } satisfies VillageStats;
+        }),
+      )
+    : Promise.resolve([] as VillageStats[]);
 
-  // --- fund (see pickFund) ---
-  const fund = fundAddr ? await loadFund(fundAddr) : null;
+  const [issuers, registrations, appeals, villageStats] = await Promise.all([issuersP, registrationsP, appealsP, villageStatsP]);
+  return { disasterId, disaster, villages, villageStats, issuers, registrations, appeals };
+}
 
-  // --- custody ledger ---
-  const hops = await Promise.all(
-    Array.from({ length: n(hopCount) }, async (_, i) => {
+async function loadHops(count: number): Promise<Hop[]> {
+  const d = getDeployment();
+  return Promise.all(
+    Array.from({ length: count }, async (_, i) => {
       const id = i + 1;
       const [h, batchCount] = await Promise.all([
         publicClient.readContract({ address: d.ledger, abi: ledgerAbi, functionName: "hop", args: [BigInt(id)] }),
@@ -428,9 +456,12 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
       } satisfies Hop;
     }),
   );
+}
 
-  const programs = await Promise.all(
-    Array.from({ length: n(programCount) }, async (_, i) => {
+async function loadPrograms(count: number): Promise<Program[]> {
+  const d = getDeployment();
+  return Promise.all(
+    Array.from({ length: count }, async (_, i) => {
       const id = i + 1;
       const p = await publicClient.readContract({ address: d.programs, abi: programsAbi, functionName: "program", args: [BigInt(id)] });
       return {
@@ -446,21 +477,6 @@ export async function loadSnapshot(custodian?: Address): Promise<Snapshot> {
       } satisfies Program;
     }),
   );
-
-  return {
-    block: head.number,
-    timestamp: n(head.timestamp),
-    seeded: !!fund,
-    disaster,
-    villages: [...villages.entries()].map(([code, township]) => ({ code, township })),
-    villageStats,
-    issuers,
-    registrations: registrations.filter((r) => r.disasterId === disasterId),
-    appeals: appeals.filter((a) => a.disasterId === disasterId),
-    fund,
-    hops: hops.filter((h) => fundAddr && h.fund.toLowerCase() === fundAddr.toLowerCase()),
-    programs: programs.filter((p) => p.disasterId === disasterId),
-  };
 }
 
 const RECENT_DONATIONS = 12;
@@ -511,73 +527,75 @@ async function loadFund(address: Address): Promise<Fund> {
   ]);
 
   const members = committee as unknown as Address[];
-  const purposes = await Promise.all(
-    Array.from({ length: n(purposeCount as bigint) }, async (_, id) => {
-      const p = (await read("purpose", [id])) as unknown as { name: string; capBps: number; allocated: bigint };
-      return { id, name: p.name, capBps: n(p.capBps), allocated: p.allocated } satisfies Purpose;
-    }),
-  );
-
-  const proposals = await Promise.all(
-    Array.from({ length: n(proposalCount as bigint) }, async (_, id) => {
-      const p = (await read("proposal", [BigInt(id)])) as unknown as Record<string, never>;
-      const approvedBy = (
-        await Promise.all(members.map(async (m) => ((await read("hasApproved", [BigInt(id), m])) ? m : null)))
-      ).filter(Boolean) as Address[];
-      let vote: Vote | undefined;
-      const voteKey = p.voteKey as Hex;
-      if (voteKey && BigInt(voteKey) !== 0n) {
-        const [v, vetoed] = await Promise.all([
-          publicClient.readContract({ address: d.voice, abi: voiceAbi, functionName: "votes", args: [voteKey] }),
-          publicClient.readContract({ address: d.voice, abi: voiceAbi, functionName: "isVetoed", args: [voteKey] }),
-        ]);
-        vote = {
-          key: voteKey,
-          disasterId: v[1],
-          eligible: n(v[2]),
-          opensAt: n(v[4]),
-          closesAt: n(v[5]),
-          yes: n(v[6]),
-          no: n(v[7]),
-          quorumBps: n(v[8]),
-          vetoed,
-        };
-      }
-      return {
-        id,
-        kind: n(p.kind),
-        status: n(p.status),
-        emergency: p.emergency as boolean,
-        movedBps: n(p.movedBps),
-        reviewConcluded: p.reviewConcluded as boolean,
-        purposeId: n(p.purposeId),
-        toPurposeId: n(p.toPurposeId),
-        approvals: n(p.approvals),
-        approvedBy,
-        newCapFrom: n(p.newCapFrom),
-        newCapTo: n(p.newCapTo),
-        estHouseholds: n(p.estHouseholds),
-        newDeadline: n(p.newDeadline),
-        createdAt: n(p.createdAt),
-        executeAfter: n(p.executeAfter),
-        proposer: p.proposer as Address,
-        recipient: p.recipient as Address,
-        amount: p.amount as bigint,
-        hopId: p.hopId as bigint,
-        docHash: p.docHash as Hex,
-        vote,
-      } satisfies Proposal;
-    }),
-  );
-
   const count = n(donationCount as bigint);
-  const donations = await Promise.all(
-    Array.from({ length: Math.min(count, RECENT_DONATIONS) }, async (_, i) => {
-      const receiptNo = BigInt(count - Math.min(count, RECENT_DONATIONS) + i + 1);
-      const r = (await read("donation", [receiptNo])) as unknown as { donor: Address; amount: bigint; at: bigint };
-      return { donor: r.donor, amount: r.amount, receiptNo, at: n(r.at) } satisfies Donation;
-    }),
-  );
+  const [purposes, proposals, donations] = await Promise.all([
+    Promise.all(
+      Array.from({ length: n(purposeCount as bigint) }, async (_, id) => {
+        const p = (await read("purpose", [id])) as unknown as { name: string; capBps: number; allocated: bigint };
+        return { id, name: p.name, capBps: n(p.capBps), allocated: p.allocated } satisfies Purpose;
+      }),
+    ),
+    Promise.all(
+      Array.from({ length: n(proposalCount as bigint) }, async (_, id) => {
+        const [raw, approved] = await Promise.all([
+          read("proposal", [BigInt(id)]),
+          Promise.all(members.map((m) => read("hasApproved", [BigInt(id), m]))),
+        ]);
+        const p = raw as unknown as Record<string, never>;
+        const approvedBy = members.filter((_, i) => approved[i]);
+        let vote: Vote | undefined;
+        const voteKey = p.voteKey as Hex;
+        if (voteKey && BigInt(voteKey) !== 0n) {
+          const [v, vetoed] = await Promise.all([
+            publicClient.readContract({ address: d.voice, abi: voiceAbi, functionName: "votes", args: [voteKey] }),
+            publicClient.readContract({ address: d.voice, abi: voiceAbi, functionName: "isVetoed", args: [voteKey] }),
+          ]);
+          vote = {
+            key: voteKey,
+            disasterId: v[1],
+            eligible: n(v[2]),
+            opensAt: n(v[4]),
+            closesAt: n(v[5]),
+            yes: n(v[6]),
+            no: n(v[7]),
+            quorumBps: n(v[8]),
+            vetoed,
+          };
+        }
+        return {
+          id,
+          kind: n(p.kind),
+          status: n(p.status),
+          emergency: p.emergency as boolean,
+          movedBps: n(p.movedBps),
+          reviewConcluded: p.reviewConcluded as boolean,
+          purposeId: n(p.purposeId),
+          toPurposeId: n(p.toPurposeId),
+          approvals: n(p.approvals),
+          approvedBy,
+          newCapFrom: n(p.newCapFrom),
+          newCapTo: n(p.newCapTo),
+          estHouseholds: n(p.estHouseholds),
+          newDeadline: n(p.newDeadline),
+          createdAt: n(p.createdAt),
+          executeAfter: n(p.executeAfter),
+          proposer: p.proposer as Address,
+          recipient: p.recipient as Address,
+          amount: p.amount as bigint,
+          hopId: p.hopId as bigint,
+          docHash: p.docHash as Hex,
+          vote,
+        } satisfies Proposal;
+      }),
+    ),
+    Promise.all(
+      Array.from({ length: Math.min(count, RECENT_DONATIONS) }, async (_, i) => {
+        const receiptNo = BigInt(count - Math.min(count, RECENT_DONATIONS) + i + 1);
+        const r = (await read("donation", [receiptNo])) as unknown as { donor: Address; amount: bigint; at: bigint };
+        return { donor: r.donor, amount: r.amount, receiptNo, at: n(r.at) } satisfies Donation;
+      }),
+    ),
+  ]);
 
   return {
     address,

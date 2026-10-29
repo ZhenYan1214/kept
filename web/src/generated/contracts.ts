@@ -34,15 +34,15 @@ export type Deployment = {
 export const deployments: Record<number, Deployment> = {
   "31337": {
     "chainId": 31337,
-    "deployBlock": 285,
-    "factory": "0xD8a5a9b31c3C0232E196d518E89Fd8bF83AcAd43",
-    "ledger": "0xDC11f7E700A4c898AE5CAddB1082cFfa76512aDD",
+    "deployBlock": 105,
+    "factory": "0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8",
+    "ledger": "0x851356ae760d987E095750cCeb3bC6014560891C",
     "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "programs": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
-    "registry": "0x2E2Ed0Cfd3AD2f1d34481277b3204d807Ca2F8c2",
-    "semaphore": "0x4C4a2f8c81640e47606d3fd77B353E87Ba015584",
-    "token": "0x21dF544947ba3E8b3c32561399E88B52Dc8b2823",
-    "voice": "0x51A1ceB83B83F1985a81C295d1fF28Afef186E02"
+    "programs": "0x95401dc811bb5740090279Ba06cfA8fcF6113778",
+    "registry": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
+    "semaphore": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB",
+    "token": "0x9E545E3C0baAB3E08CdfD552C960A1050f373042",
+    "voice": "0xf5059a5D33d5853360D16C683c16e67980206f36"
   },
   "84532": {
     "chainId": 84532,

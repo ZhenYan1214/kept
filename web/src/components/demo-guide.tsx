@@ -115,20 +115,15 @@ export function DemoProgressProvider({ children }: { children: React.ReactNode }
     let stale = false;
     (async () => {
       const d = getDeployment();
-      for (const h of snap.hops) {
-        for (const b of h.batches) {
-          const id = `${h.id}-${b.index}`;
-          if (checked.current.has(id)) continue;
-          const amount = await publicClient.readContract({
-            address: d.ledger,
-            abi: ledgerAbi,
-            functionName: "lineAmount",
-            args: [BigInt(h.id), BigInt(b.index), receipt],
-          });
-          checked.current.add(id);
-          if (amount > 0n) found.current.set(id, lineKey(BigInt(h.id), BigInt(b.index), receipt));
-        }
-      }
+      const todo = snap.hops.flatMap((h) => h.batches.map((b) => ({ id: `${h.id}-${b.index}`, h: BigInt(h.id), b: BigInt(b.index) })));
+      const fresh = todo.filter((x) => !checked.current.has(x.id));
+      const amounts = await Promise.all(
+        fresh.map((x) => publicClient.readContract({ address: d.ledger, abi: ledgerAbi, functionName: "lineAmount", args: [x.h, x.b, receipt] })),
+      );
+      fresh.forEach((x, i) => {
+        checked.current.add(x.id);
+        if (amounts[i] > 0n) found.current.set(x.id, lineKey(x.h, x.b, receipt));
+      });
       const next = await Promise.all(
         [...found.current].map(async ([key, lk]) => ({
           key,

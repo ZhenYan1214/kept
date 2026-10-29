@@ -52,26 +52,23 @@ export function useMyLines(receipt: Address) {
     if (!snap) return;
     const d = getDeployment();
     (async () => {
-      const found: MyLine[] = [];
-      for (const h of snap.hops) {
-        for (const b of h.batches) {
-          const amount = await publicClient.readContract({
-            address: d.ledger,
-            abi: ledgerAbi,
-            functionName: "lineAmount",
-            args: [BigInt(h.id), BigInt(b.index), receipt],
-          });
-          if (amount === 0n) continue;
-          const state = await publicClient.readContract({
-            address: d.ledger,
-            abi: ledgerAbi,
-            functionName: "lineState",
-            args: [lineKey(BigInt(h.id), BigInt(b.index), receipt)],
-          });
-          const pick = b.audit.find((p) => p.receipt.toLowerCase() === receipt.toLowerCase());
-          found.push({ hopId: h.id, batchIndex: b.index, amount, custodian: h.to, state: Number(state), audit: pick?.outcome });
-        }
-      }
+      // Every batch at once: one round trip for the amounts, one for the answers.
+      const batches = snap.hops.flatMap((h) => h.batches.map((b) => ({ h, b })));
+      const amounts = await Promise.all(
+        batches.map(({ h, b }) =>
+          publicClient.readContract({ address: d.ledger, abi: ledgerAbi, functionName: "lineAmount", args: [BigInt(h.id), BigInt(b.index), receipt] }),
+        ),
+      );
+      const mine = batches.map((x, i) => ({ ...x, amount: amounts[i] })).filter((x) => x.amount > 0n);
+      const states = await Promise.all(
+        mine.map(({ h, b }) =>
+          publicClient.readContract({ address: d.ledger, abi: ledgerAbi, functionName: "lineState", args: [lineKey(BigInt(h.id), BigInt(b.index), receipt)] }),
+        ),
+      );
+      const found: MyLine[] = mine.map(({ h, b, amount }, i) => {
+        const pick = b.audit.find((p) => p.receipt.toLowerCase() === receipt.toLowerCase());
+        return { hopId: h.id, batchIndex: b.index, amount, custodian: h.to, state: Number(states[i]), audit: pick?.outcome };
+      });
       setLines(found);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
