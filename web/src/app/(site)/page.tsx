@@ -39,7 +39,7 @@ export default function Home() {
             href="/replay"
             className="rise inline-flex items-center gap-2.5 rounded-full border border-line bg-card py-1.5 pl-2 pr-3.5 text-sm text-muted transition-colors hover:text-ink"
           >
-            <span className="rounded-full bg-ok px-2 py-0.5 text-xs font-semibold text-on-ink">Live demo</span>
+            <span className="shrink-0 whitespace-nowrap rounded-full bg-ok px-2 py-0.5 text-xs font-semibold text-on-ink">Live demo</span>
             Built on the real 2025 Guangfu flood records
           </Link>
           <h1 className="rise mt-7 text-[52px] font-semibold leading-none tracking-[-0.045em] [animation-delay:80ms] sm:text-[72px]">
