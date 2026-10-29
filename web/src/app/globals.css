@@ -1,41 +1,43 @@
 @import "tailwindcss";
 
 /*
- * Calm and plain: one sans-serif, a soft neutral background with white surfaces, one blue for links and
- * focus, and status colours only where they carry meaning. Colours are tokens; the dark theme is below.
+ * The logo's palette: cream paper, navy ink for text and primary actions, coral only for the mark and a few
+ * highlights, and status colours only where they carry meaning. Colours are tokens; the dark theme is below.
  */
 :root {
-  --paper: #f6f5f2;
-  --card: #ffffff;
-  --sunk: #f0eeea;
-  --ink: #1b1f24;
-  --muted: #646a73;
-  --line: #e4e1db;
-  --accent: #245b8a; /* links, focus, the few primary accents */
-  --seal: #b9442f; /* the brand mark only */
+  --paper: #f8f4ee;
+  --card: #fffdf9;
+  --sunk: #f1ebe1;
+  --ink: #1b2935;
+  --muted: #5b6570;
+  --line: #e6ded1;
+  --accent: #1b2935; /* primary buttons, links, focus: the logo's navy ink */
+  --seal: #f16646; /* the logo's coral: the mark and a few highlights */
+  --coral-ink: #c4452a; /* coral that passes contrast as text */
   --ok: #2c7350;
   --warn: #9a5b0c;
-  --bad: #b03a2e;
-  --on-ink: #f6f3ec;
-  --on-accent: #ffffff;
+  --bad: #b3261e;
+  --on-ink: #fffdf9;
+  --on-accent: #fffdf9;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #111418;
-    --card: #181c21;
-    --sunk: #1f242a;
-    --ink: #e7e9ec;
-    --muted: #9aa1aa;
-    --line: #2b3138;
-    --accent: #8db6e0;
-    --seal: #e2725c;
+    --paper: #121a22;
+    --card: #18222c;
+    --sunk: #1f2a35;
+    --ink: #eeebe5;
+    --muted: #9ba5ae;
+    --line: #2a3642;
+    --accent: #f3eee6;
+    --seal: #f16646;
+    --coral-ink: #f6a08a;
     --ok: #74c29a;
     --warn: #e2a554;
     --bad: #f08374;
-    --on-ink: #12161b;
-    --on-accent: #0e1318;
+    --on-ink: #121a22;
+    --on-accent: #1b2935;
     color-scheme: dark;
   }
 }
@@ -49,6 +51,7 @@
   --color-line: var(--line);
   --color-accent: var(--accent);
   --color-seal: var(--seal);
+  --color-coral-ink: var(--coral-ink);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-bad: var(--bad);
@@ -171,7 +174,147 @@ p {
   animation: kept-flow 1.2s linear infinite;
 }
 
+@keyframes kept-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes kept-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes kept-toast {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes kept-new-row {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    background: color-mix(in oklab, var(--ok) 14%, transparent);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    background: color-mix(in oklab, var(--ok) 10%, transparent);
+  }
+}
+
+@keyframes kept-tap {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--ink) 35%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+@keyframes kept-ring {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--seal) 55%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 9px transparent;
+  }
+}
+
+@keyframes kept-ping {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--ok) 50%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+@keyframes kept-travel {
+  from {
+    left: 0%;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+@keyframes kept-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.rise {
+  animation: kept-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.pop {
+  animation: kept-pop 0.5s ease both;
+}
+.drop {
+  animation: kept-drop 0.5s ease both;
+}
+.toast-in {
+  animation: kept-toast 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.new-row {
+  animation: kept-new-row 0.6s ease both;
+}
+.tap {
+  animation: kept-tap 0.9s ease-out infinite;
+}
+.ring-pulse {
+  animation: kept-ring 1.6s ease-out infinite;
+}
+.ping {
+  animation: kept-ping 1.6s ease-out infinite;
+}
+.travel {
+  animation: kept-travel 3.2s ease-in-out infinite;
+}
+.fill-bar {
+  transform-origin: left;
+  animation: kept-fill linear both;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .rise,
+  .pop,
+  .drop,
+  .toast-in,
+  .new-row,
+  .tap,
+  .ring-pulse,
+  .ping,
+  .travel,
+  .fill-bar {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
   html {
     scroll-behavior: auto;
   }

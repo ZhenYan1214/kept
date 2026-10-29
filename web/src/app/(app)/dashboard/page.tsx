@@ -3,8 +3,6 @@ import Link from "next/link";
 import { useSnapshot } from "@/components/snapshot";
 import { Card, Empty, SectionTitle, Stat, Tag, ntd, ntdShort, pct } from "@/components/ui";
 import { Icon } from "@/components/icons";
-import { StartHere } from "@/components/guide";
-import { Lede } from "@/components/lede";
 import {
   AlertsPanel,
   AuditPanel,
@@ -22,10 +20,7 @@ export default function Dashboard() {
   const { snap, loading } = useSnapshot();
   if (loading && !snap)
     return (
-      <div className="space-y-16">
-        <Lede />
-        <Empty>Loading the simulated demo from the chain…</Empty>
-      </div>
+      <Empty>Loading the simulated demo from the chain…</Empty>
     );
   if (!snap?.fund) {
     return (
@@ -55,18 +50,18 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-14 md:space-y-20">
-      <Lede />
-
+    <div>
       <div className="space-y-6">
-        <div id="demo" className="scroll-mt-24 flex flex-col gap-4 border-t border-line pt-10 md:flex-row md:items-end md:justify-between">
+        <div id="demo" className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
               <Tag kind="sim" />
-              Live demo on the testnet. Anyone can check it on-chain.
+              Everything here is read from the contracts. Anyone can check it on-chain.
             </p>
-            <h2 className="mt-2 text-2xl font-semibold md:text-[28px]">{f.name}</h2>
-            <p className="mt-0.5 text-sm text-muted">{snap.disaster?.name}</p>
+            <h1 className="mt-3 text-[30px] font-semibold tracking-tight">Overview</h1>
+            <p className="mt-1 text-sm text-muted">
+              {f.name} · {snap.disaster?.name}
+            </p>
           </div>
           <button
             onClick={download}
@@ -76,8 +71,6 @@ export default function Dashboard() {
             Download open data
           </button>
         </div>
-
-        <StartHere />
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           <Stat label="Raised" value={<span title={ntd(f.totalRaised)}>{ntdShort(f.totalRaised)}</span>} sub={`${f.donationCount} donations`} />

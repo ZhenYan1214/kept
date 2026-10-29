@@ -43,9 +43,16 @@ function HouseShapes({ house, lines }: { house: string; lines: string }) {
   );
 }
 
-export function KeptMark({ className, seal = true }: { className?: string; seal?: boolean }) {
-  // seal: the full logo on its cream tile, so the navy lines read in either theme. Without it, the mark in the
-  // text colour (e.g. on the credential card).
+export function KeptMark({ className, seal = true, plain = false }: { className?: string; seal?: boolean; plain?: boolean }) {
+  // seal: the full logo on its cream tile, so the navy lines read in either theme. plain: the coral house with the
+  // lines in the text colour, for headers. Neither: the whole mark in the text colour (e.g. on the credential card).
+  if (plain) {
+    return (
+      <svg viewBox="237 252 780 780" className={className ?? "h-8 w-8"} aria-hidden>
+        <HouseShapes house="#f16646" lines="currentColor" />
+      </svg>
+    );
+  }
   if (!seal) {
     return (
       <svg viewBox="237 252 780 780" className={className ?? "h-8 w-8"} aria-hidden>

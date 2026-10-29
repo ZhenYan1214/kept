@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useSnapshot } from "./snapshot";
 import { Icon } from "./icons";
+import { useToast } from "./toast";
 import { EXPLORER_URL } from "@/lib/config";
 
 export function cx(...c: (string | false | null | undefined)[]) {
@@ -223,6 +224,7 @@ export function ActionButton({
   onDone?: (result: unknown) => void;
 }) {
   const { refresh } = useSnapshot();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -239,14 +241,25 @@ export function ActionButton({
         onClick={async () => {
           setBusy(true);
           setErr(null);
+          // Local actions (a credential made in the browser) finish at once and get no toast; anything that
+          // waits on the chain gets a corner notice after a moment, then its transaction.
+          let t: number | undefined;
+          const timer = setTimeout(() => (t = toast?.start("Writing to Base Sepolia…")), 350);
           try {
             const r = await onClick();
+            clearTimeout(timer);
+            const hash = (r as { hash?: string } | undefined)?.hash;
+            if (!t && hash) t = toast?.start("Writing to Base Sepolia…");
+            if (t) toast?.done(t, "Confirmed on Base Sepolia", hash, hash ? undefined : "Saved on-chain.");
             onDone?.(r);
             setDone(true);
             setTimeout(() => setDone(false), 2600);
             await refresh();
           } catch (e) {
-            setErr(humanError(e instanceof Error ? e.message : String(e)));
+            clearTimeout(timer);
+            const msg = humanError(e instanceof Error ? e.message : String(e));
+            setErr(msg);
+            if (t) toast?.fail(t, msg);
           } finally {
             setBusy(false);
           }

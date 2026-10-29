@@ -225,7 +225,7 @@ export default function Why() {
       <FraudSimulation />
 
       <p className="text-base leading-relaxed">
-        <Link href="/" className="text-accent underline">
+        <Link href="/dashboard" className="text-accent underline">
           See the public dashboard →
         </Link>
       </p>
