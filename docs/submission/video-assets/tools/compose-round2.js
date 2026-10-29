@@ -87,7 +87,7 @@ function renderClip(frames, dur) {
   return `${out}.mp4`;
 }
 
-// ---- The plan (presentation-script.md v2.1) ------------------------------------------------------------------------
+// ---- The plan (presentation-script.md v2.1; demo clips from record-round2.js) -------------------------------------
 const old = (i) => loadRow(OLD, i), neu = (i) => loadRow(NEW, i);
 const SL = (f) => slash(path.join(ASSETS, f)), RD = (f) => slash(path.join(R2, f));
 const lastFrame = (name) => { const j = JSON.parse(fs.readFileSync(path.join(CLIPS, name, "frames.json"), "utf8")); return slash(path.join(CLIPS, name, j.frames.at(-1).file)); };
@@ -108,10 +108,10 @@ const segments = [
       M("audit", undefined, { fake: at(/^fake$/), confirm: at(/^confirm$/), sample: at(/^random$/), visit: at(/^independent$/) })] },
   { label: "3 · Technical architecture", audio: () => cutAudio("a04", neu(2), [[0, neu(2).words.length - 1]]),
     vis: (at, w) => [M("arch", undefined, { phone: at(/^phone$/), identity: at(/^identity$/), receipt: at(/^receipt$/), zk: at(/^zero-knowledge$/), signed: at(/^signed$/), relayer: at(/^relayer$/), gas: at(/^gas$/), server: at(/^server$/), realuse: at(/^real$/), base: at(/^Base$/), six: at(/^six$/), charter: at(/^charter$/), ownkey: at(/^own$/, w(/^charter$/)), twosig: at(/^two$/) })] },
-  { label: "4 · Working prototype", audio: () => { const a = find(r3.words, /^custodian$/, 20) - 1, b = find(r3.words, /^And$/, a) - 1; return cutAudio("a05", r3, [[0, a - 1], [b + 1, r3.words.length - 1]]); },
-    vis: () => [C("register"), C("verified", undefined, -2.6), C("lines", undefined, undefined, 22.5), C("audits")] },
-  { label: "4 · Working prototype", want: 18, audio: () => cutAudio("a06", old(5), [[0, old(5).words.length - 1]]),
-    vis: () => [C("committee1"), C("committee2"), C("committee3")] },
+  { label: "4 · Working prototype", want: 42, audio: () => { const a = find(r3.words, /^custodian$/, 20) - 1, b = find(r3.words, /^And$/, a) - 1; return cutAudio("a05", r3, [[0, a - 1], [b + 1, r3.words.length - 1]]); },
+    vis: (at) => [C("register", at(/^finds$/) - 0.5), C("lines", at(/^random$/) - 0.5, 4.5), C("audits")] },
+  { label: "4 · Working prototype", want: 25, audio: () => cutAudio("a06", old(5), [[0, old(5).words.length - 1]]),
+    vis: (at) => [C("committee1", at(/^Changes$/) - 0.2, 0, 8.5), C("committee1", undefined, 22.5), C("committee2", undefined, 5.5), C("committee3")] },
   { label: "4 · Working prototype", audio: () => cutAudio("a07", neu(3), [[0, neu(3).words.length - 1]]),
     vis: (at) => [M("explorer", at(/^contracts$/) - 0.3, { zoom: at(/^Here$/) - 0.6, received: at(/^received$/) }),
       M("try", undefined, { verified: at(/^source-verified$/), github: at(/^GitHub$/), url: at(/^kept-lilac$/), wallet: at(/^wallet$/) }, { shot: pathToFileURL(firstFrame("register")).href })] },

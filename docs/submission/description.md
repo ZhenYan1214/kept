@@ -21,7 +21,7 @@ Aid trackers record what custodians say they did. Kept lets the people the money
 ## Links
 
 - Demo: https://kept-lilac.vercel.app
-- Presentation video (5:44): https://youtu.be/jaPSnp_u3tg
+- Presentation video (5:54): https://youtu.be/RRqUkdwZ5Lw
 - Code: https://github.com/ZhenYan1214/kept
 - All seven contracts are source-verified on Blockscout and Sourcify (exact match, 2026-10-24).
 - Contracts on Base Sepolia (chain 84532): KeptFactory `0xD2f8E97EB8cDde0d4446b3464f36Cf01F54A13C0`, CustodyLedger `0x36e9859d90E06A084AF602282985c7b568e18072`, EligibilityRegistry `0xB784Cbe3d5Db9288baa6Ffc5F2cc909A1E2aC016`, VoiceModule `0x6ceFbf6C843A217B077e518f1808f1bb3e97ADBB`, AidPrograms `0xFf7D18bB5E7702DA924Daa07D56Fe15B6A9117be` (Semaphore v4 `0x8A1fd199516489B0Fb7153EB5f075cDAC83c693D`)
@@ -48,7 +48,7 @@ After the 2025 Guangfu flood in Taiwan, the public could see NT$1.21bn leave the
    - **Household:** *I did not receive it*. The public dashboard counts the dispute.
    - **NGO counter:** on the Household screen press *Show code at the counter*, then *Verify & record hand-over* on the NGO counter. A second try with the same household is rejected.
 
-The demo is public, so other visitors may have added households or proposals. Your credential lives in your own browser, so the steps above work regardless. Changes to the fund (Fund committee) wait through a real 5-minute public period that cannot be skipped on the testnet. The presentation video (5:44) shows the full flow, including a household veto.
+The demo is public, so other visitors may have added households or proposals. Your credential lives in your own browser, so the steps above work regardless. Changes to the fund (Fund committee) wait through a real 5-minute public period that cannot be skipped on the testnet. The presentation video (5:54) shows the full flow, including a household veto.
 
 ### The problem: trust stops at the first hand
 
