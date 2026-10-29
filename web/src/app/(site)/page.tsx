@@ -71,7 +71,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-        <div className="min-w-0 flex-[1_1_520px]">
+        <div className="min-w-0 flex-[1_1_600px]">
           <HeroScene />
         </div>
       </section>

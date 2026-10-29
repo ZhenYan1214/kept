@@ -31,10 +31,12 @@ export function loadCard(): HouseholdCard | null {
 
 export function saveCard(card: HouseholdCard) {
   localStorage.setItem(KEY, JSON.stringify(card));
+  window.dispatchEvent(new Event("kept-card"));
 }
 
 export function clearCard() {
   localStorage.removeItem(KEY);
+  window.dispatchEvent(new Event("kept-card"));
 }
 
 export function newCard(label: string): HouseholdCard {

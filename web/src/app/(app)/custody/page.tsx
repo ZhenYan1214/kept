@@ -25,7 +25,7 @@ export default function CustodyPage() {
         kind="sim"
         title="Every hand signs for what it holds"
         aside={
-          <Field label="Acting as">
+          <Field label="Signing as">
             <select className={inputCls} value={me} onChange={(e) => setMe(e.target.value as RoleName)}>
               {CUSTODIANS.map((c) => (
                 <option key={c} value={c}>
@@ -95,15 +95,21 @@ function Forward({ h, me, held }: { h: Hop; me: RoleName; held: bigint }) {
     <div className="space-y-3">
       <p className="text-sm font-medium">Pass on to the next custodian</p>
       <div className="grid grid-cols-3 gap-2">
-        <select className={inputCls} value={to} onChange={(e) => setTo(e.target.value as RoleName)}>
-          {options.map((r) => (
-            <option key={r} value={r}>
-              {ROLES[r].short}
-            </option>
-          ))}
-        </select>
-        <input type="number" className={inputCls} value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
-        <input type="number" className={inputCls} value={est} onChange={(e) => setEst(Number(e.target.value))} title="est. households" />
+        <Field label="To">
+          <select className={inputCls} value={to} onChange={(e) => setTo(e.target.value as RoleName)}>
+            {options.map((r) => (
+              <option key={r} value={r}>
+                {ROLES[r].short}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Amount (NT$)">
+          <input type="number" className={inputCls} value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+        </Field>
+        <Field label="Households">
+          <input type="number" className={inputCls} value={est} onChange={(e) => setEst(Number(e.target.value))} />
+        </Field>
       </div>
       <ActionButton
         variant="secondary"
@@ -158,6 +164,7 @@ function Reconcile({ h, me, held }: { h: Hop; me: RoleName; held: bigint }) {
       </Field>
       <ActionButton
         disabled={!chosen.length || total > held}
+        onDone={() => setPicked({})}
         onClick={() =>
           tx(me, "ledger", "reconcile", [
             BigInt(h.id),

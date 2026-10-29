@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import type { Address, Hex } from "viem";
 import { useSnapshot } from "@/components/snapshot";
 import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, Stamp, inputCls, ntd, PageHeader } from "@/components/ui";
-import { KeptMark } from "@/components/icons";
+import { Icon, KeptMark } from "@/components/icons";
 import { proposalTitle } from "@/components/panels";
 import {
   cardIdentity,
@@ -17,7 +17,7 @@ import {
   type HouseholdCard,
 } from "@/lib/household";
 import { findTier, proveMembership } from "@/lib/semaphore";
-import { postInbox } from "@/lib/inbox";
+import { postInbox, useInbox } from "@/lib/inbox";
 import { tx } from "@/lib/api";
 import { lineKey, programScope, textHash, voteScope, waitingPeriod, waitingScope } from "@/lib/scopes";
 import { getDeployment } from "@/lib/config";
@@ -99,6 +99,7 @@ function WithCard({ card, onReset }: { card: HouseholdCard; onReset: () => void 
 
   const reg = registrationPayload(card);
   const pending = snap?.registrations.find((r) => r.commitment.toString() === reg.commitment && r.status === 1);
+  const scanned = useInbox<{ commitment: string }>("registration", true).some((m) => m.payload.commitment === reg.commitment);
 
   return (
     <>
@@ -111,7 +112,7 @@ function WithCard({ card, onReset }: { card: HouseholdCard; onReset: () => void 
                   <KeptMark className="h-7 w-7" seal={false} />
                   <span className="text-lg font-semibold">Kept</span>
                 </div>
-                <span className="text-xs text-muted">Relief credential</span>
+                {tier !== null && tier !== undefined ? <Stamp>Verified · 2 signatures</Stamp> : <span className="text-xs text-muted">Relief credential</span>}
               </div>
               <div>
                 <p className="text-[22px] leading-tight text-ink">{card.label}</p>
@@ -120,11 +121,6 @@ function WithCard({ card, onReset }: { card: HouseholdCard; onReset: () => void 
                 </p>
               </div>
             </div>
-            {tier !== null && tier !== undefined && (
-              <span className="absolute bottom-5 right-5">
-                <Stamp>Verified · 2 signatures</Stamp>
-              </span>
-            )}
           </div>
           <SectionTitle kicker="This device" title="Status" />
           {tier === undefined ? (
@@ -136,17 +132,24 @@ function WithCard({ card, onReset }: { card: HouseholdCard; onReset: () => void 
                 Show this code to your village chief or township office. It contains only public data: a commitment and a receipt
                 address.
               </p>
+              {scanned || pending ? (
+                <p className="text-sm text-ink">
+                  <Icon.Check className="mr-1 inline h-4 w-4 text-ok" />
+                  The chief has your code. {pending ? "Waiting for the township office to sign." : "Waiting for the chief to sign."}
+                </p>
+              ) : (
+                <ActionButton
+                  variant="secondary"
+                  onClick={async () => {
+                    postInbox("registration", reg);
+                  }}
+                >
+                  Simulate: chief scans this code
+                </ActionButton>
+              )}
               <div className="w-fit rounded-lg bg-white p-3 ring-1 ring-line">
                 <QRCodeSVG value={JSON.stringify(reg)} size={168} />
               </div>
-              <ActionButton
-                variant="secondary"
-                onClick={async () => {
-                  postInbox("registration", reg);
-                }}
-              >
-                Simulate: chief scans this code
-              </ActionButton>
             </div>
           ) : (
             <div className="space-y-2">
@@ -183,12 +186,12 @@ function WithCard({ card, onReset }: { card: HouseholdCard; onReset: () => void 
           </div>
         </Card>
         <div className="space-y-6">
+          <Payments receipt={receipt.address} card={card} />
           <Programmes identityTier={tier} card={card} />
           <Votes card={card} registered={tier !== null && tier !== undefined} />
           {tier !== null && tier !== undefined && <StillWaiting card={card} />}
         </div>
       </div>
-      <Payments receipt={receipt.address} card={card} />
     </>
   );
 }
@@ -398,7 +401,7 @@ function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) 
     const account = cardReceipt(card);
     const message = { hopId: BigInt(l.hopId), batchIndex: BigInt(l.batchIndex), receipt, amount: l.amount, received };
     const signature = await account.signTypedData({ domain: receiptDomain(d.ledger), types: RECEIPT_TYPES, primaryType: "Receipt", message });
-    await tx("relayer", "ledger", "confirmLine", [message.hopId, message.batchIndex, receipt, received, signature]);
+    return tx("relayer", "ledger", "confirmLine", [message.hopId, message.batchIndex, receipt, received, signature]);
   };
 
   // Signed in front of the auditor who visits; the message names that auditor, so it cannot be reused.
@@ -417,14 +420,13 @@ function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) 
   return (
     <Card>
       <SectionTitle title="Payments recorded for my household">
-        Custodians publish each payment batch as pseudonymous lines. This screen finds your line by itself, without asking the
-        custodian, and lets you say whether the money actually reached you. Getting paid never requires this step; it is how you
-        can say if something went wrong.
+        Custodians publish each payment as a line: a receipt address and an amount, never a name. This screen finds yours by
+        itself. Say whether the money reached you; getting paid never depends on it.
       </SectionTitle>
       {lines === null ? (
         <Empty>Looking for your line in the published rosters…</Empty>
       ) : lines.length === 0 ? (
-        <Empty>No payment has been recorded for this household yet. If you expected one, use “Still waiting for aid?”.</Empty>
+        <Empty>No payment has been recorded for this household yet.</Empty>
       ) : (
         <div className="space-y-3">
           {lines.map((l) => (

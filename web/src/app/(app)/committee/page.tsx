@@ -7,6 +7,10 @@ import { tx, postJSON } from "@/lib/api";
 import { CHAIN_ID } from "@/lib/config";
 import { textHash } from "@/lib/scopes";
 import { ROLES, type RoleName } from "@/lib/scenario";
+import { publicClient } from "@/lib/chain";
+import { fundAbi } from "@/generated/contracts";
+import { setDemoFlag } from "@/components/demo-guide";
+import { Icon } from "@/components/icons";
 
 const MEMBERS: RoleName[] = ["c1", "c2", "c3"];
 const RECIPIENTS: RoleName[] = ["ministry", "county", "ngo"];
@@ -26,7 +30,7 @@ export default function CommitteePage() {
         kind="sim"
         title="Decisions, under the charter"
         aside={
-          <Field label="Acting as">
+          <Field label="Signing as">
             <select className={inputCls} value={member} onChange={(e) => setMember(e.target.value as RoleName)}>
               {MEMBERS.map((m) => (
                 <option key={m} value={m}>
@@ -40,6 +44,8 @@ export default function CommitteePage() {
         The committee can only act inside the promises made when the money was raised. Balance available:{" "}
         <strong>{ntd(f.balance)}</strong>.
       </PageHeader>
+
+      <BreakCharter />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Allocate member={member} />
@@ -315,6 +321,74 @@ function Surplus({ member }: { member: RoleName }) {
         </div>
         {open && <p className="text-xs text-muted">Available after the deadline.</p>}
       </div>
+    </Card>
+  );
+}
+
+/**
+ * The quickest proof that the charter binds: ask the fund, as a committee member, to pay for something the
+ * charter never listed. The call is only simulated, so nothing is written; the contract's own refusal is the result.
+ */
+function BreakCharter() {
+  const { snap } = useSnapshot();
+  const f = snap!.fund!;
+  const [state, setState] = useState<"idle" | "busy" | "refused" | string>("idle");
+  const amount = 500_000;
+  const tryIt = async () => {
+    setState("busy");
+    try {
+      await publicClient.simulateContract({
+        address: f.address,
+        abi: fundAbi,
+        functionName: "proposeAllocation",
+        args: [NOT_IN_CHARTER, f.custodian, BigInt(amount), 10, textHash("General public works")],
+        account: f.committee[0],
+      });
+      setState("The contract accepted it. That should not happen; please report it.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("PurposeNotInCharter")) {
+        setState("refused");
+        setDemoFlag("triedCharter");
+      } else setState(msg.slice(0, 200));
+    }
+  };
+  return (
+    <Card className="border-seal/30">
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+        <div className="min-w-0 flex-[1_1_380px]">
+          <p className="mb-1 text-[13px] font-medium text-coral-ink">Try it</p>
+          <h2 className="text-lg font-semibold leading-snug text-ink md:text-xl">Try to spend outside the charter</h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted">
+            The charter lists what this money was raised for. As a committee member, ask the fund to pay {ntd(amount)} for
+            “General public works”, which it never listed.
+          </p>
+        </div>
+        {state === "refused" ? (
+          <div className="pop flex max-w-sm items-start gap-3 rounded-lg bg-ok/10 px-4 py-3">
+            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-ok text-on-ink">
+              <Icon.Shield className="h-3.5 w-3.5" />
+            </span>
+            <p className="text-sm text-ink">
+              <strong className="font-semibold">Refused by the contract.</strong>{" "}
+              <span className="text-muted">
+                PurposeNotInCharter. The fund has no way to add a purpose once the money is raised. Nothing was spent.
+              </span>
+            </p>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={tryIt}
+            disabled={state === "busy"}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {state === "busy" && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+            Try it
+          </button>
+        )}
+      </div>
+      {state !== "idle" && state !== "busy" && state !== "refused" && <p className="mt-3 text-xs text-bad">{state}</p>}
     </Card>
   );
 }

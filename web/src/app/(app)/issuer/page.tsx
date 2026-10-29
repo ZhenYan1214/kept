@@ -18,9 +18,14 @@ const ACTORS: RoleName[] = ["office", "chief0", "chief1", "chief2", "chief3", "c
 
 export default function IssuerPage() {
   const { snap, roles } = useSnapshot();
-  const [actor, setActor] = useState<RoleName>("chief2");
+  const [picked, setPicked] = useState<RoleName | null>(null);
   const inbox = useInbox<Reg>("registration");
   if (!snap?.disaster) return <NotReady />;
+  // Until someone picks, sign as whoever has work waiting: the chief for a scanned code, else the office for a chief's proposal.
+  const officeAddr = roles.office?.toLowerCase();
+  const officeHasWork = snap.registrations.some((r) => r.status === 1 && r.proposer.toLowerCase() !== officeAddr);
+  const actor: RoleName = picked ?? (inbox.length === 0 && officeHasWork ? "office" : "chief2");
+  const setActor = setPicked;
   const isOffice = actor === "office";
   const myVillage = isOffice ? null : VILLAGES[Number(actor.slice(5))].code;
   const myAddr = roles[actor]?.toLowerCase();
@@ -37,7 +42,7 @@ export default function IssuerPage() {
         kind="sim"
         title="Village chief & township office"
         aside={
-          <Field label="Acting as">
+          <Field label="Signing as">
             <select className={inputCls} value={actor} onChange={(e) => setActor(e.target.value as RoleName)}>
               {ACTORS.map((a) => (
                 <option key={a} value={a}>
@@ -63,7 +68,17 @@ export default function IssuerPage() {
           ) : (
             <div className="space-y-4">
               {inbox.map((m) => (
-                <RegisterForm key={m.id} msg={m.payload} actor={actor} fixedVillage={myVillage} onDone={() => consumeInbox(m.id)} />
+                <RegisterForm
+                  key={m.id}
+                  msg={m.payload}
+                  actor={actor}
+                  fixedVillage={myVillage}
+                  onDone={(village) => {
+                    consumeInbox(m.id);
+                    // The second signature must come from the other side: hand the pen over.
+                    setActor(isOffice ? (`chief${VILLAGES.findIndex((v) => v.code === village)}` as RoleName) : "office");
+                  }}
+                />
               ))}
             </div>
           )}
@@ -120,7 +135,7 @@ function RegisterForm({
   msg: Reg;
   actor: RoleName;
   fixedVillage: number | null;
-  onDone: () => void;
+  onDone: (village: number) => void;
 }) {
   const { snap } = useSnapshot();
   const [village, setVillage] = useState<number>(fixedVillage ?? VILLAGES[2].code);
@@ -170,7 +185,8 @@ function RegisterForm({
           ]);
           const id = Number(eventArg<bigint>(r, "RegistrationProposed", "id"));
           upsertRoster({ label: msg.label, village, tier, commitment: msg.commitment, receipt: msg.receipt, registrationId: id });
-          onDone();
+          onDone(village);
+          return r;
         }}
       >
         Propose registration (signature 1 of 2)

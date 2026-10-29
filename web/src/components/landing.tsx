@@ -45,16 +45,16 @@ export function HeroScene() {
   const answered = beat >= 4;
 
   return (
-    <div className="rise relative h-[560px] min-w-0 [animation-delay:200ms]">
-      {/* The public record */}
-      <div className="absolute right-0 top-2.5 w-[470px] max-w-full overflow-hidden max-sm:hidden rounded-2xl border border-line bg-card shadow-[0_30px_60px_-24px_rgb(27_41_53/0.25)]">
+    <div className="rise relative mx-auto h-[560px] w-full min-w-0 max-w-[620px] [animation-delay:200ms]">
+      {/* The public record: it starts behind the phone, its text clear of it */}
+      <div className="absolute left-[120px] right-0 top-2.5 overflow-hidden rounded-2xl border border-line bg-card shadow-[0_30px_60px_-24px_rgb(27_41_53/0.25)] max-sm:hidden">
         <div className="flex h-10 items-center gap-1.5 border-b border-line bg-sunk/50 px-3.5">
           <span className="h-2.5 w-2.5 rounded-full bg-line" />
           <span className="h-2.5 w-2.5 rounded-full bg-line" />
           <span className="h-2.5 w-2.5 rounded-full bg-line" />
           <span className="ml-3 text-xs text-muted">Public record · Guangfu Relief Fund</span>
         </div>
-        <div className="py-4 pl-[150px] pr-5 max-sm:pl-5">
+        <div className="py-4 pl-[170px] pr-5">
           <div className="flex items-baseline justify-between">
             <span className="text-sm font-semibold">Latest on-chain</span>
             <span className="inline-flex items-center gap-1.5 text-xs text-ok">
@@ -155,6 +155,10 @@ export function HeroScene() {
               </button>
             </div>
           )}
+          <div className="absolute inset-x-[18px] bottom-[18px] flex items-center gap-2.5 rounded-xl bg-[#f1ebe1] px-3 py-2.5 text-[11.5px] leading-snug text-[#4a5662]">
+            <Icon.Shield className="h-4 w-4 shrink-0 text-[#2c7350]" />
+            Only a receipt address and the amount go public. Never your name.
+          </div>
         </div>
       </div>
     </div>

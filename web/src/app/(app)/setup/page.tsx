@@ -5,6 +5,7 @@ import { ActionButton, Card, Note, PageHeader, SectionTitle } from "@/components
 import { postJSON } from "@/lib/api";
 import { CHAIN_ID, getDeployment } from "@/lib/config";
 import { clearCard } from "@/lib/household";
+import { clearDemoFlags } from "@/components/demo-guide";
 
 export default function Setup() {
   const { snap } = useSnapshot();
@@ -76,6 +77,7 @@ export default function Setup() {
             clearCard();
             localStorage.removeItem("kept.inbox");
             localStorage.removeItem("kept.township-roster");
+            clearDemoFlags();
           }}
         >
           Reset local demo data

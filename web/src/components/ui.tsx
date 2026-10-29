@@ -3,7 +3,9 @@ import { useState } from "react";
 import { useSnapshot } from "./snapshot";
 import { Icon } from "./icons";
 import { useToast } from "./toast";
-import { EXPLORER_URL } from "@/lib/config";
+import { CHAIN_ID, EXPLORER_URL } from "@/lib/config";
+
+const CHAIN_LABEL = CHAIN_ID === 84532 ? "Base Sepolia" : CHAIN_ID === 31337 ? "the local devnet" : "the chain";
 
 export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(" ");
@@ -226,7 +228,7 @@ export function ActionButton({
   const { refresh } = useSnapshot();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState<"chain" | "local" | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const styles = {
     primary: "bg-accent text-on-accent hover:bg-accent/90",
@@ -244,16 +246,17 @@ export function ActionButton({
           // Local actions (a credential made in the browser) finish at once and get no toast; anything that
           // waits on the chain gets a corner notice after a moment, then its transaction.
           let t: number | undefined;
-          const timer = setTimeout(() => (t = toast?.start("Writing to Base Sepolia…")), 350);
+          const timer = setTimeout(() => (t = toast?.start(`Writing to ${CHAIN_LABEL}…`)), 350);
           try {
             const r = await onClick();
             clearTimeout(timer);
             const hash = (r as { hash?: string } | undefined)?.hash;
-            if (!t && hash) t = toast?.start("Writing to Base Sepolia…");
-            if (t) toast?.done(t, "Confirmed on Base Sepolia", hash, hash ? undefined : "Saved on-chain.");
+            if (!t && hash) t = toast?.start(`Writing to ${CHAIN_LABEL}…`);
+            // Anything slow enough to get a notice went to the chain, with or without a hash to show.
+            if (t) toast?.done(t, `Confirmed on ${CHAIN_LABEL}`, hash);
             onDone?.(r);
-            setDone(true);
-            setTimeout(() => setDone(false), 2600);
+            setDone(hash || t ? "chain" : "local");
+            setTimeout(() => setDone(null), 2600);
             await refresh();
           } catch (e) {
             clearTimeout(timer);
@@ -274,7 +277,7 @@ export function ActionButton({
       </button>
       {done && (
         <span className="flex items-center gap-1 text-xs font-medium text-ok" role="status">
-          <Icon.Check className="h-3.5 w-3.5" /> Saved on-chain
+          <Icon.Check className="h-3.5 w-3.5" /> {done === "chain" ? "Saved on-chain" : "Done"}
         </span>
       )}
       {err && (
