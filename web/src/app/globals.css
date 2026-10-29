@@ -99,6 +99,11 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
+/* Traditional Chinese text: the Latin face for numbers, then the system's Chinese faces. */
+.zh {
+  font-family: var(--font-public-sans), "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+
 /* A quiet label above a heading or a figure. */
 .eyebrow {
   font-size: 13px;

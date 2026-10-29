@@ -77,6 +77,15 @@ export function DemoProgressProvider({ children }: { children: React.ReactNode }
   const card = useStored(loadCard, ["kept-card", "storage"]);
   const flags = useStored(readFlags, [FLAGS_EVENT, "storage"]) ?? {};
   const scans = useInbox<{ commitment: string }>("registration", true);
+  // The household screen can be in large-type Chinese; name its buttons as they appear there.
+  const zh = useStored(() => {
+    try {
+      return localStorage.getItem("kept.household.view") === "zh";
+    } catch {
+      return false;
+    }
+  }, ["kept-view", "storage"]);
+  const say = (en: string, zhLabel: string) => <B>{zh ? zhLabel : en}</B>;
   const reg = useMemo(() => (card ? registrationPayload(card) : null), [card]);
 
   // Leaving the overview counts as having seen the record.
@@ -142,14 +151,14 @@ export function DemoProgressProvider({ children }: { children: React.ReactNode }
   const at = current === -1 ? STEPS.length : current;
 
   let hint: Hint | null = null;
-  if (at === 0) hint = { href: "/household", text: <>Press <B>Create credential</B>. It makes a key on this device. Nothing is sent anywhere.</> };
+  if (at === 0) hint = { href: "/household", text: <>Press {say("Create credential", "建立我的憑證")}. It makes a key on this device. Nothing is sent anywhere.</> };
   else if (at === 1) {
     if (registration?.status === 1)
       hint = { href: "/issuer", text: <>The village chief has signed. Now sign as the <B>Township office</B> and press <B>Approve</B>: two signatures make a household verified.</> };
     else if (registration?.status === 3)
       hint = { href: "/household", text: <>This registration was rejected. Remove the credential at the bottom of the card and create a new one.</> };
     else if (scanned) hint = { href: "/issuer", text: <>The chief has your code. Press <B>Propose registration</B>: that is signature 1 of 2.</> };
-    else hint = { href: "/household", text: <>Under Status, press <B>Simulate: chief scans this code</B>. The code holds no name, only public data.</> };
+    else hint = { href: "/household", text: <>Press {say("Simulate: chief scans this code", "模擬：村長掃描條碼")}. The code holds no name, only public data.</> };
   } else if (at === 2)
     hint = {
       href: "/custody",
@@ -159,7 +168,7 @@ export function DemoProgressProvider({ children }: { children: React.ReactNode }
         </>
       ),
     };
-  else if (at === 3) hint = { href: "/household", text: <>A payment line with your receipt address is now public. Did it arrive? Press <B>I received it</B> or <B>I did not receive it</B>.</> };
+  else if (at === 3) hint = { href: "/household", text: <>A payment line with your receipt address is now public. Did it arrive? Press {say("I received it", "有，我收到了")} or {say("I did not receive it", "沒有收到")}.</> };
   else if (at === 4)
     hint = { href: "/dashboard", text: <>Your answer now counts in <B>Confirmed</B>. Anyone can read these totals and alerts, and no custodian can change what you said.</> };
   else if (at === 5)

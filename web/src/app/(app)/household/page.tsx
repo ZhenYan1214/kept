@@ -1,9 +1,9 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import type { Address, Hex } from "viem";
 import { useSnapshot } from "@/components/snapshot";
-import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, Stamp, inputCls, ntd, PageHeader } from "@/components/ui";
+import { ActionButton, Badge, Card, Empty, Field, Note, SectionTitle, Stamp, cx, inputCls, ntd, PageHeader } from "@/components/ui";
 import { Icon, KeptMark } from "@/components/icons";
 import { proposalTitle } from "@/components/panels";
 import {
@@ -16,36 +16,79 @@ import {
   saveCard,
   type HouseholdCard,
 } from "@/lib/household";
-import { findTier, proveMembership } from "@/lib/semaphore";
+import { proveMembership } from "@/lib/semaphore";
 import { postInbox, useInbox } from "@/lib/inbox";
+import { answerLine, signAuditVisit, useHouseholdTier, useMyLines, useStillWaiting, type MyLine } from "@/lib/household-actions";
 import { tx } from "@/lib/api";
-import { lineKey, programScope, textHash, voteScope, waitingPeriod, waitingScope } from "@/lib/scopes";
+import { programScope, textHash, voteScope } from "@/lib/scopes";
 import { getDeployment } from "@/lib/config";
 import { publicClient } from "@/lib/chain";
-import { ledgerAbi, voiceAbi } from "@/generated/contracts";
-import { receiptDomain, AUDIT_VISIT_TYPES, RECEIPT_TYPES } from "@/lib/receipt";
+import { voiceAbi } from "@/generated/contracts";
 import { TIERS, VILLAGES, tierName } from "@/lib/scenario";
 import { toJSONSafe } from "@/lib/serialize";
+import { LargeZhHousehold } from "./large-zh";
+
+const VIEW_KEY = "kept.household.view";
 
 export default function HouseholdPage() {
   const [card, setCard] = useState<HouseholdCard | null>(null);
   const [ready, setReady] = useState(false);
+  const [zh, setZh] = useState(false);
   useEffect(() => {
     setCard(loadCard());
+    try {
+      setZh(localStorage.getItem(VIEW_KEY) === "zh");
+    } catch {}
     setReady(true);
   }, []);
   if (!ready) return null;
+  const pickView = (next: boolean) => {
+    setZh(next);
+    try {
+      localStorage.setItem(VIEW_KEY, next ? "zh" : "en");
+    } catch {}
+    window.dispatchEvent(new Event("kept-view"));
+  };
+  const create = (c: HouseholdCard) => (saveCard(c), setCard(c));
+  const toggle = (
+    <div role="group" aria-label="Screen" className="inline-flex rounded-xl border border-line bg-sunk/60 p-1">
+      {[
+        { on: false, label: "Standard" },
+        { on: true, label: "繁中大字" },
+      ].map((v) => (
+        <button
+          key={v.label}
+          type="button"
+          aria-pressed={zh === v.on}
+          onClick={() => pickView(v.on)}
+          className={cx(
+            "min-h-10 rounded-lg px-4 text-sm font-semibold transition-colors",
+            zh === v.on ? "bg-card text-ink shadow-[0_1px_2px_rgb(0_0_0/0.08)]" : "text-muted hover:text-ink",
+          )}
+        >
+          {v.label}
+        </button>
+      ))}
+    </div>
+  );
+  if (zh) {
+    return (
+      <div className="space-y-6">
+        <PageHeader eyebrow="Role · Household device" kind="sim" title={<span lang="zh-Hant" className="zh">我的救助</span>} aside={toggle}>
+          The same screen as an older resident in Guangfu would use it: Traditional Chinese, large type, one question at a time.
+          Same credential, same contracts.
+        </PageHeader>
+        <LargeZhHousehold card={card} onCreate={create} />
+      </div>
+    );
+  }
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Role · Household device"
-        kind="sim"
-        title="My relief credential"
-      >
+      <PageHeader eyebrow="Role · Household device" kind="sim" title="My relief credential" aside={toggle}>
         Your credential stays on this phone (or a printed card). It proves you are a verified household without saying which
         one. Nothing personal ever goes on-chain, and you never need crypto or gas.
       </PageHeader>
-      {card ? <WithCard card={card} onReset={() => (clearCard(), setCard(null))} /> : <CreateCard onCreate={(c) => (saveCard(c), setCard(c))} />}
+      {card ? <WithCard card={card} onReset={() => (clearCard(), setCard(null))} /> : <CreateCard onCreate={create} />}
       <AppealCard />
     </div>
   );
@@ -80,22 +123,9 @@ function CreateCard({ onCreate }: { onCreate: (c: HouseholdCard) => void }) {
 
 function WithCard({ card, onReset }: { card: HouseholdCard; onReset: () => void }) {
   const { snap } = useSnapshot();
-  const identity = useMemo(() => cardIdentity(card), [card]);
   const receipt = useMemo(() => cardReceipt(card), [card]);
-  const [tier, setTier] = useState<number | null | undefined>(undefined);
+  const tier = useHouseholdTier(card);
   const [showSecret, setShowSecret] = useState(false);
-  const tierKey = snap?.disaster?.tiers.map((t) => t.groupId.toString()).join(",") ?? "";
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const tiers = useMemo(() => snap?.disaster?.tiers ?? [], [tierKey]);
-  const verifiedCount = snap?.disaster?.verified;
-
-  const checkTier = useCallback(async () => {
-    if (!tiers.length) return;
-    setTier(await findTier(identity, tiers));
-  }, [identity, tiers]);
-  useEffect(() => {
-    checkTier();
-  }, [checkTier, verifiedCount]);
 
   const reg = registrationPayload(card);
   const pending = snap?.registrations.find((r) => r.commitment.toString() === reg.commitment && r.status === 1);
@@ -313,19 +343,16 @@ function Votes({ card, registered }: { card: HouseholdCard; registered: boolean 
 }
 
 function StillWaiting({ card }: { card: HouseholdCard }) {
-  const { snap } = useSnapshot();
-  const d = getDeployment();
   const [village, setVillage] = useState<number>(VILLAGES[0].code);
-  const [sentFor, setSentFor] = useState<number | null>(null);
-  if (!snap?.disaster) return null;
-  const period = waitingPeriod(snap.timestamp, snap.disaster.createdAt);
+  const waiting = useStillWaiting(card);
+  if (!waiting.ready) return null;
   return (
     <Card>
       <SectionTitle title="Still waiting for aid?">
         Say so anonymously, once a week. Only the count per village is public, and it does not depend on any custodian having
         recorded a payment for you.
       </SectionTitle>
-      {sentFor === period ? (
+      {waiting.sent ? (
         <Badge tone="info">Reported for this week. You can report again next week if nothing arrives.</Badge>
       ) : (
         <div className="flex flex-wrap items-end gap-3">
@@ -338,15 +365,7 @@ function StillWaiting({ card }: { card: HouseholdCard }) {
               ))}
             </select>
           </Field>
-          <ActionButton
-            variant="secondary"
-            onClick={async () => {
-              const scope = waitingScope(d.registry, snap.disaster!.id, period);
-              const { groupId, proof } = await proveMembership(cardIdentity(card), snap.disaster!.tiers, BigInt(village), scope);
-              await tx("relayer", "registry", "reportWaiting", [snap.disaster!.id, groupId, proof]);
-              setSentFor(period);
-            }}
-          >
+          <ActionButton variant="secondary" onClick={() => waiting.report(village)}>
             I am still waiting
           </ActionButton>
         </div>
@@ -355,67 +374,11 @@ function StillWaiting({ card }: { card: HouseholdCard }) {
   );
 }
 
-type MyLine = {
-  hopId: number;
-  batchIndex: number;
-  amount: bigint;
-  custodian: Address;
-  state: number;
-  audit?: number; // when the line was drawn for the sample audit: the recorded visit (0 = not visited yet)
-};
-
 function Payments({ receipt, card }: { receipt: Address; card: HouseholdCard }) {
-  const d = getDeployment();
-  const { snap, labelOf, roles } = useSnapshot();
-  const [lines, setLines] = useState<MyLine[] | null>(null);
-  useEffect(() => {
-    if (!snap) return;
-    (async () => {
-      // The lines are public: look for this household's receipt address in every published batch.
-      const found: MyLine[] = [];
-      for (const h of snap.hops) {
-        for (const b of h.batches) {
-          const amount = await publicClient.readContract({
-            address: d.ledger,
-            abi: ledgerAbi,
-            functionName: "lineAmount",
-            args: [BigInt(h.id), BigInt(b.index), receipt],
-          });
-          if (amount === 0n) continue;
-          const state = await publicClient.readContract({
-            address: d.ledger,
-            abi: ledgerAbi,
-            functionName: "lineState",
-            args: [lineKey(BigInt(h.id), BigInt(b.index), receipt)],
-          });
-          const pick = b.audit.find((p) => p.receipt.toLowerCase() === receipt.toLowerCase());
-          found.push({ hopId: h.id, batchIndex: b.index, amount, custodian: h.to, state: Number(state), audit: pick?.outcome });
-        }
-      }
-      setLines(found);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [snap?.block, receipt]);
-
-  const answer = async (l: MyLine, received: boolean) => {
-    const account = cardReceipt(card);
-    const message = { hopId: BigInt(l.hopId), batchIndex: BigInt(l.batchIndex), receipt, amount: l.amount, received };
-    const signature = await account.signTypedData({ domain: receiptDomain(d.ledger), types: RECEIPT_TYPES, primaryType: "Receipt", message });
-    return tx("relayer", "ledger", "confirmLine", [message.hopId, message.batchIndex, receipt, received, signature]);
-  };
-
-  // Signed in front of the auditor who visits; the message names that auditor, so it cannot be reused.
-  const signVisit = async (l: MyLine, received: boolean) => {
-    const auditor = roles.auditor!;
-    const message = { hopId: BigInt(l.hopId), batchIndex: BigInt(l.batchIndex), receipt, amount: l.amount, received, auditor };
-    const signature = await cardReceipt(card).signTypedData({
-      domain: receiptDomain(d.ledger),
-      types: AUDIT_VISIT_TYPES,
-      primaryType: "AuditVisit",
-      message,
-    });
-    await tx("auditor", "ledger", "recordAuditVisit", [message.hopId, message.batchIndex, receipt, received ? 1 : 2, signature]);
-  };
+  const { labelOf, roles } = useSnapshot();
+  const lines = useMyLines(receipt);
+  const answer = (l: MyLine, received: boolean) => answerLine(card, l, received);
+  const signVisit = (l: MyLine, received: boolean) => signAuditVisit(card, l, received, roles.auditor!);
 
   return (
     <Card>
